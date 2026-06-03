@@ -62,6 +62,12 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **Dual-Model 推理架构 (2026-06-03)**：三通道——Fast（deepseek-v4-pro 执行）、Think（Agent(model:opus)→deepseek-reasoner 中等推理）、Think+（curl 0011 API → claude-opus-4-7 高复杂度推理）。90% 走 Fast，Think 只在方向模糊时触发。模板在 `.claude/dual-model-reasoning.md`。
 - **MyAgents Agent model alias**：`agent set <id> providerEnvJson '...'` 修改，jsonValue 必须是完整 JSON 字符串。sonnet/opus/haiku 三别名对应不同模型。当前 Mino: sonnet→v4-pro, opus→deepseek-reasoner, haiku→v4-flash。(2026-06-03)
 - **0011 API 可用 (2026-06-03)**：`https://aicoding.0011.ai/v1/messages`，Anthropic 协议，x-api-key 认证，claude-opus-4-7 + claude-sonnet-4-6。已验证 200 响应。
+- **决策框架铁律 (2026-06-04)**：
+  1. **零验证不给确定性承诺** — "剩下全自动"在未验证前提假设前就是赌博。先跑一行验证再开口。
+  2. **两击规则 (Two-Strike Rule)** — 连续两次同类型失败 = 强制停止，不是换参数再试。触发后走 Think channel 或向用户确认方向。
+  3. **承诺制造沉没成本** — 话说出去后补丁摞补丁是在填自己的坑。失败后正确反应：砍掉重来，不是加速投入。
+  4. **执行惯性 > 判断力是根因** — 不是技术不够，是决策框架没拦住惯性。规则要硬到不需要自觉。
+- **Think channel 触发条件修订 (2026-06-04)**：不仅方向模糊时触发，**两击规则触发时也必须走 Think**。不要让执行中的自己决定"该不该停"——规则决定。
 
 ### 自动化 & 平台交互
 
@@ -97,6 +103,8 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **小红书 Web 端**：首页推荐流可未登录浏览，搜索和笔记详情强制登录。直接 URL 访问搜索结果页也弹登录窗。(2026-06-03)
 - **中国电商联盟 API**：京东联盟（个人可申）、多多进宝（个人可申）、淘宝联盟（企业资质）。需 APPKEY+SECRET，签名认证。(2026-06-03)
 - **闲鱼网页版技术**：搜索 URL `goofish.com/search?q=<词>`，JS 渲染 3-5 秒出结果。不登录返回空而非报错。"个人闲置"过滤排除商家号。聊天 `goofish.com/im?itemId=&peerUserId=`。登录态随 Playwright profile 持久化，跨 session 可用。(2026-06-03)
+- **React SPA 手机端快速部署** (2026-06-04)：Vite dev server `host: '0.0.0.0'` 暴露局域网，手机同 WiFi 即可访问。API 走 Vite proxy，手机端也能调后端。前提：电脑醒着+同网。比部署到静态托管快 100 倍。
+- **Web Speech API 语音录入** (2026-06-04)：浏览器原生 `SpeechRecognition`（`webkitSpeechRecognition`），`lang='zh-CN'`，`continuous: true` + `interimResults: true` 实现边说边出字。Safari/Chrome 移动端均支持，不上传音频。不支持时隐藏按钮即可。
 - **macOS 备忘录批量导出** (2026-06-03)：
   - **方案选择**：AppleScript 太慢（0.33s/条）+ 连续大量调用触发 TCC 风控断连。社区工具是正解。
   - **工具**：`apple-notes-parser`（Python），pipx 安装（隔离环境），直接读 SQLite 数据库 + protobuf 解码。
@@ -110,8 +118,8 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 
 - **晨会金融速递** (2026-06-04): 6 维度金融速递，每日 20:00 推送微信。首次自动执行 06-03 20:00，待确认。PRD 在 `workspace/finance-digest/晨会金融速递-PRD.md`，topic 在 `memory/topics/finance-digest.md`。
 - **WeChat 插件认证** (2026-06-04): Mino Bot 已重新扫码连接，AICode Bot 待处理（应用重启后 token 丢失，需重新扫码）。检查：`curl localhost:31419/status` 看 `waitingForQrLogin`。
-- **插花的艺术** (2026-06-03): 之前完成的设计任务，workspace 在 `workspace/ikebana-art/`。
-- **记忆系统** (2026-06-04): 第二次维护完成。3 个 topic 文件活跃，workspace 已整理。（首次维护 06-03 完成）
+- **插花的艺术 (ikebana)** (2026-06-04): 断舍离收纳管理 React App（`ikebana/`）。手机端可局域网访问，支持快速录入（单行）+ 批量语音录入（多行+语音识别）。AI 教练用 DeepSeek API 分析物品。Topic 在 `memory/topics/ikebana.md`。
+- **记忆系统** (2026-06-04): 第三次维护完成。4 个 topic 文件活跃（+ikebana），workspace 无新散落文件。git add + commit + push 记忆文件。（首次 06-03，二次 06-04 01:33）
 - **购物比价调研** (2026-06-03): Zyte、mcp-bijia、小红书访问、现成比价 App 四路调研完成。结论：不建轮子，现成 App 足够；要自建走联盟 API。Topic 在 `memory/topics/shopping-price-compare.md`。
 - **闲鱼买 Apple Watch S7** (2026-06-04): 已筛选 13 个个人卖家，首推 ¥825 上海（电池 99%），已发 ¥750 询价。Cron 定时 06-04 11:00 自动检查回复推微信。Topic 在 `memory/topics/xianyu-shopping.md`。
 - **AICode Bot 可用** (2026-06-03): Agent id `a0c13cae`，session `633df24a`，WeChat channel online。已用于定时通知链路。
