@@ -94,6 +94,7 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - 金融从业者，晨会需要诵读材料
 - 对推送内容质量有要求：信息密度高、有节奏感、能直接使用
 - 在意 token 效率 (2026-06-03)
+- 保持系统整洁，定期清理不用的软件 (2026-06-04)
 
 ## Technical Knowledge
 
@@ -106,6 +107,8 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **闲鱼网页版技术**：搜索 URL `goofish.com/search?q=<词>`，JS 渲染 3-5 秒出结果。不登录返回空而非报错。"个人闲置"过滤排除商家号。聊天 `goofish.com/im?itemId=&peerUserId=`。登录态随 Playwright profile 持久化，跨 session 可用。(2026-06-03)
 - **React SPA 手机端快速部署** (2026-06-04)：Vite dev server `host: '0.0.0.0'` 暴露局域网，手机同 WiFi 即可访问。API 走 Vite proxy，手机端也能调后端。前提：电脑醒着+同网。比部署到静态托管快 100 倍。
 - **Web Speech API 语音录入** (2026-06-04)：浏览器原生 `SpeechRecognition`（`webkitSpeechRecognition`），`lang='zh-CN'`，`continuous: true` + `interimResults: true` 实现边说边出字。Safari/Chrome 移动端均支持，不上传音频。不支持时隐藏按钮即可。
+- **macOS 删除 root 权限 App** (2026-06-04)：`osascript -e 'do shell script "/bin/mv ... ~/.Trash/" with administrator privileges'` 弹 GUI 密码框提权，比终端 `sudo` 友好（非交互环境 sudo 需要 TTY）。关联文件搜索：bundle ID → `find ~/Library -maxdepth 4 -iname "*bundle.id*"`。
+- **monelyze Note 数据导出** (2026-06-04)：Bundle `app.monelyze.Note`，Core Data SQLite 在 `~/Library/Group Containers/F873Q5T4A8.app.monelyze.Note/Note.sqlite`。表 ZNOTE（ZTEXT 内容、ZCREATIONDATE/ZMODIFICATIONDATE 为 2001-01-01 纪元秒）、ZTAG（标签）、Z_1TAGS（多对多）。时间戳转换：`datetime(timestamp + 978307200, 'unixepoch', 'localtime')`。
 - **macOS 备忘录批量导出** (2026-06-03)：
   - **方案选择**：AppleScript 太慢（0.33s/条）+ 连续大量调用触发 TCC 风控断连。社区工具是正解。
   - **工具**：`apple-notes-parser`（Python），pipx 安装（隔离环境），直接读 SQLite 数据库 + protobuf 解码。
