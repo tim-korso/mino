@@ -68,6 +68,7 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
   3. **承诺制造沉没成本** — 话说出去后补丁摞补丁是在填自己的坑。失败后正确反应：砍掉重来，不是加速投入。
   4. **执行惯性 > 判断力是根因** — 不是技术不够，是决策框架没拦住惯性。规则要硬到不需要自觉。
 - **Think channel 触发条件修订 (2026-06-04)**：不仅方向模糊时触发，**两击规则触发时也必须走 Think**。不要让执行中的自己决定"该不该停"——规则决定。
+- **简单交付四步法 (2026-06-04)**：每次做事前按四步走——①拉清单（最轻→最重）→ ②逐个验证（代价 vs 所得）→ ③择优决策（交付质量÷成本）→ ④直接执行（第一个可行方案即交付）。用 macOS 原生能力（Quick Look / `open` / `mdfind`）优先，不装重量级工具做轻量的事（如 VS Code 看 .md 文件是失误）。事后复盘：能更轻？能 → 败了，记住。
 
 ### 自动化 & 平台交互
 
@@ -119,7 +120,7 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **晨会金融速递** (2026-06-04): 6 维度金融速递，每日 20:00 推送微信。首次自动执行 06-03 20:00，待确认。PRD 在 `workspace/finance-digest/晨会金融速递-PRD.md`，topic 在 `memory/topics/finance-digest.md`。
 - **WeChat 插件认证** (2026-06-04): Mino Bot 已重新扫码连接，AICode Bot 待处理（应用重启后 token 丢失，需重新扫码）。检查：`curl localhost:31419/status` 看 `waitingForQrLogin`。
 - **插花的艺术 (ikebana)** (2026-06-04): 断舍离收纳管理 React App（`ikebana/`）。手机端可局域网访问，支持快速录入（单行）+ 批量语音录入（多行+语音识别）。AI 教练用 DeepSeek API 分析物品。Topic 在 `memory/topics/ikebana.md`。
-- **记忆系统** (2026-06-04): 第三次维护完成。4 个 topic 文件活跃（+ikebana），workspace 无新散落文件。git add + commit + push 记忆文件。（首次 06-03，二次 06-04 01:33）
+- **汤姆备忘录迁移** (2026-06-04): 3954 条备忘录已导出为 `workspace/notes-migration/备忘录全量_按时间排列.xlsx`，7 条原创想法已写入 MyAgents 想法箱。执行手册在 `workspace/notes-migration/执行手册.md`，给女孩的信在 `workspace/notes-migration/给你.md`。
 - **购物比价调研** (2026-06-03): Zyte、mcp-bijia、小红书访问、现成比价 App 四路调研完成。结论：不建轮子，现成 App 足够；要自建走联盟 API。Topic 在 `memory/topics/shopping-price-compare.md`。
 - **闲鱼买 Apple Watch S7** (2026-06-04): 已筛选 13 个个人卖家，首推 ¥825 上海（电池 99%），已发 ¥750 询价。Cron 定时 06-04 11:00 自动检查回复推微信。Topic 在 `memory/topics/xianyu-shopping.md`。
 - **AICode Bot 可用** (2026-06-03): Agent id `a0c13cae`，session `633df24a`，WeChat channel online。已用于定时通知链路。
