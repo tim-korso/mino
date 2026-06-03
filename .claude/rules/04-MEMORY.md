@@ -117,6 +117,8 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
   - **数据库不可直接 cp**：TCC 同时拦 cp 和 sqlite3。需通过有权限的工具（如 apple-notes-parser）程序化读取。
   - **社区替代品**：apple-notes-liberator (Java/JBang)、Apple Cloud Notes Parser (Ruby)、apple-notes-to-sqlite (Python/AppleScript)。
   - **残留物清理**：`pipx uninstall apple-notes-parser`，`brew uninstall pipx`（如不再需要），删除 venv 目录。
+- **网易云音乐 macOS 控制** (2026-06-04)：App 名 `NeteaseMusic.app`（非中文），URL scheme `orpheus://`（daily→今日推荐/favorite+likedsongs→我喜欢的音乐/search→搜索），菜单栏 `控制` → 播放/暂停/下一首。UI 是 WebView 壳（AXWebArea），AX 元素 title 多为空→导航用 URL scheme 比点 UI 靠谱。搜索用 Cmd+F 输入比 URL scheme 稳定。
+- **IM 截图发送** (2026-06-04)：`screencapture /tmp/xxx.png` → `cp ~/.myagents/tmp/` → `myagents im send-media --file ~/.myagents/tmp/xxx.png --caption "..."`。im send-media 仅允许 workspace / `~/.myagents/tmp` / 系统 temp 路径。
 
 ## Ongoing Context
 
@@ -125,8 +127,6 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **插花的艺术 (ikebana)** (2026-06-04): 断舍离收纳管理 React App（`ikebana/`）。手机端可局域网访问，支持快速录入（单行）+ 批量语音录入（多行+语音识别）。AI 教练用 DeepSeek API 分析物品。Topic 在 `memory/topics/ikebana.md`。
 - **汤姆备忘录迁移** (2026-06-04): 3954 条备忘录已导出为 `workspace/notes-migration/备忘录全量_按时间排列.xlsx`，7 条原创想法已写入 MyAgents 想法箱。执行手册在 `workspace/notes-migration/执行手册.md`，给女孩的信在 `workspace/notes-migration/给你.md`。
 - **购物比价调研** (2026-06-03): Zyte、mcp-bijia、小红书访问、现成比价 App 四路调研完成。结论：不建轮子，现成 App 足够；要自建走联盟 API。Topic 在 `memory/topics/shopping-price-compare.md`。
-- **闲鱼买 Apple Watch S7** (2026-06-04): 已筛选 13 个个人卖家，首推 ¥825 上海（电池 99%），已发 ¥750 询价。Cron 定时 06-04 11:00 自动检查回复推微信。Topic 在 `memory/topics/xianyu-shopping.md`。
-- **AICode Bot 可用** (2026-06-03): Agent id `a0c13cae`，session `633df24a`，WeChat channel online。已用于定时通知链路。
 - **闲鱼买 Apple Watch S7** (2026-06-04): 已筛选 13 个个人卖家，首推 ¥825 上海（电池 99%），已发 ¥750 询价。Cron 定时 06-04 11:00 自动检查回复推微信。Topic 在 `memory/topics/xianyu-shopping.md`。
 - **AICode Bot 可用** (2026-06-03): Agent id `a0c13cae`，session `633df24a`，WeChat channel online。已用于定时通知链路。
 
