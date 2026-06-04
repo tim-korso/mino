@@ -76,6 +76,14 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **iOS App 在 Mac 上无自动化接口**：M 系芯片跑 iOS App 只能手动操作，AI 无法控制。遇到这种情况直接切网页版 + Playwright。(2026-06-03)
 - **Cron → Bot → IM 通知链路**：cron 任务完成 → `myagents session send <botSessionId>` → Bot AI 处理 → Bridge 发微信。可用于"定时检查某件事→推送到手机"。(2026-06-03)
 
+### Multi-Agent 协作
+
+- **Agent 健康信号系统 (2026-06-04)**：三腿架构——SCHEDULE（调度）+ EXECUTE（执行）+ PERCEIVE（感知）。五个标准状态（INIT/IDLE/BUSY/WAIT_INPUT/DEAD）+ DEGRADED 悬浮态（心跳在但能力废了）。三级掉线恢复：Level 1 DEGRADED 自动恢复 → Level 2 DEAD+respawn（3次）→ Level 3 CRITICAL 人工介入。Bridge Agent 不 respawn（token 内存态，重启无用）。
+- **最小可行感知层 (2026-06-04)**：文件心跳 + session send 告警，不需要新 runtime/Global Sidecar 改动/pub-sub 基础设施。一个监控 cron + 一个 prompt 文件即可落地。
+- **心跳写入可靠性陷阱 (2026-06-04)**：AI prompt 中的「执行后写心跳」指令不是 hook——AI 提前终止/EOS 截断时心跳不写。这是结构性限制，等基础设施层 post-execution hook 支持。
+- **Prompt heredoc 单引号陷阱 (2026-06-04)**：`<< 'EOF'` 阻止 shell 变量展开，`$(date)` 被写为字面量。AI 生成的 shell 脚本中应使用 `echo "..."` 或双引号 heredoc。
+- **MyAgents cron 最小间隔 5 分钟 (2026-06-04)**：`--every` 和 `--schedule '{"kind":"every","minutes":N}'` 均拒绝 N < 5。秒级检测需 loop 模式常驻进程。
+
 ### 技术调研
 
 - **中国电商数据获取三路径**：(1) 官方联盟 API（最推荐——京东联盟/多多进宝个人可申，合法免费稳定）；(2) 第三方数据服务（鼎点/JustOneAPI，几十到几百/月）；(3) 自建爬虫（Playwright+住宅代理，技术+法律+成本三重壁垒，不推荐）。(2026-06-03)
@@ -122,13 +130,14 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 
 ## Ongoing Context
 
-- **晨会金融速递** (2026-06-04): 6 维度金融速递，每日 20:00 推送微信。首次自动执行 06-03 20:00，待确认。PRD 在 `workspace/finance-digest/晨会金融速递-PRD.md`，topic 在 `memory/topics/finance-digest.md`。
+- **晨会金融速递** (2026-06-04): Task Center `b2125e26`，底层 cron `cron_7f60bf`，每日 20:00 自动执行。06-04 首次成功（89.5s）。已接入 Commander 感知层：HealthCheck 监控 + 心跳写入 + Bridge 心跳监控。PRD 在 `workspace/finance-digest/`，topic 在 `memory/topics/finance-digest.md`。
 - **WeChat 插件认证** (2026-06-04): Mino Bot 已重新扫码连接，AICode Bot 待处理（应用重启后 token 丢失，需重新扫码）。检查：`curl localhost:31419/status` 看 `waitingForQrLogin`。
 - **插花的艺术 (ikebana)** (2026-06-04): 断舍离收纳管理 React App（`ikebana/`）。手机端可局域网访问，支持快速录入（单行）+ 批量语音录入（多行+语音识别）。AI 教练用 DeepSeek API 分析物品。Topic 在 `memory/topics/ikebana.md`。
 - **汤姆备忘录迁移** (2026-06-04): 3954 条备忘录已导出为 `workspace/notes-migration/备忘录全量_按时间排列.xlsx`，7 条原创想法已写入 MyAgents 想法箱。执行手册在 `workspace/notes-migration/执行手册.md`，给女孩的信在 `workspace/notes-migration/给你.md`。
 - **购物比价调研** (2026-06-03): Zyte、mcp-bijia、小红书访问、现成比价 App 四路调研完成。结论：不建轮子，现成 App 足够；要自建走联盟 API。Topic 在 `memory/topics/shopping-price-compare.md`。
 - **闲鱼买 Apple Watch S7** (2026-06-04): 已筛选 13 个个人卖家，首推 ¥825 上海（电池 99%），已发 ¥750 询价。Cron 定时 06-04 11:00 自动检查回复推微信。Topic 在 `memory/topics/xianyu-shopping.md`。
 - **AICode Bot 可用** (2026-06-03): Agent id `a0c13cae`，session `633df24a`，WeChat channel online。已用于定时通知链路。
+- **Commander 感知层协作** (2026-06-04): CC 工作区 Commander Agent 调度系统采纳 mimo 的 Agent 健康信号设计。三盏灯已亮：Bridge Monitor（每 5 分钟 curl bridge → heartbeat）、HealthCheck Worker（每 30 分钟检查晨会速递产出质量 → 告警 Commander session `58bcaaba`）、晨会速递心跳写入（task.md step 7）。心跳目录：`~/.myagents/heartbeats/`。Prompt: `/tmp/commander-healthcheck-prompt.md`、`/tmp/bridge-heartbeat-monitor.md`。
 
 ---
 
