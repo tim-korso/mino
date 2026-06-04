@@ -21,3 +21,4 @@ workspace/
 
 # Credentials (never commit secrets)
 .config/
+myagents_files/
