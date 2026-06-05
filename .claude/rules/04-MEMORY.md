@@ -83,6 +83,15 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **心跳写入可靠性陷阱 (2026-06-04)**：AI prompt 中的「执行后写心跳」指令不是 hook——AI 提前终止/EOS 截断时心跳不写。这是结构性限制，等基础设施层 post-execution hook 支持。
 - **Prompt heredoc 单引号陷阱 (2026-06-04)**：`<< 'EOF'` 阻止 shell 变量展开，`$(date)` 被写为字面量。AI 生成的 shell 脚本中应使用 `echo "..."` 或双引号 heredoc。
 - **MyAgents cron 最小间隔 5 分钟 (2026-06-04)**：`--every` 和 `--schedule '{"kind":"every","minutes":N}'` 均拒绝 N < 5。秒级检测需 loop 模式常驻进程。
+- **跨 Agent 经验共享失败 (2026-06-05)**：AICode 在 quiz-app 已使用 Capacitor 做 iOS 壳，接 ikebana 任务时却选了手写 WKWebView 裸壳——一字不提已有经验。原因：没质疑架构方案 + CC 没要求 Agent 接任务前检查可复用经验。损失：5 轮修复（白屏/LocalServer/相机权限/@StateObject/GENERATE_INFOPLIST_FILE），~4 小时和 ~1500 行废弃 Swift 代码。
+- **CC 五条新规则 (2026-06-05)**：
+  0. Agent 接任务必须提 ≥1 个质疑（不提问题 = 没思考 = 不发车）
+  0.5. 发车前 Explore 搜社区最佳实践（本地经验是井底之蛙，internet 是大巫）
+  1. 跨域检测：前端工程师调原生代码 > 2 轮 → 亮灯
+  2. 第 2 次同类型失败 CC 介入
+  3. 核心交互路径（拍照/存储/AI 调用）首次实现后 Opus 全链路预审
+- **方向判断力 > 执行力 (2026-06-05)**：三个最关键决定——Qwen-VL 选型（识别质量优先于速度）、Capacitor 果断切换（承认 WKWebView 裸壳是错误）、Opus 制度化（全链路审查/社区搜索/反向质疑）。任何一个只靠执行力不可能救回来。
+- **3 轮自动上报规则 (2026-06-05)**：同一 task 经历 3 轮「修复→部署→验证失败」后，**无论 Agent 认为原因是否相同**，必须上报 CC。不用 Agent 自己判断「是不是同一个问题重复出现」——数轮次，零歧义。困在坑里的人很难判断自己是不是在填同一个坑。
 
 ### 技术调研
 
@@ -105,6 +114,12 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - 保持系统整洁，定期清理不用的软件 (2026-06-04)
 
 ## Technical Knowledge
+
+- **Capacitor iOS 壳 > WKWebView 裸壳 (2026-06-05)**：React/Vite SPA 打包成 iOS App，用 `@capacitor/ios`。内置 localhost 服务（WKWebView 不拦截 ES module）、原生相机插件（Capacitor Camera plugin，`Camera.getPhoto()`）、Info.plist 权限自动生成。对比手写 WKWebView：0 行 Swift vs 1500 行，白屏/相机权限/CORS 坑全部消失。`@capacitor/preferences` 替代 localStorage。`capacitor.config.ts` 设 `webDir: 'dist'`。
+- **GENERATE_INFOPLIST_FILE 陷阱 (2026-06-05)**：Xcode `GENERATE_INFOPLIST_FILE = YES` 会静默丢弃手动 Info.plist 中的自定义 key（如 NSCameraUsageDescription）。权限声明必须用 `INFOPLIST_KEY_NSCameraUsageDescription` 直接写在 pbxproj build settings 里。
+- **Qwen3-VL-Flash 中文物品识别 (2026-06-05)**：比 DeepSeek Vision 准确率高、速度快 3-5x。OpenAI 兼容格式 `content: [{type: "image_url", image_url: {url: "data:..."}}]`。百炼 DashScope API，`dashscope.aliyuncs.com/compatible-mode/v1`。SSE 流式复用。sunset notice：qwen-vl-max 2026-07-13 下线。
+- **Florence-2 浏览器端本地识别 (2026-06-05)**：Transformers.js v3 + WebGPU 可行，但 ONNX Runtime Web 未适配 iOS Safari WebGPU（2026 Q2 现状）。CPU 推理与 API 持平无优势。模型 200-400MB。P3-track，季度复评。
+- **Capacitor 生产 API 调用 (2026-06-05)**：Capacitor 无 Vite proxy，API 必须走直连 URL。不可用 `/api/qwen` 或 `/api/deepseek` 代理路径。部署前必 `npm run build` 确保 dist 包含最新代码。
 
 - **MyAgents 进程模型**：Rust (Tauri) + Global Sidecar (Node.js) + Session Sidecar (per session) + Plugin Bridge (per bot)
 - **DeepSeek-v4-pro 1M context**：足够处理多轮搜索+编译，单次 $0.8-0.9
@@ -132,10 +147,10 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 
 - **晨会金融速递** (2026-06-04): Task Center `b2125e26`，底层 cron `cron_7f60bf`，每日 20:00 自动执行。06-04 首次成功（89.5s）。已接入 Commander 感知层：HealthCheck 监控 + 心跳写入 + Bridge 心跳监控。PRD 在 `workspace/finance-digest/`，topic 在 `memory/topics/finance-digest.md`。
 - **WeChat 插件认证** (2026-06-04): Mino Bot 已重新扫码连接，AICode Bot 待处理（应用重启后 token 丢失，需重新扫码）。检查：`curl localhost:31419/status` 看 `waitingForQrLogin`。
-- **插花的艺术 (ikebana)** (2026-06-04): 断舍离收纳管理 React App（`ikebana/`）。手机端可局域网访问，支持快速录入（单行）+ 批量语音录入（多行+语音识别）。AI 教练用 DeepSeek API 分析物品。Topic 在 `memory/topics/ikebana.md`。
-- **汤姆备忘录迁移** (2026-06-04): 3954 条备忘录已导出为 `workspace/notes-migration/备忘录全量_按时间排列.xlsx`，7 条原创想法已写入 MyAgents 想法箱。执行手册在 `workspace/notes-migration/执行手册.md`，给女孩的信在 `workspace/notes-migration/给你.md`。
-- **购物比价调研** (2026-06-03): Zyte、mcp-bijia、小红书访问、现成比价 App 四路调研完成。结论：不建轮子，现成 App 足够；要自建走联盟 API。Topic 在 `memory/topics/shopping-price-compare.md`。
-- **闲鱼买 Apple Watch S7** (2026-06-04): 已筛选 13 个个人卖家，首推 ¥825 上海（电池 99%），已发 ¥750 询价。Cron 定时 06-04 11:00 自动检查回复推微信。Topic 在 `memory/topics/xianyu-shopping.md`。
+- **插花的艺术 (ikebana)** (2026-06-05): v2 完成交付。理念从「断舍离」转为「喜欢物品的集合」。React + Vite + Tailwind → Capacitor iOS 壳。Qwen3-VL-Flash 视觉识别 + DeepSeek 文本评分。iPhone/iPad 双设备真机验证通过（拍照→识别→卡片→喜欢/丢弃全链路）。iCloud 同步代码已写完待 $99 Apple Developer 账号开启。Topic 在 `memory/topics/ikebana.md`。
+- **备忘录迁移** (2026-06-04 完成): 3954 条已导出 xlsx，7 条原创想法已入想法箱。执行手册 + 给女孩的信均在 workspace。
+- **购物比价调研** (2026-06-03 完成): 结论——不建轮子。Topic 存档 `memory/topics/shopping-price-compare.md`。
+- **闲鱼 Apple Watch S7** (2026-06-04 过期): Cron 已过期，卖家未回复。Topic 存档参考 `memory/topics/xianyu-shopping.md`。
 - **AICode Bot 可用** (2026-06-03): Agent id `a0c13cae`，session `633df24a`，WeChat channel online。已用于定时通知链路。
 - **Commander 感知层协作** (2026-06-04): CC 工作区 Commander Agent 调度系统采纳 mimo 的 Agent 健康信号设计。三盏灯已亮：Bridge Monitor（每 5 分钟 curl bridge → heartbeat）、HealthCheck Worker（每 30 分钟检查晨会速递产出质量 → 告警 Commander session `58bcaaba`）、晨会速递心跳写入（task.md step 7）。心跳目录：`~/.myagents/heartbeats/`。Prompt: `/tmp/commander-healthcheck-prompt.md`、`/tmp/bridge-heartbeat-monitor.md`。
 
