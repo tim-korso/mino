@@ -74,6 +74,9 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **Think channel 触发条件修订 (2026-06-04)**：不仅方向模糊时触发，**两击规则触发时也必须走 Think**。不要让执行中的自己决定"该不该停"——规则决定。
 - **简单交付四步法 (2026-06-04)**：每次做事前按四步走——①拉清单（最轻→最重）→ ②逐个验证（代价 vs 所得）→ ③择优决策（交付质量÷成本）→ ④直接执行（第一个可行方案即交付）。用 macOS 原生能力（Quick Look / `open` / `mdfind`）优先，不装重量级工具做轻量的事（如 VS Code 看 .md 文件是失误）。事后复盘：能更轻？能 → 败了，记住。
 - **验证引擎四角色分工 (2026-06-06)**：构建验证/评分系统时四种角色不混用——LLM = 侦察兵（搜索/提取/坑检测，做感知）、规则引擎 = 裁判（确定性加权公式，做判定）、Gold Set = 尺子（已知正确答案的标注集，做校准）、回归测试 = 警报器（自动检测系统退化）。**不确定性隔离在 extraction 层**，判定层是确定性的。P0 = 最小验证闭环（Gold Set + 回归测试 + App MVP），先跑通再扩展。
+- **「数据决定，别猜」工程原则 (2026-06-06)**：遇到分叉决策 → 设计低成本实验 → 跑 → 看结果 → 决定。当日三次验证：TF-IDF 过滤 640 视频（1 小时出结论 vs 40 小时全量）、3 小时视频实验品（先验证有人看 vs 先建产线）、App 内嵌 4 期再开公众号（先验证有读者 vs 先注册认证）。「让数据决定」把讨论从「哪个方案更好」变成「实验结果是什么」。
+- **内容产品双格式模式 (2026-06-06)**：短主张（一句话+置信度+证据，适合搜索验证）+ 周度深度文（800-1500 字叙事解读，适合阅读订阅）。两者互补：短主张被搜到，深度文被读到。不要做 chatbot（属于 v3，交互层 vs 内容层）。
+- **视频 MVP：会动的数据报告 (2026-06-06)**：对 50-60 岁爸妈的视频格式——黑底白字 + 数据大字弹出 + 冷静 AI 旁白 + 硬字幕。无角色、无卡通、无 transition。本质是 narrated infographic，不是 YouTube 节目。验证成本：3 小时一个实验品。
 
 ### 自动化 & 平台交互
 
@@ -150,16 +153,13 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 
 ## Ongoing Context
 
-- **晨会金融速递** (2026-06-04): Task Center `b2125e26`，底层 cron `cron_7f60bf`，每日 20:00 自动执行。06-04 首次成功（89.5s）。已接入 Commander 感知层：HealthCheck 监控 + 心跳写入 + Bridge 心跳监控。PRD 在 `workspace/finance-digest/`，topic 在 `memory/topics/finance-digest.md`。
-- **WeChat 插件认证** (2026-06-04): Mino Bot 已重新扫码连接，AICode Bot 待处理（应用重启后 token 丢失，需重新扫码）。检查：`curl localhost:31419/status` 看 `waitingForQrLogin`。
-- **插花的艺术 (ikebana)** (2026-06-05): v2 完成交付。理念从「断舍离」转为「喜欢物品的集合」。React + Vite + Tailwind → Capacitor iOS 壳。Qwen3-VL-Flash 视觉识别 + DeepSeek 文本评分。iPhone/iPad 双设备真机验证通过（拍照→识别→卡片→喜欢/丢弃全链路）。iCloud 同步代码已写完待 $99 Apple Developer 账号开启。Topic 在 `memory/topics/ikebana.md`。
-- **备忘录迁移** (2026-06-04 完成): 3954 条已导出 xlsx，7 条原创想法已入想法箱。执行手册 + 给女孩的信均在 workspace。
-- **购物比价调研** (2026-06-03 完成): 结论——不建轮子。Topic 存档 `memory/topics/shopping-price-compare.md`。
-- **AICode Bot** (2026-06-03, DEGRADED 06-05): Agent id `a0c13cae`，session `633df24a`。Bridge 断连待重新扫码。
-- **CC 验证引擎协作 (2026-06-06)**: CC 调研护肤成分验证标签功能，娜娜单日 10 轮交付——A 醇验证方法论 → 通用验证引擎框架 → pqa.com 提取管线 review → 视频提取 → 数据审查（474 条）→ App 设计 → 工程化原则 → 标注指南 → 人力瓶颈分析。7 篇 cargo 文档落盘 CC 工作区。汤姆拍板 P0 三件（Gold Set / 回归测试 / App MVP）。Topic: `memory/topics/verification-engine.md`。
-- **Session 注册表 (2026-06-05)**: mino↔CC 双向通信已打通。`~/.myagents/heartbeats/agent_sessions.json` + `register_session.py`。每次启动自动注册，发消息前 lookup。
-- **IM 通道切换中 (2026-06-06)**: 汤姆不满微信 Bot 合盖/重启体验。娜娜推荐钉钉（内置 Rust 直驱，国内直连，无 VPN 需求，稳定性最高）。钉钉 channel `dingtalk_dingzg9a`(`123b7f04`) 在 Mino Agent `849dab77` 下已存在但 `enabled: false`。CLI 无 `channel enable/disable` 命令，需 GUI 或改 config.json 启用。等汤姆决定启用还是重建。
-- **Commander 感知层协作** (2026-06-04): CC 工作区 Commander Agent 调度系统采纳 mimo 的 Agent 健康信号设计。三盏灯已亮：Bridge Monitor（每 5 分钟 curl bridge → heartbeat）、HealthCheck Worker（每 30 分钟检查晨会速递产出质量 → 告警 Commander session `58bcaaba`）、晨会速递心跳写入（task.md step 7）。心跳目录：`~/.myagents/heartbeats/`。Prompt: `/tmp/commander-healthcheck-prompt.md`、`/tmp/bridge-heartbeat-monitor.md`。
+- **pqa-app 爸妈版信息验证 App (2026-06-06)**: 474+32=506 条主张，App MVP 完成（index.html SPA，搜索+卡片详情+3 tab），已部署 iPhone。每周深度文嵌入 app。Curated topics 16 个四分区。鲁蛇养生引擎每周三发布新内容。Loser 工作区 (`/Users/1234/Loser/`) 托管 App+内容。CC 工作区 7 篇方法论 cargo。Topic: `memory/topics/verification-engine.md`。
+- **鲁蛇养生引擎 (2026-06-06)**: 鲁蛇 AI Agent 在 Loser 工作区，每周产出短主张+深度文。Week 1: 32 条主张（4 话题）+ 1500 字深度文 + 视频实验。视频出片全自动（30 秒渲染）。领域：营养+睡眠+运动+补充剂。
+- **晨会金融速递 (2026-06-06 更新)**: Task Center `b2125e26`，底层 cron `cron_7f60bf`，每日 20:00 自动执行。06-04 首次成功（89.5s）。**06-05 执行失败**：20:41 SDK 静默 hang 60 分钟超时，疑似 DeepSeek API 临时不可达。06-06 晚间待观察自愈。Topic: `memory/topics/finance-digest.md`。
+- **插花的艺术 (ikebana) (2026-06-05)**: v2 完成交付。React + Vite + Tailwind → Capacitor iOS 壳。双设备真机通过。iCloud 同步待 $99 Apple Developer 账号。
+- **WeChat/AICode Bot (2026-06-06)**: Mino Bot 正常。AICode Bot 仍 DEGRADED (bridge-unreachable)，待汤姆重新扫码。
+- **Session 注册表 + 多 Agent 通信 (2026-06-05)**: mino↔CC↔Loser 三方通信。`~/.myagents/heartbeats/agent_sessions.json` + `register_session.py`。`myagents session send` 的 from 标签取自发件方 session title（已确认两次）。查其他 session ID：心跳文件或 `sessions.json`。
+- **Commander 感知层 (2026-06-04)**: Bridge Monitor + HealthCheck Worker + 晨会速递心跳。心跳目录：`~/.myagents/heartbeats/`。
 
 ---
 
