@@ -54,6 +54,7 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **`myagents session send` 的 from 标签取自发件方 session title (2026-06-06)**：接收方看到的 from 不是 Agent 名称，是发送方 session 的 title。若 title 是 auto-generated（如「娜娜 手机端独立机器人」），接收方会看到奇怪的标签。Fix：在 GUI 改 session title。CLI 无 `session rename` 命令。
 - **`myagents session send` 换行保护 (2026-06-05)**：`-p` 内容含 `\n` 或 >4KB 时 CLI 立即 fail-fast (exit 3)，提示切到 `--prompt-file`。习惯上多行/长内容永远走 `--prompt-file`，跨平台一致。
 - **Session 注册表 — Agent 间通信的地址簿 (2026-06-05)**：Session ID 是 UUID，每次新开会话就变，旧 ID 作废。方案：`~/.myagents/heartbeats/agent_sessions.json` 文件注册表 + `register_session.py` 脚本（register/lookup/list）。每个 Agent 在 CLAUDE.md Every Session 节写入 `$CLAUDE_CODE_SESSION_ID`。发消息前先 lookup。已验证 mino↔commander 双向通信。
+- **CLI 无法开关 Agent channel (2026-06-06)**：`myagents agent channel` 只有 list/add/remove，没有 enable/disable。已存在但禁用的 channel 只能在 GUI 启用或手动改 config.json。CLI 功能缺口。
 
 ### 内容创作
 
@@ -155,9 +156,9 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **备忘录迁移** (2026-06-04 完成): 3954 条已导出 xlsx，7 条原创想法已入想法箱。执行手册 + 给女孩的信均在 workspace。
 - **购物比价调研** (2026-06-03 完成): 结论——不建轮子。Topic 存档 `memory/topics/shopping-price-compare.md`。
 - **AICode Bot** (2026-06-03, DEGRADED 06-05): Agent id `a0c13cae`，session `633df24a`。Bridge 断连待重新扫码。
-- **CC 验证引擎协作 (2026-06-06)**: CC 调研护肤成分验证标签功能，娜娜单日 10 轮交付——A 醇验证方法论 → 通用验证引擎框架 → pqa.com 提取管线 review → 视频提取 → 数据审查（474 条）→ App 设计 → 工程化原则 → 标注指南 → 人力瓶颈分析。7 篇 cargo 文档落盘 `workspace/commander/cargo/`。汤姆拍板 P0 三件（Gold Set / 回归测试 / App MVP）。方法论被 CC 整理为 `docs/ingredient-evidence-framework.md`。
+- **CC 验证引擎协作 (2026-06-06)**: CC 调研护肤成分验证标签功能，娜娜单日 10 轮交付——A 醇验证方法论 → 通用验证引擎框架 → pqa.com 提取管线 review → 视频提取 → 数据审查（474 条）→ App 设计 → 工程化原则 → 标注指南 → 人力瓶颈分析。7 篇 cargo 文档落盘 CC 工作区。汤姆拍板 P0 三件（Gold Set / 回归测试 / App MVP）。Topic: `memory/topics/verification-engine.md`。
 - **Session 注册表 (2026-06-05)**: mino↔CC 双向通信已打通。`~/.myagents/heartbeats/agent_sessions.json` + `register_session.py`。每次启动自动注册，发消息前 lookup。
-- **Telegram Bot 通道 (2026-06-05 pending)**: 汤姆选方案 A 替代微信 Bot。Mino Agent `849dab77` 待加 Telegram channel。等汤姆提供 @BotFather token。
+- **IM 通道切换中 (2026-06-06)**: 汤姆不满微信 Bot 合盖/重启体验。娜娜推荐钉钉（内置 Rust 直驱，国内直连，无 VPN 需求，稳定性最高）。钉钉 channel `dingtalk_dingzg9a`(`123b7f04`) 在 Mino Agent `849dab77` 下已存在但 `enabled: false`。CLI 无 `channel enable/disable` 命令，需 GUI 或改 config.json 启用。等汤姆决定启用还是重建。
 - **Commander 感知层协作** (2026-06-04): CC 工作区 Commander Agent 调度系统采纳 mimo 的 Agent 健康信号设计。三盏灯已亮：Bridge Monitor（每 5 分钟 curl bridge → heartbeat）、HealthCheck Worker（每 30 分钟检查晨会速递产出质量 → 告警 Commander session `58bcaaba`）、晨会速递心跳写入（task.md step 7）。心跳目录：`~/.myagents/heartbeats/`。Prompt: `/tmp/commander-healthcheck-prompt.md`、`/tmp/bridge-heartbeat-monitor.md`。
 
 ---
