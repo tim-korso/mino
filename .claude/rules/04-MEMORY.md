@@ -52,6 +52,8 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **Bridge 调试端口**：Mino Bot port 31419，AICode Bot port 31420。`/status` 看状态，`/qr-login-start` 触发扫码登录。(2026-06-03)
 - **Cron 执行记录**：`~/.myagents/cron_runs/<taskId>.jsonl`，每行 JSON。`myagents cron runs <id> --limit N --json`。(2026-06-03)
 - **`myagents session send` 的 from 标签取自发件方 session title (2026-06-06)**：接收方看到的 from 不是 Agent 名称，是发送方 session 的 title。若 title 是 auto-generated（如「娜娜 手机端独立机器人」），接收方会看到奇怪的标签。Fix：在 GUI 改 session title。CLI 无 `session rename` 命令。
+- **`myagents session send` 换行保护 (2026-06-05)**：`-p` 内容含 `\n` 或 >4KB 时 CLI 立即 fail-fast (exit 3)，提示切到 `--prompt-file`。习惯上多行/长内容永远走 `--prompt-file`，跨平台一致。
+- **Session 注册表 — Agent 间通信的地址簿 (2026-06-05)**：Session ID 是 UUID，每次新开会话就变，旧 ID 作废。方案：`~/.myagents/heartbeats/agent_sessions.json` 文件注册表 + `register_session.py` 脚本（register/lookup/list）。每个 Agent 在 CLAUDE.md Every Session 节写入 `$CLAUDE_CODE_SESSION_ID`。发消息前先 lookup。已验证 mino↔commander 双向通信。
 
 ### 内容创作
 
@@ -152,9 +154,10 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **插花的艺术 (ikebana)** (2026-06-05): v2 完成交付。理念从「断舍离」转为「喜欢物品的集合」。React + Vite + Tailwind → Capacitor iOS 壳。Qwen3-VL-Flash 视觉识别 + DeepSeek 文本评分。iPhone/iPad 双设备真机验证通过（拍照→识别→卡片→喜欢/丢弃全链路）。iCloud 同步代码已写完待 $99 Apple Developer 账号开启。Topic 在 `memory/topics/ikebana.md`。
 - **备忘录迁移** (2026-06-04 完成): 3954 条已导出 xlsx，7 条原创想法已入想法箱。执行手册 + 给女孩的信均在 workspace。
 - **购物比价调研** (2026-06-03 完成): 结论——不建轮子。Topic 存档 `memory/topics/shopping-price-compare.md`。
-- **闲鱼 Apple Watch S7** (2026-06-04 过期): Cron 已过期，卖家未回复。Topic 存档参考 `memory/topics/xianyu-shopping.md`。
-- **AICode Bot 可用** (2026-06-03): Agent id `a0c13cae`，session `633df24a`，WeChat channel online。已用于定时通知链路。
+- **AICode Bot** (2026-06-03, DEGRADED 06-05): Agent id `a0c13cae`，session `633df24a`。Bridge 断连待重新扫码。
 - **CC 验证引擎协作 (2026-06-06)**: CC 调研护肤成分验证标签功能，娜娜单日 10 轮交付——A 醇验证方法论 → 通用验证引擎框架 → pqa.com 提取管线 review → 视频提取 → 数据审查（474 条）→ App 设计 → 工程化原则 → 标注指南 → 人力瓶颈分析。7 篇 cargo 文档落盘 `workspace/commander/cargo/`。汤姆拍板 P0 三件（Gold Set / 回归测试 / App MVP）。方法论被 CC 整理为 `docs/ingredient-evidence-framework.md`。
+- **Session 注册表 (2026-06-05)**: mino↔CC 双向通信已打通。`~/.myagents/heartbeats/agent_sessions.json` + `register_session.py`。每次启动自动注册，发消息前 lookup。
+- **Telegram Bot 通道 (2026-06-05 pending)**: 汤姆选方案 A 替代微信 Bot。Mino Agent `849dab77` 待加 Telegram channel。等汤姆提供 @BotFather token。
 - **Commander 感知层协作** (2026-06-04): CC 工作区 Commander Agent 调度系统采纳 mimo 的 Agent 健康信号设计。三盏灯已亮：Bridge Monitor（每 5 分钟 curl bridge → heartbeat）、HealthCheck Worker（每 30 分钟检查晨会速递产出质量 → 告警 Commander session `58bcaaba`）、晨会速递心跳写入（task.md step 7）。心跳目录：`~/.myagents/heartbeats/`。Prompt: `/tmp/commander-healthcheck-prompt.md`、`/tmp/bridge-heartbeat-monitor.md`。
 
 ---
