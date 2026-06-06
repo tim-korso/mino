@@ -161,6 +161,26 @@ Loser 工作区 `/Users/1234/Loser/pqa-app/`（App 交付物）：
 
 **20. 晨会金融速递 cron 故障排查**：06-05 20:41 执行超时（SDK 静默 hang 60 分钟）。可能：DeepSeek API 临时不可达。建议今晚看自愈情况 + 设 5 分钟超时。
 
+### 21. pqa-app React 重构 (2026-06-07 娜娜执行)
+
+鲁蛇 AI 之前修 Q-PQA bugs 时引入了新的 JS 语法错误（多余 `}` 导致整个脚本无法解析，App 白屏）。汤姆要求重构为 Capacitor 标准工程。
+
+**问题链**：
+1. 🔴 `index.html` L712 多余 `}` → `SyntaxError: Unexpected token '}'` → 整个脚本 parse 失败 → 白屏
+2. 🟡 `data.js` 766KB 同步加载（`<script src>` 无 `defer`）→ 阻塞首屏渲染
+3. 🔴 重构后 `const` 声明不挂 `window` → React 组件取 `window.CLAIMS_FLAT` 为 `undefined` → 内容不加载
+
+**重构方案**：单一 51KB HTML → React + Vite + Capacitor 标准工程
+- 组件化：App.jsx（全局状态/路由） + 7 个视图组件 + Header/TabBar
+- 数据：`data.js` (766KB) 保留为 public/ 静态资源，加 `defer`；WEEKLY_ISSUES 提取为独立模块
+- 样式：全部 CSS 提取到 `src/App.css`
+- 关键修复：非模块 `const` 不挂 `window` → 加桥接脚本 `window.CLAIMS_FLAT = CLAIMS_FLAT`
+
+**部署链路**：`npm run build` → `npx cap sync ios` → `xcodebuild` → `xcrun devicectl device install app` → launch
+
+**项目位置**：`/Users/1234/Loser/pqa-app/`（旧版保留为 `pqa-app.old/`）
+
 ## 变更记录
+- 2026-06-07: 娜娜重构 pqa-app 为 React + Vite + Capacitor 标准工程。修复 JS 语法错误、data.js 同步阻塞、const window 桥接。部署 iPhone 成功。
 - 2026-06-06: 娜娜单日 18+ 轮交付全链路闭环——方法论→工程→人力 + App MVP + 鲁蛇养生引擎 + 视频实验。CC 7 篇 cargo 落盘，Loser 托管 App+内容。
 - 2026-06-06 (初始): 娜娜单日 10 轮交付，方法论→工程→人力全链路。CC 7 篇 cargo 落盘。Tom 拍板 P0 三件。

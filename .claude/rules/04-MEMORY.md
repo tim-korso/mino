@@ -77,6 +77,8 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **「数据决定，别猜」工程原则 (2026-06-06)**：遇到分叉决策 → 设计低成本实验 → 跑 → 看结果 → 决定。当日三次验证：TF-IDF 过滤 640 视频（1 小时出结论 vs 40 小时全量）、3 小时视频实验品（先验证有人看 vs 先建产线）、App 内嵌 4 期再开公众号（先验证有读者 vs 先注册认证）。「让数据决定」把讨论从「哪个方案更好」变成「实验结果是什么」。
 - **内容产品双格式模式 (2026-06-06)**：短主张（一句话+置信度+证据，适合搜索验证）+ 周度深度文（800-1500 字叙事解读，适合阅读订阅）。两者互补：短主张被搜到，深度文被读到。不要做 chatbot（属于 v3，交互层 vs 内容层）。
 - **视频 MVP：会动的数据报告 (2026-06-06)**：对 50-60 岁爸妈的视频格式——黑底白字 + 数据大字弹出 + 冷静 AI 旁白 + 硬字幕。无角色、无卡通、无 transition。本质是 narrated infographic，不是 YouTube 节目。验证成本：3 小时一个实验品。
+- **单文件 HTML → React 迁移的 window 陷阱 (2026-06-07)**：当旧项目用 `<script src="data.js">`（非模块脚本）声明 `const CLAIMS_FLAT = [...]`，迁移到 React/Vite（ES module）后，`window.CLAIMS_FLAT` 是 `undefined`——非模块脚本中 `const` 不创建 window 属性（只有 `var` 和 function 声明会）。修复：在 data.js 后加桥接脚本 `<script defer>window.CLAIMS_FLAT = CLAIMS_FLAT</script>`，不碰源文件。这是「DO NOT EDIT」生成文件的正确处理方式。
+- **Capacitor SPM 首次构建可超时 (2026-06-07)**：`xcodebuild` 首次拉 Capacitor Swift Package Manager 依赖可能因 GitHub 网络超时失败，重试通常通过（第二次用缓存）。不是代码问题，别改代码。
 
 ### 自动化 & 平台交互
 
@@ -153,7 +155,7 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 
 ## Ongoing Context
 
-- **pqa-app 爸妈版信息验证 App (2026-06-06)**: 474+32=506 条主张，App MVP 完成（index.html SPA，搜索+卡片详情+3 tab），已部署 iPhone。每周深度文嵌入 app。Curated topics 16 个四分区。鲁蛇养生引擎每周三发布新内容。Loser 工作区 (`/Users/1234/Loser/`) 托管 App+内容。CC 工作区 7 篇方法论 cargo。Topic: `memory/topics/verification-engine.md`。
+- **pqa-app 爸妈版信息验证 App (2026-06-07 更新)**: 474+32=506 条主张。已重构为 React + Vite + Capacitor 标准工程（从单文件 51KB HTML 迁移）。7 视图组件 + Tab 导航 + Markdown 深度文渲染。已部署 iPhone（`com.pqa.app`）。鲁蛇养生引擎每周三发布新内容。Loser 工作区 (`/Users/1234/Loser/pqa-app/`) 托管 App+内容。CC 工作区 7 篇方法论 cargo。Topic: `memory/topics/verification-engine.md`。
 - **鲁蛇养生引擎 (2026-06-06)**: 鲁蛇 AI Agent 在 Loser 工作区，每周产出短主张+深度文。Week 1: 32 条主张（4 话题）+ 1500 字深度文 + 视频实验。视频出片全自动（30 秒渲染）。领域：营养+睡眠+运动+补充剂。
 - **晨会金融速递 (2026-06-06 更新)**: Task Center `b2125e26`，底层 cron `cron_7f60bf`，每日 20:00 自动执行。06-04 首次成功（89.5s）。**06-05 执行失败**：20:41 SDK 静默 hang 60 分钟超时，疑似 DeepSeek API 临时不可达。06-06 晚间待观察自愈。Topic: `memory/topics/finance-digest.md`。
 - **插花的艺术 (ikebana) (2026-06-05)**: v2 完成交付。React + Vite + Tailwind → Capacitor iOS 壳。双设备真机通过。iCloud 同步待 $99 Apple Developer 账号。
