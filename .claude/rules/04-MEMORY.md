@@ -90,6 +90,9 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **Agent 规则工程 — hooks 优先 (2026-06-09)**：社区共识——prompt 规则是建议，hooks 才是执行。NCSC 定义 LLMs 为 "inherently confusable deputies"（无法可靠区分不同优先级指令）。Arize AI 研究：长会话中系统提示权重衰减，最近 token 压倒初始指令。「The only safeguard that actually works is Hooks」。**本地方案**：3 个 Hook 脚本已落地——PreToolUse 备份 (D-01)、Stop 构建验证 (D-03)、Stop 完整性检查 (D-04)。settings.local.json 配了 permissions.deny（拦截 sudo/rm -rf/写配置）。
 - **规则工程 — 自我验证方法论 (2026-06-09)**：用 claim-verification 引擎跑自己的规则文件，提取 ~30 条方法论主张 → 分级 → 对照行业最佳实践。两击规则与 Anthropic 官方完全一致（最高验证度）。全局规则从 362→250 行 (-31%)，砍的全部是预防性/无验证/哲学表述类规则。「对论证中最关键的 1-2 条定量主张跑外部验证」同样适用于规则体系本身。
 - **信息孤岛是行业结构性问题 (2026-06-09)**：O'Reilly Radar 2026 将 multi-agent memory engineering 列为 discipline gap。arXiv 2603.17787 量化 77.5% 无共享治理失败率。行业解法共识：问题不在存储层（Mem0/LangGraph/CrewAI 都只解决存储共享），在治理层（冲突仲裁/溯源/业务定义）。解法 = Context Layer，类比数据目录解决数据孤岛。本地方案（agent_sessions.json + session send）只解决寻址，知识共享层尚未开始。
+- **claim-verification 的领域边界 — 科学验证 vs 消费决策 (2026-06-09)**：Skill 底层是科学主张验证引擎（证据金字塔→PubMed/Cochrane→置信度评分），健康类验证如鱼得水。但消费产品类需要多维对比框架（杀菌力×安全性×价格×便利×气味），单一 confidence 无法回答「哪个最好」。错位四方面：偏好维度不可通约、证据类型不匹配（缺 third_party_test/market_data/label_analysis）、来源封顶规则过粗、JSON 输出 vs 决策矩阵需求不匹配。解法：Layer 0 分流（health_claim / product_claim 两条管线），产品线用多维评分替代单一置信度。不要用一个框架覆盖所有领域。
+- **灭菌产品日常有效性被严重夸大 (2026-06-09)**：U Arizona Gerba 博士等多源权威共识——健康家庭日常衣物用普通洗涤剂+充分干燥已足够。洗衣消毒液核心价值在特定场景（家人肠胃炎/免疫力低下）和弥补低温洗涤缺口，而非日常杀菌。产品标注用量远低于国标推荐有效浓度（PCMX 日常用 340mg/L vs 国标 1000-2000mg/L）→「杀菌 99.9%」实验室真但日常使用存疑。
+- **产品测评博主方法论评估框架 (2026-06-09)**：对内容创作者的实验方法论可从五维度评估——工具选择是否行业标准、实验设计是否有对照/盲法/随机化、文献支撑是否充分（≥20篇/视频）、透明度（是否展示缺点/利益冲突）、纠错机制（是否承认错误/调整方法）。李嗲/付铁寒在此框架下表现优于绝大多数带货主播，但本质仍是「更高质量的 KOL 推荐」而非「独立科学评估」。
 
 ### 自动化 & 平台交互
 
@@ -166,7 +169,7 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 
 ## Ongoing Context
 
-- **pqa-app 爸妈版信息验证 App (2026-06-09 更新)**: 506 条主张。React + Vite + Capacitor 标准工程。已部署 iPhone。鲁蛇养生引擎每周三发布。验证引擎方法论已 Skill 化 → `.claude/skills/claim-verification/`。Skill 已通过三轮实战验证：①牛奶/痤疮 6 轮 deep-dive（全链路顺畅）②AI 自我分析 11 主张（C001 数字错 2.5x，plausible-sounding error 的典型案例）③验证另一 Skill 描述文本（troubler-audit 14 条主张全 low/framework）。Skill 设计稳定，5 层管道 + 降级规则 + 领域锚点覆盖跨领域场景。Topic: `memory/topics/verification-engine.md`。
+- **pqa-app 爸妈版信息验证 App (2026-06-09 更新)**: 506 条主张。React + Vite + Capacitor 标准工程。已部署 iPhone。鲁蛇养生引擎每周三发布。验证引擎方法论已 Skill 化 → `.claude/skills/claim-verification/`。Skill 已通过四轮实战验证：①牛奶/痤疮 6 轮 deep-dive（全链路顺畅）②AI 自我分析 11 主张（C001 数字错 2.5x，plausible-sounding error 的典型案例）③验证另一 Skill 描述文本（troubler-audit 14 条主张全 low/framework）④洗衣消毒液 4 轮（消费产品领域+skill 边界暴露+方法论审计）。Skill 设计稳定，5 层管道 + 降级规则 + 领域锚点覆盖跨领域场景。领域边界已明确（健康类适配度最高，消费产品类需二阶改造）。Topic: `memory/topics/verification-engine.md`。
 - **鲁蛇养生引擎 (2026-06-06)**: 鲁蛇 AI Agent 在 Loser 工作区，每周产出短主张+深度文。Week 1: 32 条主张（4 话题）+ 1500 字深度文 + 视频实验。领域：营养+睡眠+运动+补充剂。
 - **晨会金融速递 (2026-06-06)**: Task Center `b2125e26`，底层 cron `cron_7f60bf`，每日 20:00 自动执行。06-04 首次成功，06-05 SDK hang 60 分钟超时。Topic: `memory/topics/finance-digest.md`。
 - **插花的艺术 (ikebana) (2026-06-05)**: v2 完成交付。React + Vite + Tailwind → Capacitor iOS 壳。双设备真机通过。
