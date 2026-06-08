@@ -3,7 +3,7 @@
 > CC 调研的「护肤成分已验证/未验证」自动判定系统。娜娜方法论贡献 + AICode 工程化。
 
 ## 状态
-**App MVP 完成 + 养生内容引擎启动 + 验证框架 Skill 化** — 2026-06-09 娜娜将方法论做成 claim-verification Skill。备忘录 session 测试中。鲁蛇养生引擎 Week 1 完成。
+**App MVP 完成 + 养生内容引擎启动 + 验证框架 Skill 化** — 2026-06-09 娜娜将方法论做成 claim-verification Skill。已通过牛奶/痤疮 6 轮实战 + AI 自我分析 11 主张验证。备忘录 session v2 重跑中。鲁蛇养生引擎 Week 1 完成。
 
 ## 背景
 

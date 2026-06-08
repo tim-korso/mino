@@ -55,6 +55,7 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **`myagents session send` 换行保护 (2026-06-05)**：`-p` 内容含 `\n` 或 >4KB 时 CLI 立即 fail-fast (exit 3)，提示切到 `--prompt-file`。习惯上多行/长内容永远走 `--prompt-file`，跨平台一致。
 - **Session 注册表 — Agent 间通信的地址簿 (2026-06-05)**：Session ID 是 UUID，每次新开会话就变，旧 ID 作废。方案：`~/.myagents/heartbeats/agent_sessions.json` 文件注册表 + `register_session.py` 脚本（register/lookup/list）。每个 Agent 在 CLAUDE.md Every Session 节写入 `$CLAUDE_CODE_SESSION_ID`。发消息前先 lookup。已验证 mino↔commander 双向通信。
 - **CLI 无法开关 Agent channel (2026-06-06)**：`myagents agent channel` 只有 list/add/remove，没有 enable/disable。已存在但禁用的 channel 只能在 GUI 启用或手动改 config.json。CLI 功能缺口。
+- **IM Bot 会话上下文膨胀与清理 (2026-06-09)**：IM Bot 会话是 unifiedSession，每条新 IM 消息追加到同一会话——79 条消息可累积 10M input tokens。解决：删除全部 IM Bot 会话（`source: openclaw-weixin_private` / `dingtalk_private` 等），同步清理 sessions.json 索引 + sessions/*.jsonl 转录 + channel state.json activeSessions 引用。清理后下次 IM 消息自动创建新会话，上下文从零开始。Cron 每 12h 自动执行。脚本：`~/.myagents/scripts/cleanup_bot_sessions.py`。
 
 ### 内容创作
 
@@ -165,7 +166,7 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **鲁蛇养生引擎 (2026-06-06)**: 鲁蛇 AI Agent 在 Loser 工作区，每周产出短主张+深度文。Week 1: 32 条主张（4 话题）+ 1500 字深度文 + 视频实验。领域：营养+睡眠+运动+补充剂。
 - **晨会金融速递 (2026-06-06)**: Task Center `b2125e26`，底层 cron `cron_7f60bf`，每日 20:00 自动执行。06-04 首次成功，06-05 SDK hang 60 分钟超时。Topic: `memory/topics/finance-digest.md`。
 - **插花的艺术 (ikebana) (2026-06-05)**: v2 完成交付。React + Vite + Tailwind → Capacitor iOS 壳。双设备真机通过。
-- **WeChat/AICode Bot (2026-06-09 更新)**: 两个 bridge 进程均已退出（DEAD）。Bridge Monitor 因 `/status` vs `/health` 端点不匹配持续误报 DEGRADED。Commander 已部署 Bridge-Health-Fixer + HealthCheck v2 修复 cron。待汤姆重新扫码登录。根本问题：bridge monitor 硬编码了错误的健康检查端点。
+- **WeChat/AICode Bot (2026-06-09 更新)**: 两个 bridge 进程均已退出（DEAD），待汤姆重新扫码登录。Bridge Monitor `/status` vs `/health` 端点不匹配已由 Commander 修复。IM Bot 会话上下文膨胀问题已解决：全量清理脚本 + 12h cron 自动执行。清理后 Bot 每次回复从几十万 token 降到几千 token。
 - **Session 注册表 (2026-06-08 更新)**: mino↔CC↔备忘录 三方通信。Cron 任务中 session ID 不能硬编码——session 重建后 ID 会变，需用 `register_session.py lookup` 动态获取。
 - **Commander 感知层 (2026-06-08 更新)**: Bridge Monitor + HealthCheck Worker v2 + Bridge-Health-Fixer cron。心跳目录：`~/.myagents/heartbeats/`。
 
