@@ -83,6 +83,8 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **Bridge Monitor `/status` vs `/health` 端点不匹配 (2026-06-08)**：MyAgents 内置 bridge monitor 硬编码 `/status` 探测，但 agent-sidecar bridge 只实现 `/health`。`/status` 返回 404 被误判为 DEGRADED。Cron 任务中 session ID 不能硬编码——session 重建后 ID 会变，应改用 `register_session.py lookup` 动态获取。
 - **机制合理性 ≠ 高置信度 (2026-06-09)**：睡眠不足→皮质醇↑→皮脂↑ 这个链条在生物学上成立，但零干预 RCT + 因果方向不明确 → 评级不能超过 LOW。互联网叙事中「熬夜爆痘」的信念强度远超证据强度。机制是必要非充分条件——用有无机制来判定置信度会系统性高估未经验证的假说。
 - **拆分分析 vs 组合分析 (2026-06-09)**：将牛奶拆成激素/蛋白/A1A2/乳糖分别分析，会错过关键洞察——乳糖+乳清蛋白的协同效应才是牛奶胰岛素指数悖论(GI 15-30 vs II 90-115)的答案。复杂系统（食物、药物、经济）的部件之和 ≠ 整体效应。先用组合视角扫一遍再拆。
+- **定量主张的实测/估算区分 (2026-06-09)**：AI 说出定量主张时不会自动区分"量过的"和"估的"。不加区分时所有数字看起来一样可信——但估算数字可能差 2-3 倍。C001 声称"省 4000+ 行"，实测 1625 行，偏差 2.5x。**解法**：一个前缀——`实测: 1625 行（$ wc -l）` vs `估算: ~10,000 token（基于行数×6，未实测）`。零额外开销，读者一眼知道哪部分可信。这是"零验证不给确定性承诺"的具体执行机制。
+- **plausible-sounding 的错误 > 明显错误 (2026-06-09)**：用 Claim Verification Engine 跑自我分析，11 条主张全部 low confidence，最危险的错误不是明显错的——是听起来合理但量级差 2-3 倍的那种。C001「4000+」听起来合理→不加验证就接受→整个论证链被污染。**检查方法**：对论证中最关键的 1-2 个定量主张跑外部验证，一个数字错了整条推理链松动。
 
 ### 自动化 & 平台交互
 
@@ -159,7 +161,7 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 
 ## Ongoing Context
 
-- **pqa-app 爸妈版信息验证 App (2026-06-09 更新)**: 506 条主张。React + Vite + Capacitor 标准工程。已部署 iPhone。鲁蛇养生引擎每周三发布。验证引擎方法论已 Skill 化 → `.claude/skills/claim-verification/`。Skill 已在牛奶/痤疮 6 轮连续验证实战中验证（营养素-痤疮致痘因子排名：遗传 > 高GI > 牛奶 > BMI ≈ 压力 > 熬夜）。备忘录全量数据验证 session（`3bab8584`）正用该 Skill 跑 v2。Topic: `memory/topics/verification-engine.md`。
+- **pqa-app 爸妈版信息验证 App (2026-06-09 更新)**: 506 条主张。React + Vite + Capacitor 标准工程。已部署 iPhone。鲁蛇养生引擎每周三发布。验证引擎方法论已 Skill 化 → `.claude/skills/claim-verification/`。Skill 已在牛奶/痤疮 6 轮验证 + AI 自我分析验证（11 主张全 low→C001 数字错 2.5x）两轮实战中验证。备忘录全量数据验证 session（`3bab8584`）正用该 Skill 跑 v2。Topic: `memory/topics/verification-engine.md`。
 - **鲁蛇养生引擎 (2026-06-06)**: 鲁蛇 AI Agent 在 Loser 工作区，每周产出短主张+深度文。Week 1: 32 条主张（4 话题）+ 1500 字深度文 + 视频实验。领域：营养+睡眠+运动+补充剂。
 - **晨会金融速递 (2026-06-06)**: Task Center `b2125e26`，底层 cron `cron_7f60bf`，每日 20:00 自动执行。06-04 首次成功，06-05 SDK hang 60 分钟超时。Topic: `memory/topics/finance-digest.md`。
 - **插花的艺术 (ikebana) (2026-06-05)**: v2 完成交付。React + Vite + Tailwind → Capacitor iOS 壳。双设备真机通过。
