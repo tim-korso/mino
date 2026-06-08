@@ -86,6 +86,10 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **拆分分析 vs 组合分析 (2026-06-09)**：将牛奶拆成激素/蛋白/A1A2/乳糖分别分析，会错过关键洞察——乳糖+乳清蛋白的协同效应才是牛奶胰岛素指数悖论(GI 15-30 vs II 90-115)的答案。复杂系统（食物、药物、经济）的部件之和 ≠ 整体效应。先用组合视角扫一遍再拆。
 - **定量主张的实测/估算区分 (2026-06-09)**：AI 说出定量主张时不会自动区分"量过的"和"估的"。不加区分时所有数字看起来一样可信——但估算数字可能差 2-3 倍。C001 声称"省 4000+ 行"，实测 1625 行，偏差 2.5x。**解法**：一个前缀——`实测: 1625 行（$ wc -l）` vs `估算: ~10,000 token（基于行数×6，未实测）`。零额外开销，读者一眼知道哪部分可信。这是"零验证不给确定性承诺"的具体执行机制。
 - **plausible-sounding 的错误 > 明显错误 (2026-06-09)**：用 Claim Verification Engine 跑自我分析，11 条主张全部 low confidence，最危险的错误不是明显错的——是听起来合理但量级差 2-3 倍的那种。C001「4000+」听起来合理→不加验证就接受→整个论证链被污染。**检查方法**：对论证中最关键的 1-2 个定量主张跑外部验证，一个数字错了整条推理链松动。
+- **Agent 规则工程 — 量上限 (2026-06-09)**：Jaroslawicz et al. (2025) 研究证明指令越多 → 总体遵从率线性下降。Boris Cherny (Claude Code 作者) 公开确认 LLMs 可靠跟随 ~150-200 条指令，系统 prompt 已占 ~50。HumanLayer 团队保持 <60 行/300 硬限制。SFEIR 研究所量化：模块化 50 行/文件 96% 遵从 vs 单文件 200 行 92%。**核心原则：规则不在多，在精。~20 条关键规则 + hooks 兜底 > 200 行规则文件。**
+- **Agent 规则工程 — hooks 优先 (2026-06-09)**：社区共识——prompt 规则是建议，hooks 才是执行。NCSC 定义 LLMs 为 "inherently confusable deputies"（无法可靠区分不同优先级指令）。Arize AI 研究：长会话中系统提示权重衰减，最近 token 压倒初始指令。「The only safeguard that actually works is Hooks」。**本地方案**：3 个 Hook 脚本已落地——PreToolUse 备份 (D-01)、Stop 构建验证 (D-03)、Stop 完整性检查 (D-04)。settings.local.json 配了 permissions.deny（拦截 sudo/rm -rf/写配置）。
+- **规则工程 — 自我验证方法论 (2026-06-09)**：用 claim-verification 引擎跑自己的规则文件，提取 ~30 条方法论主张 → 分级 → 对照行业最佳实践。两击规则与 Anthropic 官方完全一致（最高验证度）。全局规则从 362→250 行 (-31%)，砍的全部是预防性/无验证/哲学表述类规则。「对论证中最关键的 1-2 条定量主张跑外部验证」同样适用于规则体系本身。
+- **信息孤岛是行业结构性问题 (2026-06-09)**：O'Reilly Radar 2026 将 multi-agent memory engineering 列为 discipline gap。arXiv 2603.17787 量化 77.5% 无共享治理失败率。行业解法共识：问题不在存储层（Mem0/LangGraph/CrewAI 都只解决存储共享），在治理层（冲突仲裁/溯源/业务定义）。解法 = Context Layer，类比数据目录解决数据孤岛。本地方案（agent_sessions.json + session send）只解决寻址，知识共享层尚未开始。
 
 ### 自动化 & 平台交互
 
@@ -169,6 +173,7 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **WeChat/AICode Bot (2026-06-09 更新)**: 两个 bridge 进程均已退出（DEAD），待汤姆重新扫码登录。Bridge Monitor `/status` vs `/health` 端点不匹配已由 Commander 修复。IM Bot 会话上下文膨胀问题已解决：全量清理脚本 + 12h cron 自动执行。清理后 Bot 每次回复从几十万 token 降到几千 token。
 - **Session 注册表 (2026-06-08 更新)**: mino↔CC↔备忘录 三方通信。Cron 任务中 session ID 不能硬编码——session 重建后 ID 会变，需用 `register_session.py lookup` 动态获取。
 - **Commander 感知层 (2026-06-08 更新)**: Bridge Monitor + HealthCheck Worker v2 + Bridge-Health-Fixer cron。心跳目录：`~/.myagents/heartbeats/`。
+- **全局规则体系 (2026-06-09 更新)**: 经 claim-verification 验证 + 行业对标后精简：362→250 行 (-31%)。两击规则与 Anthropic 官方一致（最高验证度）。3 个 Hooks 脚本落地（PreToolUse 备份 + Stop 构建验证 + Stop 完整性检查），`permissions.deny` 已配置。最终架构：HARD 层（permissionMode + deny + hooks）+ DENY 层（13 条规则）+ ALLOW 层（5 条）。
 
 ---
 
