@@ -80,6 +80,7 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **视频 MVP：会动的数据报告 (2026-06-06)**：对 50-60 岁爸妈的视频格式——黑底白字 + 数据大字弹出 + 冷静 AI 旁白 + 硬字幕。无角色、无卡通、无 transition。本质是 narrated infographic，不是 YouTube 节目。验证成本：3 小时一个实验品。
 - **单文件 HTML → React 迁移的 window 陷阱 (2026-06-07)**：当旧项目用 `<script src="data.js">`（非模块脚本）声明 `const CLAIMS_FLAT = [...]`，迁移到 React/Vite（ES module）后，`window.CLAIMS_FLAT` 是 `undefined`——非模块脚本中 `const` 不创建 window 属性（只有 `var` 和 function 声明会）。修复：在 data.js 后加桥接脚本 `<script defer>window.CLAIMS_FLAT = CLAIMS_FLAT</script>`，不碰源文件。这是「DO NOT EDIT」生成文件的正确处理方式。
 - **Capacitor SPM 首次构建可超时 (2026-06-07)**：`xcodebuild` 首次拉 Capacitor Swift Package Manager 依赖可能因 GitHub 网络超时失败，重试通常通过（第二次用缓存）。不是代码问题，别改代码。
+- **产品测评类内容的验证边界 (2026-06-09)**：用 claim-verification Engine 跑 16 篇产品测评公众号文章（43 条主张），sourceType=`product_review_blog` 封顶 MEDIUM。瓶颈不在引擎——功效主张需要第三方检测报告但内容不提供。引擎只能判断「证据说了什么」，「证据在哪里」是内容方的事。产品测评与健康类内容在引擎内表现差异巨大：前者因缺独立测试数据致大半主张掉 LOW，后者在 PubMed/Cochrane 可查的证据金字塔中如鱼得水。
 - **验证框架 Skill 化 (2026-06-09)**：将验证引擎方法论做成 Claude Code Skill 暴露两个问题——①证据金字塔存在领域偏差：健康领域 Meta/RCT 层级在历史/程序领域不适用，政府公报/操作手册就是最高证据（regulatory + institutional_consensus 同时存在 → HIGH）；②引用方向检测比引用存在检测更重要：Fisher 2012 被引用但实际反证主张，是证据 AGAINST 而不是 FOR。5 条测试样本就暴露 3 条改进——小样本快速验证 > 大面积铺开。
 - **Bridge Monitor `/status` vs `/health` 端点不匹配 (2026-06-08)**：MyAgents 内置 bridge monitor 硬编码 `/status` 探测，但 agent-sidecar bridge 只实现 `/health`。`/status` 返回 404 被误判为 DEGRADED。Cron 任务中 session ID 不能硬编码——session 重建后 ID 会变，应改用 `register_session.py lookup` 动态获取。
 - **机制合理性 ≠ 高置信度 (2026-06-09)**：睡眠不足→皮质醇↑→皮脂↑ 这个链条在生物学上成立，但零干预 RCT + 因果方向不明确 → 评级不能超过 LOW。互联网叙事中「熬夜爆痘」的信念强度远超证据强度。机制是必要非充分条件——用有无机制来判定置信度会系统性高估未经验证的假说。
@@ -99,6 +100,7 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **闲鱼网页版 (goofish.com) 可用**：搜索需登录但不阉割，"个人闲置"过滤排除商家号。正常浏览节奏不触发风控，高频 API 抓才会被检测。网页版聊天可发消息给卖家。(2026-06-03)
 - **iOS App 在 Mac 上无自动化接口**：M 系芯片跑 iOS App 只能手动操作，AI 无法控制。遇到这种情况直接切网页版 + Playwright。(2026-06-03)
 - **Cron → Bot → IM 通知链路**：cron 任务完成 → `myagents session send <botSessionId>` → Bot AI 处理 → Bridge 发微信。可用于"定时检查某件事→推送到手机"。(2026-06-03)
+- **微信公众号长图提取 (2026-06-09)**：公众号文章内容常以长图嵌入（1080×8000-10000px PNG），是运营者主动防搬运策略（非微信限制）。提取链路：Playwright 打开文章→提取主内容图 URL→curl 下载→Tesseract chi_sim OCR。PaddleOCR 在 macOS ARM 装不了，EasyOCR 依赖链同样烂——Tesseract 就够。关键经验：对比度拉升最有效（`-contrast-stretch 5%x1%`），长图直接喂不需要切分，批量时 OMP_THREAD_LIMIT=1 设单线程+外部并行更稳。注意微信图片 URL 有时效性（~24h），需尽快下载到本地。批量请求触发 captcha 后慢速重访可缓解。
 
 ### Multi-Agent 协作
 
