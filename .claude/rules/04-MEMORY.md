@@ -79,6 +79,8 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 - **视频 MVP：会动的数据报告 (2026-06-06)**：对 50-60 岁爸妈的视频格式——黑底白字 + 数据大字弹出 + 冷静 AI 旁白 + 硬字幕。无角色、无卡通、无 transition。本质是 narrated infographic，不是 YouTube 节目。验证成本：3 小时一个实验品。
 - **单文件 HTML → React 迁移的 window 陷阱 (2026-06-07)**：当旧项目用 `<script src="data.js">`（非模块脚本）声明 `const CLAIMS_FLAT = [...]`，迁移到 React/Vite（ES module）后，`window.CLAIMS_FLAT` 是 `undefined`——非模块脚本中 `const` 不创建 window 属性（只有 `var` 和 function 声明会）。修复：在 data.js 后加桥接脚本 `<script defer>window.CLAIMS_FLAT = CLAIMS_FLAT</script>`，不碰源文件。这是「DO NOT EDIT」生成文件的正确处理方式。
 - **Capacitor SPM 首次构建可超时 (2026-06-07)**：`xcodebuild` 首次拉 Capacitor Swift Package Manager 依赖可能因 GitHub 网络超时失败，重试通常通过（第二次用缓存）。不是代码问题，别改代码。
+- **验证框架 Skill 化 (2026-06-09)**：将验证引擎方法论做成 Claude Code Skill 暴露两个问题——①证据金字塔存在领域偏差：健康领域 Meta/RCT 层级在历史/程序领域不适用，政府公报/操作手册就是最高证据（regulatory + institutional_consensus 同时存在 → HIGH）；②引用方向检测比引用存在检测更重要：Fisher 2012 被引用但实际反证主张，是证据 AGAINST 而不是 FOR。5 条测试样本就暴露 3 条改进——小样本快速验证 > 大面积铺开。
+- **Bridge Monitor `/status` vs `/health` 端点不匹配 (2026-06-08)**：MyAgents 内置 bridge monitor 硬编码 `/status` 探测，但 agent-sidecar bridge 只实现 `/health`。`/status` 返回 404 被误判为 DEGRADED。Cron 任务中 session ID 不能硬编码——session 重建后 ID 会变，应改用 `register_session.py lookup` 动态获取。
 
 ### 自动化 & 平台交互
 
@@ -155,13 +157,13 @@ Daily logs (raw material) → topic files (synthesized per-project) → 04-MEMOR
 
 ## Ongoing Context
 
-- **pqa-app 爸妈版信息验证 App (2026-06-07 更新)**: 474+32=506 条主张。已重构为 React + Vite + Capacitor 标准工程（从单文件 51KB HTML 迁移）。7 视图组件 + Tab 导航 + Markdown 深度文渲染。已部署 iPhone（`com.pqa.app`）。鲁蛇养生引擎每周三发布新内容。Loser 工作区 (`/Users/1234/Loser/pqa-app/`) 托管 App+内容。CC 工作区 7 篇方法论 cargo。Topic: `memory/topics/verification-engine.md`。
-- **鲁蛇养生引擎 (2026-06-06)**: 鲁蛇 AI Agent 在 Loser 工作区，每周产出短主张+深度文。Week 1: 32 条主张（4 话题）+ 1500 字深度文 + 视频实验。视频出片全自动（30 秒渲染）。领域：营养+睡眠+运动+补充剂。
-- **晨会金融速递 (2026-06-06 更新)**: Task Center `b2125e26`，底层 cron `cron_7f60bf`，每日 20:00 自动执行。06-04 首次成功（89.5s）。**06-05 执行失败**：20:41 SDK 静默 hang 60 分钟超时，疑似 DeepSeek API 临时不可达。06-06 晚间待观察自愈。Topic: `memory/topics/finance-digest.md`。
-- **插花的艺术 (ikebana) (2026-06-05)**: v2 完成交付。React + Vite + Tailwind → Capacitor iOS 壳。双设备真机通过。iCloud 同步待 $99 Apple Developer 账号。
-- **WeChat/AICode Bot (2026-06-06)**: Mino Bot 正常。AICode Bot 仍 DEGRADED (bridge-unreachable)，待汤姆重新扫码。
-- **Session 注册表 + 多 Agent 通信 (2026-06-05)**: mino↔CC↔Loser 三方通信。`~/.myagents/heartbeats/agent_sessions.json` + `register_session.py`。`myagents session send` 的 from 标签取自发件方 session title（已确认两次）。查其他 session ID：心跳文件或 `sessions.json`。
-- **Commander 感知层 (2026-06-04)**: Bridge Monitor + HealthCheck Worker + 晨会速递心跳。心跳目录：`~/.myagents/heartbeats/`。
+- **pqa-app 爸妈版信息验证 App (2026-06-09 更新)**: 474+32=506 条主张。React + Vite + Capacitor 标准工程。已部署 iPhone（`com.pqa.app`）。鲁蛇养生引擎每周三发布。验证引擎方法论已 Skill 化 → `.claude/skills/claim-verification/`。备忘录全量数据验证 session（`3bab8584`）正用该 Skill 跑 3955 条备忘录。Topic: `memory/topics/verification-engine.md`。
+- **鲁蛇养生引擎 (2026-06-06)**: 鲁蛇 AI Agent 在 Loser 工作区，每周产出短主张+深度文。Week 1: 32 条主张（4 话题）+ 1500 字深度文 + 视频实验。领域：营养+睡眠+运动+补充剂。
+- **晨会金融速递 (2026-06-06)**: Task Center `b2125e26`，底层 cron `cron_7f60bf`，每日 20:00 自动执行。06-04 首次成功，06-05 SDK hang 60 分钟超时。Topic: `memory/topics/finance-digest.md`。
+- **插花的艺术 (ikebana) (2026-06-05)**: v2 完成交付。React + Vite + Tailwind → Capacitor iOS 壳。双设备真机通过。
+- **WeChat/AICode Bot (2026-06-08 更新)**: Mino Bot + AICode Bot 两个 bridge 进程均已退出（DEAD）。Bridge Monitor 因 `/status` vs `/health` 端点不匹配误报 DEGRADED。Commander 已部署修复 cron。待汤姆重新扫码。
+- **Session 注册表 (2026-06-08 更新)**: mino↔CC↔备忘录 三方通信。Cron 任务中 session ID 不能硬编码——session 重建后 ID 会变，需用 `register_session.py lookup` 动态获取。
+- **Commander 感知层 (2026-06-08 更新)**: Bridge Monitor + HealthCheck Worker v2 + Bridge-Health-Fixer cron。心跳目录：`~/.myagents/heartbeats/`。
 
 ---
 

@@ -3,7 +3,7 @@
 > CC 调研的「护肤成分已验证/未验证」自动判定系统。娜娜方法论贡献 + AICode 工程化。
 
 ## 状态
-**App MVP 完成 + 养生内容引擎启动** — 2026-06-06 娜娜 18+ 轮交付全链路闭环。App 上线 iPhone，鲁蛇养生引擎 Week 1 产出，视频实验通过。等汤姆消化后续决策。
+**App MVP 完成 + 养生内容引擎启动 + 验证框架 Skill 化** — 2026-06-09 娜娜将方法论做成 claim-verification Skill。备忘录 session 测试中。鲁蛇养生引擎 Week 1 完成。
 
 ## 背景
 
@@ -114,9 +114,36 @@ Loser 工作区 `/Users/1234/Loser/pqa-app/`（App 交付物）：
 
 ## 下一步
 - [ ] Gold Set 标注（标注指南已就绪，Cochrane 代用方案可用）
-- [ ] 汤姆确认 Skill 方案（纯方法论版先写）
+- [x] ~~汤姆确认 Skill 方案（纯方法论版先写）~~ → Skill 已创建 (2026-06-09)
+- [ ] 备忘录 session 重跑 v2 对齐率验证
 - [ ] 鲁蛇养生引擎 Week 2+
 - [ ] 视频深度文验证 → 决定是否建视频产线
+
+### 22. claim-verification Skill 化 (2026-06-09 娜娜执行)
+
+备忘录全量数据验证 session 用验证框架跑 3955 条备忘录后，提议做成 Skill。娜娜执行。
+
+**交付物**：`.claude/skills/claim-verification/` — 3 文件
+- `SKILL.md`：5 Layer 管道 + JSON Schema（直接对接 pqa-app 数据层）
+- `references/anchors.md`：4 级置信度 × 4+ 领域锚点示例
+- `references/downgrade-rules.md`：7 条自动降级 + 边缘案例处理
+
+**设计原则**：LLM = 侦察兵（提取+分类+察觉漏洞），规则引擎 = 裁判（置信度由确定性规则算出）。不确定性隔离在 extraction 层。
+
+**初始测试**：备忘录 5 条代表 → 1/5 匹配手动评级，4/5 差异暴露两类问题：
+1. 证据金字塔存在领域偏差 — 健康领域的 Meta/RCT 层级在历史/程序领域不适用（政府公报/操作手册就是最高证据）
+2. 来源方向未检测 — 只查"有没有引用"不看"引用是不是支持"
+
+**v2 改进**：
+1. regulatory + institutional_consensus 同时存在 → HIGH
+2. 新增 sourceSupport 字段 + cited source contradicts 降级规则
+3. obviousGaps 加来源矛盾启发式
+
+**关键教训**：
+- 证据金字塔不能跨领域一刀切 — 健康/金融/历史各有不同的"最高证据"形态
+- 引用方向检测比引用存在检测更重要 — 引用反证主张的来源比无引用更误导
+- 5 条样本就暴露了 3 条改进 — 小样本快速验证 > 大面积铺开
+- MyAgents 自动发现 `.claude/skills/` 下的 skill，无需手动注册
 
 ### 06-06 后续：Loser 工作区 + 鲁蛇养生引擎 (11-15 轮)
 娜娜 10 轮方法论交付后，CC 将执行工作迁移到 Loser 工作区（/Users/1234/Loser/），引入新 Agent「鲁蛇 AI」。
@@ -181,6 +208,7 @@ Loser 工作区 `/Users/1234/Loser/pqa-app/`（App 交付物）：
 **项目位置**：`/Users/1234/Loser/pqa-app/`（旧版保留为 `pqa-app.old/`）
 
 ## 变更记录
+- 2026-06-09: 娜娜将验证框架做成 claim-verification Skill（3 文件）。备忘录 session 5 条测试 → v2 改进 3 条。已集成到 MyAgents skill 系统。
 - 2026-06-07: 娜娜重构 pqa-app 为 React + Vite + Capacitor 标准工程。修复 JS 语法错误、data.js 同步阻塞、const window 桥接。部署 iPhone 成功。
 - 2026-06-06: 娜娜单日 18+ 轮交付全链路闭环——方法论→工程→人力 + App MVP + 鲁蛇养生引擎 + 视频实验。CC 7 篇 cargo 落盘，Loser 托管 App+内容。
 - 2026-06-06 (初始): 娜娜单日 10 轮交付，方法论→工程→人力全链路。CC 7 篇 cargo 落盘。Tom 拍板 P0 三件。
