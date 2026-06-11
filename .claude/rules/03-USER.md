@@ -4,7 +4,7 @@
 - **What to call them:** 汤姆
 - **Pronouns:** 他
 - **Timezone:** Asia/Shanghai (UTC+8, 北京时间)
-- **Notes:** 偏好直接沟通，不绕弯子，对模糊话语零容忍。在意 token 效率，希望被指出不足。
+- **Notes:** 偏好直接沟通，不绕弯子，对模糊话语零容忍。不在意 token 消耗，在意回答质量和深度。希望被指出不足。
 
 ## 协作工作流
 
