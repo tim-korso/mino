@@ -4,7 +4,7 @@
 
 ## User
 
-- 汤姆：金融从业，晨会需诵读材料，直接沟通，在意 token 效率，保持系统整洁
+- 汤姆：金融从业，晨会需诵读材料，直接沟通，不在意 token 消耗，在意回答质量和深度，保持系统整洁
 - 时区 Asia/Shanghai
 
 ## Active Projects
@@ -15,7 +15,8 @@
 | 晨会金融速递 | `memory/topics/finance-digest.md` | 每日20:00自动执行 |
 | claim-verification Skill | `memory/topics/verification-engine.md` §22 | 3 文件，5 Layer 管道。已测：健康/消费/组织政治/AI 自引 |
 | 金融监管研究 | `memory/topics/finance-regulation.md` | 丁向群/四把刀/省联社改革/EAST/权力圈实证 |
-| WeChat/AICode Bot | — | Bridges DEAD，待扫码。IM Bot 会话每12h自动清理 |
+| WeChat Bot (呆呆) | — | 06-11 bridge 恢复，`session send` 主动推送已验证 |
+| AICode WeChat Bot (微信) | — | 06-11 bridge fetch 失败，待扫码恢复 |
 | Session 注册表 | `~/.myagents/heartbeats/` | mino↔CC↔备忘录 三方通信 |
 | shopping-claim-verify Skill | `memory/topics/shopping-claim-verify.md` | v3 完工。5层管线+Phase Gate+Challenger协议。4品类实测 |
 
@@ -40,6 +41,7 @@
 - **品类信息可验证性差异巨大 (2026-06-11)**：扫地机器人→Level A测试机构全覆盖 [HIGH可验证]；内裤→有标准但品牌数据占主导 [MEDIUM]；房产→远程几乎无法验证任何关键主张 [LOW]。诚实标注「验证不了」比硬凑推荐有价值
 - **记忆量≠记忆值 (2026-06-11)**：185行 auto-loaded 记忆 → 49行纯导航。关键不是记多少，是谁赢了指令优先级竞争。导航 < 指令——记忆只管"去哪找"，不管"怎么做事"
 - **规则净效应 > 单条规则 (2026-06-12)**：多条"好规则"叠加可能产生系统性保守偏向——不是检查每条规则好不好，是检查所有规则加在一起把 Agent 推向了什么方向。保守压力需要主动在源头文件中中和，不是靠加更多规则解决
+- **WeChat Bridge 主动推送 (2026-06-11)**：cron→bot heartbeat 链路过长且不稳定。替代方案：主 session 产出内容 → `myagents session send <botSessionId>` 直接投递到微信 bot 的活跃 session。bot 收到 prompt 后自动回复到微信。关键是先找到活跃 bot session（grep 日志或 sessions.json 中 agentDir 含 mino 且 lastActiveAt 最近的）
 
 ## Technical Quick-Ref
 
