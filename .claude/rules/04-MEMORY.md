@@ -49,7 +49,7 @@
 - **平台**：闲鱼网页版可用（goofish.com，JS 渲染 3-5s）。小红书 Web 强制登录。iOS App 在 Mac 无自动化接口
 - **电商**：联盟 API（京东/多多个人可申）> 第三方数据 > 自建爬虫
 - **MyAgents**：Rust + Global Sidecar + Session Sidecar + Plugin Bridge。cron 最小间隔 5 分钟
-- **工具**：Playwright（需系统 Chrome）。Tavily Search 主力搜索。DeepSeek-v4-pro 1M context
+- **工具**：Playwright（需系统 Chrome）。Tavily Search 主力搜索。You.com Search（STDIO bridge 走代理，2026-06-12接入）。DeepSeek-v4-pro 1M context
 - **Web Speech API**：`webkitSpeechRecognition`，`lang='zh-CN'`，`continuous:true + interimResults:true`
 - **GENERATE_INFOPLIST_FILE=YES** 会静默丢弃 Info.plist 自定义 key。权限用 INFOPLIST_KEY_ 写在 pbxproj
 
