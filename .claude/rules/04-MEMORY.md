@@ -18,6 +18,7 @@
 | WeChat Bot (呆呆) | — | 06-11 bridge 恢复，`session send` 主动推送已验证 |
 | AICode WeChat Bot (微信) | — | 06-11 bridge fetch 失败，待扫码恢复 |
 | Session 注册表 | `~/.myagents/heartbeats/` | mino↔CC↔备忘录 三方通信 |
+| Agent 功劳行为模式 — 门禁 B | `memory/2026-06-18.md` | Hook 已部署，沉积数据自然积累中。详见 06-18 日志 |
 | shopping-claim-verify Skill | `memory/topics/shopping-claim-verify.md` | v3 完工。5层管线+Phase Gate+Challenger协议。4品类实测 |
 
 ## Critical Lessons
@@ -29,6 +30,7 @@
 - **plausible-sounding 错误 > 明显错误**：关键定量主张必须跑外部验证
 - **规则量上限**：~20条关键规则 + hooks 兜底 > 200行规则文件。指令越多遵从率越低
 - **Hooks > Rules**：prompt 规则是建议，hooks 才是执行。LLMs 是 "inherently confusable deputies"
+- **门禁 B 落地 — 规则分级 (2026-06-18)**：两击规则从 prompt 升级到 PreToolUse hook（三级拦截 BLOCK→LOCK→LOCKOUT），核心原则 拦截面=数据采集面（RFC #45427）。SessionStart hook 自动 `gate-b-lookup --hot 10` 喂回沉积数据。过渡期 2-4 周数据积累。Hook 级：两击规则(✅)。Prompt 级：D-01备份/D-03验收/D-04报错(仍靠自觉)。详见 06-18 日志
 - **Skill 冲突解决**：Skill 明确约束行为范围时，Skill 边界 > 人格指令（见 02-SOUL exception）
 - **跨 Agent 经验共享**：接任务前检查已有 topic files。Capacitor 壳 > WKWebView 裸壳
 - **IM Bot 会话清理**：source 字段标识，清理需同步 sessions.json + sessions/*.jsonl + state.json
@@ -43,12 +45,21 @@
 - **规则净效应 > 单条规则 (2026-06-12)**：多条"好规则"叠加可能产生系统性保守偏向——不是检查每条规则好不好，是检查所有规则加在一起把 Agent 推向了什么方向。保守压力需要主动在源头文件中中和，不是靠加更多规则解决
 - **WeChat Bridge 主动推送 (2026-06-11)**：cron→bot heartbeat 链路过长且不稳定。替代方案：主 session 产出内容 → `myagents session send <botSessionId>` 直接投递到微信 bot 的活跃 session。bot 收到 prompt 后自动回复到微信。关键是先找到活跃 bot session（grep 日志或 sessions.json 中 agentDir 含 mino 且 lastActiveAt 最近的）
 
+## 探路叙事
+
+灵感实现的探路过程记在每日日记 `🧭 探索：<名字>` 小节。三段式：**出发点 → 过程 → 教训**。给你自己看的——下次 Agent 卡方向时翻翻，回忆起当时怎么探的路，就能给 Agent 指路。
+
+Agent 完成非平凡实现后，在当日日记写探路叙事。这是实现流程的最后一步，不需要你提醒。
+
+索引：grep `🧭 探索` 全量日记即可一览所有探路记录。
+
 ## Technical Quick-Ref
 
 - **项目**：React+Vite→Capacitor iOS。部署前必 `npm run build`。Vite `host:'0.0.0.0'` 暴露局域网
 - **平台**：闲鱼网页版可用（goofish.com，JS 渲染 3-5s）。小红书 Web 强制登录。iOS App 在 Mac 无自动化接口
 - **电商**：联盟 API（京东/多多个人可申）> 第三方数据 > 自建爬虫
 - **MyAgents**：Rust + Global Sidecar + Session Sidecar + Plugin Bridge。cron 最小间隔 5 分钟
+- **PreToolUse Hook (2026-06-18)**：`two-strike.sh` 三级拦截 BLOCK→LOCK→LOCKOUT。SessionStart: `gate-b-lookup.sh --hot 10`
 - **工具**：Playwright（需系统 Chrome）。Tavily Search 主力搜索。You.com Search（STDIO bridge 走代理，2026-06-12接入）。DeepSeek-v4-pro 1M context
 - **Web Speech API**：`webkitSpeechRecognition`，`lang='zh-CN'`，`continuous:true + interimResults:true`
 - **GENERATE_INFOPLIST_FILE=YES** 会静默丢弃 Info.plist 自定义 key。权限用 INFOPLIST_KEY_ 写在 pbxproj
