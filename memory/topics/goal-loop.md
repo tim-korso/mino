@@ -1,0 +1,189 @@
+# Goal Loop — 增量知识库 + 叙事突变检测 + 声明式验证
+
+> 2026-06-23 从设计图提取。起源 2026-06-12 投资分析场景，经 06-17 收敛验证讨论，到 06-23 五图完整设计。
+
+## 概念定义
+
+Goal Loop = 围绕一个验证目标持续运行的闭环：**搜索 → 过滤 → 验证 → 收敛 → 循环**。
+
+不是「Agent 执行一次性任务」，是「Agent 围绕 Goal 持续 reconcile，直到声明的验证条件被满足」。
+
+## 演化路径
+
+| 阶段 | 日期 | 触发 | 含义 |
+|------|------|------|------|
+| 投资监控循环 | 06-12 | 基金 dual-model 验证后 | cron 循环查数据→判断→推送 |
+| 收敛验证范式 | 06-17 | 讨论验证器架构 | goal-oriented agent eval — 围绕目标反复 loop |
+| 增量知识库叙事突变 | 06-23 | 认知空白分析落地 | 四层检测器 + 五个 Python 模块 + 声明式目标 |
+
+## 架构总览
+
+### 五个 Python 模块（dual-model MCP，当前 session 可调）
+
+| 模块 | 流程 | 状态 | 细节 |
+|------|------|------|------|
+| **MonitoringPipeline** | 验证→存储→快照→diff | ✅ 持久化到 `~/.myagents/kb/` | 每个 run 产快照，支持跨时间对比 |
+| **GoalLoop** | 搜索→过滤→验证→收敛 | ✅ 三引擎并行 | Exa + Tavily + You.com，收敛检测自动停 |
+| **ConsensusVerifier** | 3 验证器+Moderator+异议保护 | ✅ Batched (5条/批) | 多数投票，显式记录 dissent |
+| **QuestionBank** | RAG — 3,239 道题检索 | ✅ BM25 + AI 综合 | 检索+AI rerank 混合 |
+| **ClaimKnowledgeBase** | 语义去重+corroboration+收回级联 | ✅ BUG004 已修 | 主张去重→证据累积→若源主张被否→级联收回 |
+
+### 数据持久化
+
+```
+~/.myagents/kb/
+├── d5_fjnx.db           # 福建农信 knowledge base
+├── d5_monitoring.db     # MonitoringPipeline 快照存储
+├── failure-patterns.db  # 门禁 B 失败模式沉积
+└── lockout/             # LOCKOUT 状态持久化
+```
+
+## 七维能力矩阵
+
+2026-06-23 实测评估：
+
+| 维度 | 表现 | 评价 | 备注 |
+|------|------|------|------|
+| **单文档分析** | Pro 直接做，无需绕路 | ✅ 稳定 | — |
+| **多文档交叉验证** | 共识/矛盾/来源排名 | ✅ 核心价值 | Flash→Pro reduce 模式 |
+| **自主搜索扩展** | 三引擎并行，过滤去噪 | ✅ 可用 | 搜索 query 优化空间大 |
+| **收敛检测** | 停滞/达标自动停 | ✅ 防无限循环烧 token | — |
+| **置信度校准** | HIGH/MEDIUM/LOW 三级 | ⚠️ 依赖 Pro 判断 | 无外部 ground truth，关键局限 |
+| **多模型共识 (D4)** | 3 验证器 + 1 Moderator | ⚠️ token 成本高 | 性价比未证明 |
+| **持续监控 (D5)** | 架构就绪但未端到端测 | ❌ 待验证 | 最大未闭环项 |
+
+## 增量知识库检测器体系
+
+这是 goal loop 在增量知识库场景下的核心设计——四个检测器按优先级堆叠：
+
+| 检测器 | 必要性 | 作用 | 关系 |
+|--------|--------|------|------|
+| **WoW Diff** | ⭐⭐⭐⭐⭐ | 基础——没有它什么都没法做 | 每周快照 diff，发现任何变化 |
+| **主张漂移** | ⭐⭐⭐ | 告诉你单条主张在变化 | 主张 A 从"可能有效"→"已证实" |
+| **叙事突变** | ⭐⭐⭐⭐ | 告诉你变化聚合起来是否构成拐点 | 多条主张漂移的同向聚合 → 叙事级 shift |
+| **矛盾轨迹** | ⭐⭐ | 锦上添花 | 两条主张互相矛盾→标记需裁决 |
+
+**关键设计原则**：WoW Diff 是地基，叙事突变是上层建筑。不是四个独立检测器——是层层递进的信号升级链：
+
+```
+WoW Diff 发现变化 → 主张漂移判定单条变化方向
+                 → 叙事突变判定聚合变化是否构成拐点
+                 → 矛盾轨迹标记需人工裁决的冲突
+```
+
+## 增量知识库处理流程（场景 4）
+
+日级 Flash 预处理 + 月级 Pro 综合：
+
+```
+Day 1:  5篇新政策 → Flash × 5 → JSON → 存库
+Day 2:  5篇新政策 → Flash × 5 → JSON → 存库
+...
+Day 30: Pro 综合 150 个 JSON → "本月政策趋势"
+```
+
+这是晨会金融速递的升级版——用廉价模型做日常结构化预处理，积累到阈值后用强模型做汇聚综合。
+
+**设计要点**：
+- Flash（deepseek-chat 级）做提取——低成本、高吞吐
+- Pro（deepseek-v4-pro 级）做综合——高质量、低频
+- 结构化 JSON 是中间态，不是终态——保证跨 session 可检索
+- 阈值触发：不是固定 30 天，是累积到 N 条主张或检测到叙事突变时触发综合
+
+## 未来架构：K8s 式声明式验证目标
+
+### 核心洞察
+
+> 你不说「启动 3 个 Pod」，你说「我要 3 个副本」。K8s 持续调到你声明的东西成真。
+
+### 当前问题
+
+系统是**被动**的——需要手动说「帮我验证这 5 份文档」。
+
+### 目标形态
+
+声明式 YAML：
+
+```yaml
+verification_goal:
+  topic: "EU AI Act 影响评估"
+  target:
+    claims: "ALL"
+    min_confidence: HIGH
+    min_sources: 3
+    max_contradictions: 1
+    freshness: 7d
+```
+
+系统持续运行 Goal Loop，直到声明的验证目标被满足。新增材料自动触发 re-verification。未达标的主张持续追踪。
+
+### 和 K8s 的类比
+
+| K8s | Goal Loop |
+|-----|-----------|
+| Desired state (YAML) | verification_goal |
+| Controller Manager | GoalLoop 模块 |
+| Reconciliation loop | 搜索→过滤→验证→收敛 |
+| etcd (current state) | ~/.myagents/kb/ SQLite |
+| Drift detection | WoW Diff |
+| Pod events | 叙事突变 |
+
+## 和 Ethan 文章的哲学对齐
+
+Ethan：「Agent 是意义先于存在——先有 Goal，先有委托关系，然后 Agent 才成立。」
+
+Goal Loop 是这个哲学的最完整实践：
+
+- **Goal 是 verification_goal**（声明式），不是"帮我分析一下"（命令式）
+- **Context 是增量知识库**（持久化主张 + 快照历史）
+- **Agent 的存在 = Goal Loop 模块**（搜索→过滤→验证→收敛），没有 Goal 就没有循环
+- **叙事突变 = 循环的核心事件**（变化聚合是否构成拐点）
+
+和单次 Agent 调用的本质区别：
+- 单次调用：用户发起 → Agent 执行 → 完成 → 停
+- Goal Loop：用户声明目标 → 系统持续 reconcile → 达标才停 → 新材料进入 → 重新评估
+
+## 已知局限 & 未做的优化
+
+### 已验证的局限
+1. **置信度校准无外部 ground truth**（⚠️）——依赖 Pro 模型自我评估置信度，无独立验证。关键定量主张应跑外部交叉核验
+2. **多模型共识 token 成本高**（⚠️）——3 验证器 + 1 Moderator 形成多数投票，但成本是单次验证的 4 倍+
+3. **持续监控未端到端测试**（❌）——D5 架构就绪但未跑完整闭环，这是最大未闭环项
+4. **搜索 query 优化空间大**——三引擎并行但 query 构造未优化，可能漏结果或噪声多
+
+### 未做的优化
+1. **检测器阈值需要校准**——WoW Diff 的"显著变化"阈值、叙事突变的"聚合拐点"阈值都是经验值，未做回溯测试
+2. **约束冲突处理**——声明式目标中 min_confidence + min_sources + max_contradictions 三个约束可能同时不可满足，需要 conflict resolution 策略
+3. **级联收回的跨 topic 传播**——BUG004 已修单 topic 内级联，但跨 topic 的主张依赖链（topic A 的主张被 topic B 引用）未处理
+4. **收敛检测的"虚假收敛"**——当前只检测「结果不再变化」，未区分「真的验证充分了」和「搜索策略单一导致找不到新信息」
+5. **K8s 式声明式目标从 YAML 到实际 reconcile loop**——设计已画但未实现。需定义 reconciliation 的触发条件、频率、退避策略
+6. **和认知空白看板的整合**——cognitive-gap-watchlist 跟踪 7 家公司，但 WoW Diff / 叙事突变检测器未接入看板的信号清单
+7. **Flash/Pro 模型选择的自动化**——当前 Flash/Pro 分工手动指定，未根据任务复杂度自适应路由
+
+## 技术实现细节
+
+- **MCP 工具**：`mcp__dual-model__batch_analyze`、`mcp__dual-model__batch_verify`、`mcp__dual-model__single_analyze`
+- **搜索后端**：Exa、Tavily、You.com（STDIO bridge 走代理，2026-06-12 接入）
+- **存储**：SQLite（`~/.myagents/kb/`），每个 knowledge base 独立 db 文件
+- **快照**：MonitoringPipeline 每次 run 产生快照，支持 diff
+- **收敛检测**：计数器 + 阈值——连续 N 轮无新主张 / 无置信度变化 → 自动停止
+
+## 相关文件
+
+- [[cognitive-gap-analysis]] — 认知空白分析框架（Goal Loop 的应用场景之一）
+- [[cognitive-gap-watchlist]] — 7 家公司跟踪看板（叙事突变检测器的待接入目标）
+- [[finance-digest]] — 晨会金融速递（增量知识库场景 4 的原型）
+- [[finance-regulation]] — 金融监管研究（增量知识库场景 4 的首个应用域）
+- 门禁 B alignment：`~/.myagents/tasks/31cbe6e0-f34b-4713-9aa4-1d5ff2d9e624/alignment.md`（GoalLoop 列为 Phase 2+）
+
+## Session 记录
+
+| 日期 | Session | 内容 |
+|------|---------|------|
+| 2026-06-12 | `7a3cc39a` | 首次提出「goal loop」——投资监控循环 |
+| 2026-06-17 | `36543a11` | 追问 goal loop → 收敛验证范式讨论 |
+| 2026-06-23 | `50bed1a7` | 五张设计图还原 + Ethan 文章对齐 + 本文件创建 |
+
+---
+
+*更新触发：WoW Diff 发现增量知识库有显著变化时，叙事突变判定为拐点时，或 GoalLoop 模块代码变更时。*
