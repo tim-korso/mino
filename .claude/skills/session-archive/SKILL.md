@@ -15,11 +15,22 @@ Invoke this skill:
 
 ## Pipeline
 
+### Step 0: Read INDEX.md First
+
+**Before scanning the session**, read `memory/INDEX.md`. You need to know:
+
+- What topic files already exist (to avoid creating duplicates)
+- What status each topic is in (active/dormant/complete)
+- When each was last updated (to know what's stale)
+- What recent sessions touched (to cross-reference)
+
+Without this step, you're updating a map you haven't read.
+
 ### Step 1: Scan Session
 
-Review the current conversation. Identify:
+Review the current conversation. Cross-reference against INDEX.md:
 
-1. **Topics touched** — which existing topic files were discussed? Any new topics emerge?
+1. **Topics touched** — which existing topic files were discussed? Any new topics emerge? Check: does INDEX.md already list this topic?
 2. **Decisions made** — what was chosen, what was rejected, and why?
 3. **Files changed** — what was created, modified, or deleted?
 4. **Design artifacts** — any sketches, diagrams, images shared?
