@@ -3,7 +3,7 @@
 > **Gateway file.** Always read this first when waking up in a new session.
 > 04-MEMORY.md is auto-loaded core memory (critical lessons). This file is the archival index — what topics exist, where they are, when they were last touched.
 
-**Stats**: 12 topics | 16 journal days | last rebuilt 2026-06-27
+**Stats**: 13 topics | 17 journal days | last rebuilt 2026-06-30
 
 ---
 
@@ -24,11 +24,13 @@
 | 11 | **xianyu-shopping** | `memory/topics/xianyu-shopping.md` | 06-03 | shopping, second-hand, xianyu |
 
 | 12 | **deep-research** | `memory/topics/deep-research.md` | 06-27 | search, research-engine, skill, verification, challenger |
+| 13 | **life-change-notes** | `memory/topics/life-change-notes.md` | 06-30 | life-org, change-tracking, accountability, habits, minimalism |
 
 ## Recent Sessions
 
 | Date | Session ID | Manifest | Main Topic |
 |------|-----------|----------|------------|
+| 06-30 | — | `memory/sessions/2026-06-30-life-change-notes.md` | 生活 change notes 系统设计 + 问责模型 |
 | 06-27 | — | `memory/sessions/2026-06-27-deep-research-skill.md` | deep-research skill 设计+落地+实测 |
 | 06-23 | `50bed1a7` | `memory/sessions/2026-06-23-goal-loop-restore.md` | goal-loop design restore + memory system design |
 | 06-21 | — | — | cognitive-gap framework + watchlist init |

@@ -27,7 +27,8 @@
 | 级联式语音对话 | `memory/topics/cascade-voice.md` | ASR(豆包)→LLM(DeepSeek)→TTS(MiniMax克隆音色)。三段冒烟通过，实时录音ASR待排查 |
 | 认知空白分析框架 | `memory/topics/cognitive-gap-analysis.md` | 2026-06-21 创建。三层框架+五种误判模式+批量扫描。已分析智谱/DeepSeek/8家公司。Skill v1.1 + 组合跟踪模式（Gap Repair Portfolio） |
 | 认知空白追踪看板 | `memory/topics/cognitive-gap-watchlist.md` | 2026-06-21 初始化。7家公司：范式/商汤/寒武纪/智谱/DeepSeek/百济神州/优必选。含修复路径+信号清单+审查日历 |
-| **Deep Research Skill** ★NEW | `memory/topics/deep-research.md` | v2 七层调研引擎(含Challenger Gate)。2次实测——AI芯片+量子计算。Challenger Gate验证：发现6项父Agent错误，100%采纳 |
+| **Deep Research Skill** | `memory/topics/deep-research.md` | v2 七层调研引擎(含Challenger Gate)。3次实测——AI芯片+量子计算+生活change notes。Challenger Gate验证：发现6项父Agent错误，100%采纳 |
+| **生活 Change Notes 系统** ★NEW | `memory/topics/life-change-notes.md` | 2026-06-30 创建。工作变更管理模式→生活迁移。三层架构(基线→变更流→提炼)+三种问责模型(物理/对话/决策)。核心洞见：工作靠问责链，生活零问责——不能照搬event-based |
 
 ## Critical Lessons
 
@@ -51,6 +52,7 @@
 - **品类信息可验证性差异巨大 (2026-06-11)**：扫地机器人→Level A测试机构全覆盖 [HIGH可验证]；内裤→有标准但品牌数据占主导 [MEDIUM]；房产→远程几乎无法验证任何关键主张 [LOW]。诚实标注「验证不了」比硬凑推荐有价值
 - **记忆量≠记忆值 (2026-06-11)**：185行 auto-loaded 记忆 → 49行纯导航。关键不是记多少，是谁赢了指令优先级竞争。导航 < 指令——记忆只管"去哪找"，不管"怎么做事"
 - **Challenger Gate 不是加分项是必需品 (2026-06-27)**：父 Agent 在未经独立验证时，每轮调研犯 6 个具体错误而不自知（把模拟当硬件、把单人观点当共识、把实验室实验当商业产品）。"构建者不能验证自己的输出"被硬数据证实。从 shopping-claim-verify 移植的 Challenger 协议（信息不对称+否定性搜索+结构化修正+强制合并）是抵御确认偏误的最小有效架构。详见 `memory/topics/deep-research.md` + `references/challenger-protocol.md`
+- **工作模式不能直接迁移到生活——搬表面机制不搬底层结构必然失败 (2026-06-30)**：change notes 的表面是"记录变化"，底层是"被问责"（监管推送→岗位职责→同事互审→领导检查→合规证据）。生活抽走了整条问责链。行为迁移必须先识别底层结构再设计替代方案，不能只复制表面操作。三种替代问责源：物理问责（容量=触发器）、对话问责（bot/人主动问）、决策问责（预测vs实际到期对比）。详见 `memory/topics/life-change-notes.md`
 - **规则净效应 > 单条规则 (2026-06-12)**：多条"好规则"叠加可能产生系统性保守偏向——不是检查每条规则好不好，是检查所有规则加在一起把 Agent 推向了什么方向。保守压力需要主动在源头文件中中和，不是靠加更多规则解决
 - **WeChat Bridge 主动推送 (2026-06-11)**：cron→bot heartbeat 链路过长且不稳定。替代方案：主 session 产出内容 → `myagents session send <botSessionId>` 直接投递到微信 bot 的活跃 session。bot 收到 prompt 后自动回复到微信。关键是先找到活跃 bot session（grep 日志或 sessions.json 中 agentDir 含 mino 且 lastActiveAt 最近的）
 - **三层认知空白分析 (2026-06-21)**：识别被C端低估的科技公司。五误判模式——甜点判主厨(用非核心产品判断公司)、时间错位(用旧体验判断快迭代公司)、大厂对比偏见(用大厂C端标准判断创业公司)、模态忽视、制裁信号钝感(被BIS制裁=最强第三方技术背书)。核心洞见：C端App体验最易获取→最易被过度加权。真正有价值的信号(自研架构/API增速/被制裁/投资方质量)不在App里。详见 `memory/topics/cognitive-gap-analysis.md`，Skill: `cognitive-gap-analysis`
