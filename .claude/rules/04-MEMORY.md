@@ -29,6 +29,7 @@
 | 认知空白追踪看板 | `memory/topics/cognitive-gap-watchlist.md` | 2026-06-21 初始化。7家公司：范式/商汤/寒武纪/智谱/DeepSeek/百济神州/优必选。含修复路径+信号清单+审查日历 |
 | **Deep Research Skill** | `memory/topics/deep-research.md` | v2 七层调研引擎(含Challenger Gate)。3次实测——AI芯片+量子计算+生活change notes。Challenger Gate验证：发现6项父Agent错误，100%采纳 |
 | **生活 Change Notes 系统** ★NEW | `memory/topics/life-change-notes.md` | 2026-06-30 创建。工作变更管理模式→生活迁移。三层架构(基线→变更流→提炼)+三种问责模型(物理/对话/决策)。核心洞见：工作靠问责链，生活零问责——不能照搬event-based |
+| **希望麦田 — Agent Farm 管理系统** ★NEW | `memory/topics/agent-farm.md` | 2026-07-06 创建。Goal Loop 之上的农场管理元层——5块田的声明式定义+生命周期+跨田授粉+周巡田节奏。汤姆角色：选种、巡田、收割、育种。Agent角色：耕种。核心洞见：神迹不是单次产出，是150次日处理+30次周diff+6次月综合的累积 |
 
 ## Critical Lessons
 

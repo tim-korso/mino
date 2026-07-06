@@ -1,0 +1,51 @@
+field:
+  id: cognitive-gap-watchlist
+  name: "科技公司认知空白跟踪"
+  description: "跟踪被C端大众低估的科技公司——识别'为什么我没注意到这家公司在变强'的认知时间空白"
+  status: active
+  planted: 2026-06-21
+  last_harvest: 2026-06-21
+
+seed:
+  topic: "被C端低估的科技公司"
+  companies:
+    - "范式 (AI芯片)"
+    - "商汤 (AI基础设施)"
+    - "寒武纪 (AI芯片)"
+    - "智谱 (大模型)"
+    - "DeepSeek (大模型)"
+    - "百济神州 (生物科技)"
+    - "优必选 (机器人)"
+  key_signals:
+    - "C端认知 vs B端现实的 gap 变化"
+    - "自研架构/API增速/被制裁/投资方质量等非App信号"
+    - "BIS制裁 = 最强第三方技术背书"
+
+cultivation:
+  schedule: weekly
+  search_engines: [exa, tavily, youdotcom]
+  processing:
+    weekly: "信号扫描 7 家公司 → 更新 watchlist 条目"
+    monthly: "认知空白 gap 评估 → 哪家公司的 C端vsB端 gap 在扩大/缩小"
+
+harvest_trigger:
+  narrative_mutation: true
+  confidence_threshold: MEDIUM
+  staleness: 14d
+
+budget:
+  token_per_cycle: 40000
+  priority: 2
+
+output:
+  format: "alert"
+  channel: "session"
+
+pollination:
+  feeds_into: [deep-research-queue]
+  consumes_from: [finance-regulation]
+
+health:
+  d5_end_to_end_tested: false
+  detectors_connected: false
+  notes: "7家公司有 watchlist 但 WoW Diff + 叙事突变检测器未接入——等于空转。需优先接入检测器"

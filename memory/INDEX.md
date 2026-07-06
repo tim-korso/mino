@@ -3,7 +3,7 @@
 > **Gateway file.** Always read this first when waking up in a new session.
 > 04-MEMORY.md is auto-loaded core memory (critical lessons). This file is the archival index — what topics exist, where they are, when they were last touched.
 
-**Stats**: 13 topics | 17 journal days | last rebuilt 2026-06-30
+**Stats**: 14 topics | 17 journal days | last rebuilt 2026-07-06
 
 ---
 
@@ -25,11 +25,13 @@
 
 | 12 | **deep-research** | `memory/topics/deep-research.md` | 06-27 | search, research-engine, skill, verification, challenger |
 | 13 | **life-change-notes** | `memory/topics/life-change-notes.md` | 06-30 | life-org, change-tracking, accountability, habits, minimalism |
+| 14 | **agent-farm** | `memory/topics/agent-farm.md` | 07-06 | farm, portfolio, goal-loop, meta-system, agent-orchestration |
 
 ## Recent Sessions
 
 | Date | Session ID | Manifest | Main Topic |
 |------|-----------|----------|------------|
+| 07-06 | — | — | 希望麦田农场管理系统设计 |
 | 06-30 | — | `memory/sessions/2026-06-30-life-change-notes.md` | 生活 change notes 系统设计 + 问责模型 |
 | 06-27 | — | `memory/sessions/2026-06-27-deep-research-skill.md` | deep-research skill 设计+落地+实测 |
 | 06-23 | `50bed1a7` | `memory/sessions/2026-06-23-goal-loop-restore.md` | goal-loop design restore + memory system design |
@@ -47,6 +49,9 @@
 | `~/.myagents/kb/d5_fjnx.db` | 福建农信 knowledge base |
 | `~/.myagents/kb/d5_monitoring.db` | MonitoringPipeline 快照 |
 | `~/.myagents/kb/failure-patterns.db` | 门禁 B 失败模式沉积 |
+| `memory/fields/*.yml` | 麦田定义——5块田 + 1模板 |
+| `memory/FARM.md` | 🌾 农场仪表盘——周巡田看板 |
+| `.claude/commands/巡田.md` | 巡田 slash command |
 
 ---
 

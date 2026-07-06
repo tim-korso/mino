@@ -1,0 +1,43 @@
+field:
+  id: deep-research-queue
+  name: "Deep Research 队列"
+  description: "按需深度调研——单个复杂问题的七层深度研究。不是定期循环，是队列模式"
+  status: active
+  planted: 2026-06-27
+  last_harvest: 2026-06-30
+
+seed:
+  topic: "按需深度调研队列"
+  recent_questions:
+    - "AI芯片竞争格局 (2026-06-27)"
+    - "量子计算商业化进展 (2026-06-27)"
+    - "生活 change notes 系统调研 (2026-06-30)"
+  queue: []  # 待调研问题列表
+
+cultivation:
+  schedule: on-demand
+  search_engines: [exa, tavily, youdotcom]
+  processing:
+    on_demand: "Deep Research v2 七层引擎 + Challenger Gate → 研究报告 + 搜索路径存档"
+
+harvest_trigger:
+  narrative_mutation: false  # 一次性调研，产出即收割
+  confidence_threshold: HIGH
+  staleness: 30d             # 队列长时间空 → 检查是否需要补充问题
+
+budget:
+  token_per_cycle: 200000    # 深度调研 token 消耗大
+  priority: 3
+
+output:
+  format: "full-report"
+  channel: "session"
+
+pollination:
+  feeds_into: [finance-regulation, cognitive-gap-watchlist]
+  consumes_from: [cognitive-gap-watchlist, shopping-claim]
+
+health:
+  d5_end_to_end_tested: true
+  detectors_connected: false
+  notes: "v2 七层引擎 + Challenger Gate 已验证。搜索路径存档机制已建立。Challenger Gate 实测发现 6 项父 Agent 错误，100% 采纳"

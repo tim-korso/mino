@@ -1,0 +1,44 @@
+field:
+  id: shopping-claim
+  name: "消费选品验证"
+  description: "验证消费品的产品主张——按品类区分证据层级，输出置信度 + 决策矩阵"
+  status: active
+  planted: 2026-06-11
+  last_harvest: 2026-06-11
+
+seed:
+  topic: "消费品选品验证"
+  categories_tested:
+    - "扫地机器人 (Level A - 测试机构全覆盖)"
+    - "内裤 (Level B - 有标准但品牌数据主导)"
+    - "房产 (Level C - 远程几乎无法验证)"
+    - "护肤品 (Level B - 成分可验证但效果个体差异大)"
+  key_insight: "品类信息可验证性差异巨大——诚实标注'验证不了'比硬凑推荐有价值"
+
+cultivation:
+  schedule: on-demand
+  search_engines: [exa, tavily, youdotcom]
+  processing:
+    on_demand: "Phase 0 品类知识发现 → 五层管线 → Phase Gate → Challenger 协议 → 决策矩阵"
+
+harvest_trigger:
+  narrative_mutation: false  # 按需触发，产出即收割
+  confidence_threshold: MEDIUM
+  staleness: 30d
+
+budget:
+  token_per_cycle: 30000
+  priority: 4
+
+output:
+  format: "decision-matrix"
+  channel: "session"
+
+pollination:
+  feeds_into: [deep-research-queue]
+  consumes_from: []
+
+health:
+  d5_end_to_end_tested: true
+  detectors_connected: false
+  notes: "v3 完工。五层管线 + Phase Gate + Challenger 协议。4 品类实测通过。品类元技能可迁移"

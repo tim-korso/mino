@@ -1,0 +1,46 @@
+# 田定义模板 — 复制此文件创建新田
+# 文件命名：memory/fields/<field-id>.yml
+
+field:
+  id: "field-id"                  # kebab-case，唯一标识
+  name: "田的名称"                 # 人类可读
+  description: "一句话描述这块田种什么"
+  status: active                  # active | fallow | harvested | dead
+  planted: YYYY-MM-DD             # 播种日期
+  last_harvest: YYYY-MM-DD        # 上次收割日期
+
+seed:
+  topic: "研究主题"
+  key_claims:                     # 核心验证主张（3-5条）
+    - "主张 1"
+    - "主张 2"
+
+cultivation:
+  schedule: weekly                # daily | weekly | monthly | on-demand
+  search_engines: [exa, tavily]  # 搜索后端
+  processing:
+    daily: "日级处理描述"
+    weekly: "周级处理描述"
+    monthly: "月级处理描述"
+
+harvest_trigger:
+  narrative_mutation: true        # 叙事突变是否触发收割
+  confidence_threshold: HIGH      # HIGH | MEDIUM | LOW
+  staleness: 14d                  # 多少天无新发现建议休耕
+
+budget:
+  token_per_cycle: 50000          # 每次循环最多消耗
+  priority: 3                     # 1(highest)-5(lowest)
+
+output:
+  format: "weekly-brief"          # daily-brief | weekly-brief | alert | full-report | decision-matrix
+  channel: "session"              # session | wechat | task-center
+
+pollination:
+  feeds_into: []                  # 产出推送到哪些田
+  consumes_from: []               # 从哪些田获取输入
+
+health:
+  d5_end_to_end_tested: false     # Goal Loop 端到端验证过？
+  detectors_connected: false      # WoW Diff / 叙事突变检测器已接入？
+  notes: ""

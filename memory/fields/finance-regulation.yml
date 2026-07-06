@@ -1,0 +1,45 @@
+field:
+  id: finance-regulation
+  name: "金融监管变化跟踪"
+  description: "跟踪中国农村金融监管改革——省联社改革、EAST系统、监管风格转向"
+  status: active
+  planted: 2026-06-11
+  last_harvest: 2026-06-23
+
+seed:
+  topic: "中国农村金融监管改革"
+  key_claims:
+    - "省联社改革路径和推进速度"
+    - "EAST 系统对中小银行的实质影响"
+    - "丁向群时代的监管风格转向（从'四把刀'到新范式）"
+    - "省级权力圈与监管执行力的关系"
+
+cultivation:
+  schedule: weekly
+  search_engines: [exa, tavily, youdotcom]
+  processing:
+    daily: "Flash 扫描新政策/监管文件 → 结构化 JSON → 入库 d5_fjnx.db"
+    weekly: "Pro 做 WoW diff → 主张漂移检测 → 更新 finance-regulation topic"
+    monthly: "Pro 综合月度政策趋势 → 叙事突变检测"
+
+harvest_trigger:
+  narrative_mutation: true
+  confidence_threshold: HIGH
+  staleness: 14d
+
+budget:
+  token_per_cycle: 50000
+  priority: 2
+
+output:
+  format: "weekly-brief"
+  channel: "session"
+
+pollination:
+  feeds_into: [cognitive-gap-watchlist]
+  consumes_from: [finance-digest]
+
+health:
+  d5_end_to_end_tested: false
+  detectors_connected: false
+  notes: "D5 MonitoringPipeline 架构就绪但未端到端测——最大未闭环项。KB 在 ~/.myagents/kb/d5_fjnx.db"

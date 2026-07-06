@@ -1,0 +1,43 @@
+field:
+  id: finance-digest
+  name: "晨会金融速递"
+  description: "每日金融新闻速递——汤姆晨会诵读材料。每日20:00自动执行，推送到微信"
+  status: active
+  planted: 2026-06-12
+  last_harvest: running
+
+seed:
+  topic: "每日金融要闻速递"
+  key_areas:
+    - "宏观经济政策"
+    - "金融市场动态"
+    - "银行业监管"
+    - "国际金融大事"
+
+cultivation:
+  schedule: daily
+  search_engines: [tavily, exa]
+  processing:
+    daily: "搜索当日金融要闻 → 筛选 → 格式化 → 推送微信"
+
+harvest_trigger:
+  narrative_mutation: false  # 不需要叙事突变——每日产出本身就是收割
+  confidence_threshold: MEDIUM
+  staleness: 1d              # 日更，1天无产出 = 异常
+
+budget:
+  token_per_cycle: 15000
+  priority: 1                # 最高优先级——每日必达
+
+output:
+  format: "daily-brief"
+  channel: "wechat"
+
+pollination:
+  feeds_into: [finance-regulation]
+  consumes_from: []
+
+health:
+  d5_end_to_end_tested: true
+  detectors_connected: false
+  notes: "稳定运行。走 Task Center 定时触发。唯一端到端闭环的田"
