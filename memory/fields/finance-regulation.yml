@@ -4,7 +4,7 @@ field:
   description: "跟踪中国农村金融监管改革——省联社改革、EAST系统、监管风格转向"
   status: active
   planted: 2026-06-11
-  last_harvest: 2026-06-23
+  last_harvest: 2026-07-06
 
 seed:
   topic: "中国农村金融监管改革"
@@ -40,6 +40,8 @@ pollination:
   consumes_from: [finance-digest]
 
 health:
-  d5_end_to_end_tested: false
-  detectors_connected: false
-  notes: "D5 MonitoringPipeline 架构就绪但未端到端测——最大未闭环项。KB 在 ~/.myagents/kb/d5_fjnx.db"
+  d5_end_to_end_tested: true
+  detectors_connected: true
+  cron_registered: true
+  kb_snapshot: "week-28"
+  notes: "07-06全量重灌完成——19条旧主张撤回(全LOW信源无法验证)→25条新主张入库(HIGH=11/MEDIUM=9/LOW=5)。检测到明确叙事突变：改革-法制-反腐三角协同加速。日级Flash cron已注册(每24h)。省联社改革全景图+丁向群监管方向标记ready_for_harvest候选"

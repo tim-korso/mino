@@ -4,7 +4,7 @@ field:
   description: "跟踪被C端大众低估的科技公司——识别'为什么我没注意到这家公司在变强'的认知时间空白"
   status: active
   planted: 2026-06-21
-  last_harvest: 2026-06-21
+  last_harvest: 2026-07-06
 
 seed:
   topic: "被C端低估的科技公司"
@@ -46,6 +46,7 @@ pollination:
   consumes_from: [finance-regulation]
 
 health:
-  d5_end_to_end_tested: false
-  detectors_connected: false
-  notes: "7家公司有 watchlist 但 WoW Diff + 叙事突变检测器未接入——等于空转。需优先接入检测器"
+  d5_end_to_end_tested: true
+  detectors_connected: true
+  cron_registered: true
+  notes: "07-06手动全扫描完成——27信号双引擎交叉验证。百济全触发(70%),优必选全触发(40%),寒武纪核心信号触发(45%),智谱倒退(40%),DeepSeek零变化(5%)。周级cron已注册(每7天自动扫描)。信号体系从静态→动态"
