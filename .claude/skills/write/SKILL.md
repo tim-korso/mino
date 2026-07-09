@@ -716,3 +716,52 @@ python3 .claude/skills/canon-mapper/scripts/db.py index <book_id>
 **引用清单**：`db.py cite` 查询 claims.db 中所有被章节引用的主张 → 提取来源信息（经典作者/标题/年份 或 evidence_summary 兜底） → 按 APA/Chicago 格式化 → 按章节分组输出。
 
 **术语索引**：`db.py index` 扫描所有章节 markdown → 提取 **粗体概念** / 《书名》 / 大写缩写（ATP, NAD+） / 章节标题 → 去重排序 → 每个术语标注首次出现的章节和节。
+
+## 跨书能力
+
+写第二本书时，不用从零开始——可以复用第一本书中已验证的主张，并发现两本书之间的深层同构模式。
+
+### 主张复用
+
+```bash
+# 将健康书的验证主张复用到金融书
+python3 db.py reuse H001 --to finance --role foundation --from health
+
+# 查看某本书复用了哪些主张
+python3 db.py reused finance
+
+# 查看某本书的主张被哪些书复用了
+python3 db.py reused --by health
+
+# 全部跨书复用关系
+python3 db.py reused --all
+```
+
+**复用角色**：
+| 角色 | 含义 | 示例 |
+|------|------|------|
+| `foundation` | 底层原理——健康书证明的"反馈循环失控"，金融书直接引用 | VO₂max→死亡率预测力 → 单一指标预测力在金融中同样存在 |
+| `shared` | 共享模式——同样的结构在不同领域的不同表现 | Lp(a)的遗传决定 vs 金融危机的结构必然性 |
+| `application` | 应用实例——抽象原理在另一领域的具体投射 | 表观遗传重编程的安全窗口 → 金融创新的监管窗口 |
+
+### 跨书模式发现
+
+```bash
+# 自动发现两本书之间的同构模式
+python3 db.py patterns <book1> <book2>
+
+# 将发现的模式保存
+python3 db.py pattern-save <book1> <claim1> <book2> <claim2> <pattern_type> '<note>'
+```
+
+**五类通用系统动力学模式**：
+
+| 模式 | 描述 | 健康书示例 | 金融书示例 |
+|------|------|-----------|-----------|
+| `feedback_loop_collapse` | 反馈循环失控→系统崩溃 | 胰岛素抵抗→代谢崩塌 | 流动性危机→信用崩塌 |
+| `threshold_effect` | 累积到临界点→突然相变 | 糖尿病确诊（HbA1c越过阈值） | 银行挤兑（信心越过临界点） |
+| `adaptive_response_failure` | 短期适应长期激活→系统损耗 | 慢性压力→HPA轴失调 | 长期低利率→影子银行膨胀 |
+| `concentration_risk` | 单点依赖→脆弱性放大 | 只做有氧不做力量 | 银行过度依赖批发融资 |
+| `measurement_illusion` | 指标正常≠系统健康 | 空腹血糖正常≠代谢健康 | VaR正常≠风险可控 |
+
+**设计洞见**：这些模式不是巧合——是复杂系统在不同领域的同一组底层动力学。发现这些模式是跨书写作的核心价值：健康书不是"也适用于金融的类比"——两本书是同一组系统原理在不同基底的投影。

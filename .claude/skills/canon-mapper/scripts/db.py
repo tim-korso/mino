@@ -156,6 +156,39 @@ VALUES ('finance', '金融知识的五根骨头', '中国金融体系', 'finance
 INSERT OR IGNORE INTO projects (id, name, topic, domain, skeleton_file, workspace_dir, status)
 VALUES ('ai', 'AI知识的六根骨头', '人工智能', 'ai',
         'workspace/ai-book/00-骨架.md', 'workspace/ai-book', 'active');
+
+INSERT OR IGNORE INTO projects (id, name, topic, domain, skeleton_file, workspace_dir, status)
+VALUES ('health', '健康的六根骨头', '代谢健康', 'health',
+        'workspace/health-book/00-骨架.md', 'workspace/health-book', 'active');
+
+-- 跨书模式映射：同一系统动力学模式在不同领域的投影
+CREATE TABLE IF NOT EXISTS cross_book_patterns (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pattern_name TEXT NOT NULL,
+    pattern_type TEXT NOT NULL,
+    book1_id TEXT NOT NULL,
+    book1_claim_id TEXT NOT NULL REFERENCES claims(id),
+    book2_id TEXT NOT NULL,
+    book2_claim_id TEXT NOT NULL REFERENCES claims(id),
+    mapping_note TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- 跨书主张复用：一条主张被多本书共享
+CREATE TABLE IF NOT EXISTS claim_reuse (
+    claim_id TEXT NOT NULL REFERENCES claims(id),
+    book_id TEXT NOT NULL,
+    role TEXT DEFAULT 'shared',
+    imported_from_book TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY (claim_id, book_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_patterns_type ON cross_book_patterns(pattern_type);
+CREATE INDEX IF NOT EXISTS idx_patterns_book1 ON cross_book_patterns(book1_id);
+CREATE INDEX IF NOT EXISTS idx_patterns_book2 ON cross_book_patterns(book2_id);
+CREATE INDEX IF NOT EXISTS idx_reuse_book ON claim_reuse(book_id);
+CREATE INDEX IF NOT EXISTS idx_reuse_imported ON claim_reuse(imported_from_book);
 """
 
 
@@ -913,6 +946,350 @@ def _add_term(terms, term, chapter, section, term_type):
     terms[term]['count'] += 1
 
 
+# ═══════════════════════════════════════════════════════════════════
+# 第三层：跨书知识图谱 + 主张复用
+# ═══════════════════════════════════════════════════════════════════
+
+# 五类通用系统动力学模式——同一模式在不同领域的投影
+PATTERN_TYPES = {
+    'feedback_loop_collapse': {
+        'name': '反馈循环崩溃',
+        'desc': '正反馈循环失控 → 越过临界点 → 系统崩溃',
+        'signals': ['循环', '恶性', '失控', '崩塌', '崩溃', '螺旋', '多米诺'],
+    },
+    'threshold_effect': {
+        'name': '阈值效应',
+        'desc': '累积到临界点 → 突然相变 → 不可逆或难以逆转',
+        'signals': ['临界', '阈值', '拐点', '突然', '触底', '引爆'],
+    },
+    'adaptive_response_failure': {
+        'name': '适应性反应过载',
+        'desc': '短期适应机制长期激活 → 系统损耗 → 脆弱性上升',
+        'signals': ['适应', '代偿', '耐受', '疲劳', '衰竭', '过载', '透支'],
+    },
+    'concentration_risk': {
+        'name': '集中度风险',
+        'desc': '单点依赖 → 看似高效 → 一次冲击全盘崩溃',
+        'signals': ['单一', '集中', '依赖', '多样化', '分散', '单点'],
+    },
+    'measurement_illusion': {
+        'name': '测量幻觉',
+        'desc': '测量指标 ≠ 系统健康 → 指标正常但系统已脆弱',
+        'signals': ['正常', '指标', '检测', '看似', '表面', '隐性', '沉默', '潜伏'],
+    },
+}
+
+
+def cmd_patterns():
+    """发现两本书之间的同构模式
+    用法: patterns <book1> <book2>
+    """
+    if len(sys.argv) < 4:
+        print("用法: patterns <book1> <book2>")
+        print("示例: patterns health finance")
+        sys.exit(1)
+
+    book1 = sys.argv[2]
+    book2 = sys.argv[3]
+
+    conn = get_db()
+
+    # 查两本书的所有主张
+    claims1 = conn.execute("""
+        SELECT DISTINCT c.id, c.text, c.claim_type, c.evidence_summary
+        FROM claims c
+        JOIN claim_chapters cc ON c.id = cc.claim_id
+        WHERE cc.book_id = ?
+    """, (book1,)).fetchall()
+
+    claims2 = conn.execute("""
+        SELECT DISTINCT c.id, c.text, c.claim_type, c.evidence_summary
+        FROM claims c
+        JOIN claim_chapters cc ON c.id = cc.claim_id
+        WHERE cc.book_id = ?
+    """, (book2,)).fetchall()
+
+    if not claims1:
+        print(f"📭 {book1} 还没有主张。先运行 migrate。")
+        conn.close()
+        return
+    if not claims2:
+        print(f"📭 {book2} 还没有主张。先运行 migrate。")
+        conn.close()
+        return
+
+    # 扫描同构模式
+    found = []
+    seen_pairs = set()
+    same_book = (book1 == book2)
+
+    for c1 in claims1:
+        text1 = (c1['text'] + ' ' + (c1['evidence_summary'] or '')).lower()
+        for c2 in claims2:
+            # 同书不跟自己比，也不重复比
+            if same_book and c1['id'] >= c2['id']:
+                continue
+
+            text2 = (c2['text'] + ' ' + (c2['evidence_summary'] or '')).lower()
+            # 检查是否已经记录过
+            existing = conn.execute("""
+                SELECT id FROM cross_book_patterns
+                WHERE book1_claim_id = ? AND book2_claim_id = ?
+            """, (c1['id'], c2['id'])).fetchone()
+            if existing:
+                continue
+
+            for ptype, pinfo in PATTERN_TYPES.items():
+                score = 0
+                matched_signals = []
+                for sig in pinfo['signals']:
+                    if sig.lower() in text1:
+                        score += 1
+                        matched_signals.append(sig)
+                    if sig.lower() in text2:
+                        score += 1
+                        matched_signals.append(sig)
+                # 需要双方的文本中都有该模式的信号词
+                signals_in_1 = [s for s in pinfo['signals'] if s.lower() in text1]
+                signals_in_2 = [s for s in pinfo['signals'] if s.lower() in text2]
+                if signals_in_1 and signals_in_2:
+                    found.append({
+                        'pattern_type': ptype,
+                        'pattern_name': pinfo['name'],
+                        'pattern_desc': pinfo['desc'],
+                        'claim1_id': c1['id'],
+                        'claim1_text': c1['text'][:100],
+                        'claim2_id': c2['id'],
+                        'claim2_text': c2['text'][:100],
+                        'signals1': signals_in_1,
+                        'signals2': signals_in_2,
+                        'total_score': len(signals_in_1) + len(signals_in_2),
+                    })
+
+    # 按分数排序，取前 20
+    found.sort(key=lambda x: x['total_score'], reverse=True)
+    found = found[:20]
+
+    if not found:
+        print(f"🔍 {book1} ↔ {book2}: 未发现明显的同构模式。")
+        print(f"   {book1}: {len(claims1)} 条主张, {book2}: {len(claims2)} 条主张")
+        print(f"   两本书的主题差异可能太大，或者主张还不够多。")
+        conn.close()
+        return
+
+    print(f"# {book1} ↔ {book2} 跨书同构模式\n")
+    print(f"> {len(claims1)} 条主张 vs {len(claims2)} 条主张 | 发现 {len(found)} 个候选同构\n")
+
+    # 按模式类型分组
+    by_type = {}
+    for f in found:
+        t = f['pattern_type']
+        if t not in by_type:
+            by_type[t] = []
+        by_type[t].append(f)
+
+    for ptype, pinfo in PATTERN_TYPES.items():
+        if ptype not in by_type:
+            continue
+        matches = by_type[ptype]
+        print(f"## {pinfo['name']}（{ptype}）\n")
+        print(f"> {pinfo['desc']}\n")
+        for i, m in enumerate(matches[:5], 1):
+            print(f"### 候选 {i}\n")
+            print(f"| | 主张 | 信号词 |")
+            print(f"|------|------|------|")
+            print(f"| **{book1}** [{m['claim1_id']}] | {m['claim1_text']}... | {', '.join(m['signals1'][:4])} |")
+            print(f"| **{book2}** [{m['claim2_id']}] | {m['claim2_text']}... | {', '.join(m['signals2'][:4])} |")
+            print()
+            print(f"**为什么同构**：两方都涉及{m['pattern_name']}——{m['pattern_desc']}")
+            print()
+
+    # 提示如何保存
+    print("---")
+    print("💡 以上是自动检测的候选。要将某个候选保存为确认的跨书模式：")
+    print("   python3 db.py pattern-save <book1> <claim1> <book2> <claim2> <pattern_type> '<note>'")
+    conn.close()
+
+
+def cmd_pattern_save():
+    """保存一条跨书模式映射
+    用法: pattern-save <book1> <claim1> <book2> <claim2> <pattern_type> '<note>'
+    """
+    if len(sys.argv) < 7:
+        print("用法: pattern-save <book1> <claim1_id> <book2> <claim2_id> <pattern_type> '<note>'")
+        print("pattern_type: feedback_loop_collapse | threshold_effect | adaptive_response_failure | concentration_risk | measurement_illusion")
+        sys.exit(1)
+
+    book1, claim1, book2, claim2, ptype, note = sys.argv[2:8]
+    if ptype not in PATTERN_TYPES:
+        print(f"❌ 未知模式类型: {ptype}")
+        print(f"可用: {', '.join(PATTERN_TYPES.keys())}")
+        sys.exit(1)
+
+    conn = get_db()
+    conn.execute("""
+        INSERT INTO cross_book_patterns (pattern_name, pattern_type, book1_id, book1_claim_id, book2_id, book2_claim_id, mapping_note)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (PATTERN_TYPES[ptype]['name'], ptype, book1, claim1, book2, claim2, note))
+    conn.commit()
+    print(f"✅ 跨书模式已保存: {PATTERN_TYPES[ptype]['name']}")
+    print(f"   {book1}[{claim1}] ↔ {book2}[{claim2}]")
+    conn.close()
+
+
+def cmd_reuse():
+    """将一条主张标记为在另一本书中复用
+    用法: reuse <claim_id> --to <book_id> [--role shared|foundation|application] [--from <source_book>]
+    """
+    claim_id = sys.argv[2] if len(sys.argv) > 2 else None
+    if not claim_id:
+        print("用法: reuse <claim_id> --to <book_id> [--role shared|foundation|application] [--from <source_book>]")
+        print("示例: reuse H001 --to finance --role foundation --from health")
+        sys.exit(1)
+
+    to_book = None
+    role = 'shared'
+    from_book = None
+    for i, arg in enumerate(sys.argv):
+        if arg == '--to' and i + 1 < len(sys.argv):
+            to_book = sys.argv[i + 1]
+        if arg == '--role' and i + 1 < len(sys.argv):
+            role = sys.argv[i + 1]
+        if arg == '--from' and i + 1 < len(sys.argv):
+            from_book = sys.argv[i + 1]
+
+    if not to_book:
+        print("❌ 需要 --to <book_id>")
+        sys.exit(1)
+    if role not in ('shared', 'foundation', 'application'):
+        print("❌ role 必须是: shared, foundation, application")
+        sys.exit(1)
+
+    conn = get_db()
+
+    # 验证主张存在
+    claim = conn.execute("SELECT id, text FROM claims WHERE id = ?", (claim_id,)).fetchone()
+    if not claim:
+        print(f"❌ 主张 {claim_id} 不存在")
+        conn.close()
+        sys.exit(1)
+
+    # 插入复用记录
+    conn.execute("""
+        INSERT OR REPLACE INTO claim_reuse (claim_id, book_id, role, imported_from_book)
+        VALUES (?, ?, ?, ?)
+    """, (claim_id, to_book, role, from_book))
+    conn.commit()
+    print(f"✅ [{claim_id}] 已标记为在 {to_book} 中复用 (role={role})")
+    print(f"   > {claim['text'][:120]}...")
+    conn.close()
+
+
+def cmd_reused():
+    """查看跨书复用关系
+    用法: reused <book_id>            — 该书复用了哪些其他书的主张
+          reused --by <book_id>       — 该书的主张被哪些书复用了
+          reused --all                — 全部复用关系
+    """
+    if len(sys.argv) < 3:
+        print("用法: reused <book_id>        — 该书复用了哪些其他书的主张")
+        print("      reused --by <book_id>  — 该书的主张被哪些书复用了")
+        print("      reused --all           — 全部复用关系")
+        sys.exit(1)
+
+    conn = get_db()
+    arg = sys.argv[2]
+
+    if arg == '--all':
+        rows = conn.execute("""
+            SELECT cr.claim_id, cr.book_id, cr.role, cr.imported_from_book,
+                   c.text
+            FROM claim_reuse cr
+            JOIN claims c ON cr.claim_id = c.id
+            ORDER BY cr.book_id, cr.claim_id
+        """).fetchall()
+        if not rows:
+            print("📭 还没有任何跨书复用关系。")
+            print("   用 'python3 db.py reuse <claim_id> --to <book_id>' 添加。")
+            conn.close()
+            return
+        print("# 全部跨书复用关系\n")
+        for r in rows:
+            role_label = {'shared': '共享', 'foundation': '基础', 'application': '应用'}.get(r['role'], r['role'])
+            from_str = f" ← {r['imported_from_book']}" if r['imported_from_book'] else ''
+            print(f"- **[{r['claim_id']}]** → {r['book_id']} ({role_label}){from_str}")
+            print(f"  > {r['text'][:100]}...")
+        conn.close()
+        return
+
+    if arg == '--by':
+        book_id = sys.argv[3] if len(sys.argv) > 3 else 'health'
+        rows = conn.execute("""
+            SELECT cr.claim_id, cr.book_id, cr.role, cr.imported_from_book,
+                   c.text
+            FROM claim_reuse cr
+            JOIN claims c ON cr.claim_id = c.id
+            WHERE cr.imported_from_book = ?
+            ORDER BY cr.book_id
+        """, (book_id,)).fetchall()
+        if not rows:
+            print(f"📭 {book_id} 的主张还没有被其他书复用。")
+            conn.close()
+            return
+        print(f"# {book_id} 的主张被以下书复用\n")
+        for r in rows:
+            print(f"- **[{r['claim_id']}]** 被 {r['book_id']} 复用 ({r['role']})")
+            print(f"  > {r['text'][:100]}...")
+        conn.close()
+        return
+
+    # 默认：该书复用了哪些其他书的主张
+    book_id = arg
+    rows = conn.execute("""
+        SELECT cr.claim_id, cr.role, cr.imported_from_book, c.text, c.claim_type
+        FROM claim_reuse cr
+        JOIN claims c ON cr.claim_id = c.id
+        WHERE cr.book_id = ?
+        ORDER BY cr.imported_from_book, cr.claim_id
+    """, (book_id,)).fetchall()
+
+    if not rows:
+        print(f"📭 {book_id} 还没有复用其他书的主张。")
+        print(f"   用 'python3 db.py reuse <claim_id> --to {book_id} --from <source>' 添加。")
+    else:
+        print(f"# {book_id} 复用了以下主张\n")
+        by_source = {}
+        for r in rows:
+            src = r['imported_from_book'] or '未知来源'
+            if src not in by_source:
+                by_source[src] = []
+            by_source[src].append(r)
+
+        for src, items in sorted(by_source.items()):
+            print(f"## 来自 {src}\n")
+            for r in items:
+                role_label = {'shared': '共享', 'foundation': '基础', 'application': '应用'}.get(r['role'], r['role'])
+                print(f"- **[{r['claim_id']}]** ({role_label}) {r['text'][:120]}...")
+            print()
+
+    # 同时显示 confirmed patterns
+    patterns = conn.execute("""
+        SELECT cp.pattern_name, cp.pattern_type, cp.book1_id, cp.book1_claim_id,
+               cp.book2_id, cp.book2_claim_id, cp.mapping_note
+        FROM cross_book_patterns cp
+        WHERE cp.book1_id = ? OR cp.book2_id = ?
+    """, (book_id, book_id)).fetchall()
+
+    if patterns:
+        print(f"## 跨书模式映射\n")
+        for p in patterns:
+            other_book = p['book2_id'] if p['book1_id'] == book_id else p['book1_id']
+            print(f"- **{p['pattern_name']}**: {other_book} — {p['mapping_note'][:100] if p['mapping_note'] else '(无备注)'}")
+        print()
+
+    conn.close()
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
@@ -939,6 +1316,10 @@ def main():
         'projects': cmd_projects,
         'cite': cmd_cite,
         'index': cmd_index,
+        'patterns': cmd_patterns,
+        'pattern-save': cmd_pattern_save,
+        'reuse': cmd_reuse,
+        'reused': cmd_reused,
     }
 
     if cmd in commands:

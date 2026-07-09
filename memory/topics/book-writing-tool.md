@@ -142,6 +142,29 @@ python3 $DB affected DR001           # 看影响范围
 
 **索引管线**：章节扫描 → 正则提取(粗体概念+《书名》+大写缩写+标题) → 去重排序 → markdown 附录
 
+## Cross-Book Layer（2026-07-10）
+
+两张新表 + 四个新命令——主张跨书复用 + 系统动力学模式发现。
+
+### Schema
+```sql
+cross_book_patterns: pattern_name, pattern_type, book1/2_id, mapping_note
+claim_reuse: claim_id, book_id, role (foundation|shared|application), imported_from_book
+```
+
+### Commands
+| 命令 | 用途 |
+|------|------|
+| `db.py patterns <b1> <b2>` | 自动发现两本书之间的同构模式（五类系统动力学） |
+| `db.py pattern-save ...` | 手动保存确认的跨书模式 |
+| `db.py reuse <cid> --to <book> --from <src>` | 标记主张在另一本书中复用 |
+| `db.py reused <book>` | 查看跨书复用关系（正向/反向/全量） |
+
+### 五类通用系统动力学模式
+feedback_loop_collapse / threshold_effect / adaptive_response_failure / concentration_risk / measurement_illusion
+
+核心洞见：健康书和金融书不是类比——是同一组复杂系统原理在不同基底的投影。
+
 ## Session History
 
 | Date | What |
@@ -150,3 +173,4 @@ python3 $DB affected DR001           # 看影响范围
 | 2026-07-10 | Phase 2 深化模板库: 五个通用模板(A/B/C/D/E)写入 /write SKILL.md——从健康书具体内容抽成通用模板 |
 | 2026-07-10 | Phase 2 第二批模板(F/G/H/I): 误区爆破/发现故事/自评工具/反对声音——九模板全部通用化 |
 | 2026-07-10 | 第二层生产工具: render.py(HTML/EPUB/PDF) + db.py cite(引用清单) + db.py index(术语索引)——三工具全部实现并测试通过 |
+| 2026-07-10 | 第三层跨书能力: cross_book_patterns + claim_reuse 两张新表 + 4个新命令(patterns/pattern-save/reuse/reused)——五类系统动力学模式 + 主张复用机制 |
