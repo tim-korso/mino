@@ -4,6 +4,50 @@
 
 ---
 
+## 全品类下载渠道矩阵调研 — 2026-07-09
+
+- **问题类型**：综合研判（10品类渠道发现+验证+Agent自动化评估）
+- **模式**：Deep（4路Agent并行 → 1路Challenger验证）
+- **轮次**：1 轮 4 路并行 Agent (70+ 搜索, 171 源) → 收敛（公开数据极其丰富）
+- **最佳查询**：
+  - `site:annas-archive.org "Investments" Bodie Kane Marcus pdf` — Exa Search 直接命中 Anna's Archive MD5 索引
+  - `"torrent sites" RARBG alternatives 2026` — TechPP/VideoProc 综合评测覆盖全部公开 tracker
+  - `网盘搜索 最新可用 2026` — w2solo 社区 100+ 站实测列表，标注各站状态
+  - `Sci-Hub latest domain 2026` — Wikipedia 条目提供实时域名 + Telegram Bot 备选
+- **最佳源**：
+  - w2solo.com — 中国网盘搜索引擎的"群众实测"清单（100+站逐一标注状态）
+  - libgen.help — LibGen 镜像 5 分钟级实时监控，Agent 域名发现的关键入口
+  - 网盘之家 wowenda.com — 导航站，标注每个搜索站的访问状态和资源数
+  - GitHub (justjavac, TapXWorld, apachecn) — 中文教材/电子书最稳定的免费来源
+  - Wikipedia (Anna's Archive, Sci-Hub, Library Genesis 条目) — 域名变更的最及时信息源
+- **Challenger 发现**：5/6 主张被修正
+  1. **ERROR**: 123云盘 "免登录+不限速" 已被 2025-11-27 权益调整推翻（需登录+10GB/月）
+  2. **MISSING_CONTEXT**: TG Bot API getFile 有 20MB 硬限制（>20MB 需本地服务器）
+  3. **MISSING_CONTEXT**: Alist 2025-06 被出售，社区 fork 为 OpenList（供应链风险）
+  4. **MISSING_CONTEXT**: 网盘直链助手 "免客户端" 为真但 "免限速" 为假
+  5. **OVERCLAIM**: LibGen .li "最稳定" 仅是快照最优，非绝对断言
+  6. **✅ VERIFIED**: 鸠摩搜书 jiumodiary.com 仍活跃可用
+- **死胡同**：
+  - cmacked/macbed/macserialjunkie — macOS 破解站已下线，替代为 xmac.app/haxmac.cc
+  - 冰点文库/小叶文档 — 百度文库下载工具均已停更/关站，替代为油猴脚本+万能文库下载器
+  - 百度网盘搜书引擎 — 生态严重衰退，链接大量失效，已迁移至阿里/夸克网盘
+  - Anna's Archive .org/.li/.se 全部不可用 — 仅剩 .gl/.pk/.gd
+- **最脆弱发现**（已修正）：
+  - "123云盘是Agent自动化最友好的中文网盘" — 免登录已取消，改需登录+10GB月流量
+  - "TG Bot API 是最高效的 Agent 下载通道" — 20MB 限制使其对大文件场景不适用
+  - "Alist 是核心基础设施" — 被出售后有供应链风险，推荐 CloudDrive2/OpenList 替代
+- **教训**：
+  - **静态域名列表是伪资产** — 任何不包含"如何发现最新域名"机制的 skill 必然第一轮就失效
+  - **"免费免登录"主张需要时间戳** — 云盘权益会变，上次为真的主张下次可能已错。每条 "免登录/不限速" 主张必须标注验证日期
+  - **WebFetch 安全策略拦截是系统性限制** — 不是某个域名的问题，是所有 shadow library/网盘搜索站的域名都会被拦截。必须走 TG API 或 Playwright 通道绕过
+  - **TG Bot API 不是银弹** — 20MB 限制意味着教材/视频/软件等大文件不能用 Bot API 下载。Z-Library Bot 能发电子书是因为一般电子书 < 20MB。影视/软件/教材需要走网盘路径
+  - **Alist 不再是无风险的推荐** — 曾经是"部署即用"的开源基础设施，现在有供应链风险。对 Agent 自动化场景，优先用 CloudDrive2 或直接对接网盘 API
+  - **LibGen + Anna's Archive 互为补充** — LibGen 镜像可能某天宕机，Anna's Archive 聚合搜索覆盖更广但域名更不稳定。Agent 应同时持有两者的最新域名列表
+  - **中国网盘生态在加速分化** — 百度网盘（老资源多但限速）→ 阿里云盘（主力分享平台）→ 夸克网盘（增长中）→ 123云盘（从最友好变成一般）。Agent 需要多网盘搜索策略而非单一引擎
+  - **Researcher Agent vs Challenger Agent 的信息不对称再次被验证有效** — Researcher 发现了 123云盘/网盘直链助手/TG Bot API 的优势，但 Challenger 找到了它们的关键限制。结构化的攻防验证是唯一能减少确认偏误的机制
+
+---
+
 ## 生活 Change Notes 概念调研 — 2026-06-30
 
 - **问题类型**：综合研判（机制分析 + 存在性检查 + 操作指南）

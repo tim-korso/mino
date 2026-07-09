@@ -1,6 +1,6 @@
 ---
 name: deep-research
-description: 'Six-layer deep research engine with Challenger verification gate, two-level recursive execution, and dynamic graph planning. Multi-angle query generation, dynamic source routing, parallel fan-out, cross-source verification, gap detection with recursion, independent adversarial verification, structured synthesis with evidence chains + audit trail. For any complex question where shallow search fails. Triggers on: "deep research", "深度调研", "搜商", "帮我彻底研究", "全面调研", "深入研究", "穷尽搜索", "这个问题的答案是什么", "帮我搞清楚", or any question where a single search would be insufficient.'
+description: 'Seven-layer deep research engine with Challenger verification gate, two-level recursive execution, dynamic graph planning, and Canon Mapper integration. Consumes search directions from claims.db, auto-writes verified findings back. Triggers on: "deep research", "深度调研", "搜商", "消费搜索方向", "run directions", "帮我彻底研究", "全面调研", "深入研究", "穷尽搜索".'
 ---
 
 # Deep Research — 增强型深度调研引擎 v2
@@ -533,6 +533,51 @@ contradiction_omitted → 必须在报告中新增矛盾条目
 | **Layer 5.5 Challenger** | `Agent(subagent_type: "claude")` | 独立对抗验证 |
 | **Layer 3 深度挖掘** | `tavily_crawl`, `tavily_map` | 站点级深度提取 |
 | **Layer 3 Fallback** | Playwright browser tools | JS渲染/登录墙内容 |
+
+## ★ Canon Mapper 集成模式（v2.1·NEW）
+
+**当用户说 "消费搜索方向"、"run directions"、或以 canon-mapper 生成的 search_directions 作为输入时，自动进入此模式。**
+
+### 输入
+
+读取 `workspace/claims.db` 的 `search_directions` 表：
+
+```bash
+python3 .claude/skills/canon-mapper/scripts/db.py directions --pending
+```
+
+### 自动分组
+
+将 pending 方向按 `priority` 和主题相似度自动分组（通常 2-4 个方向一组），每组作为一轮研究的问题列表。
+
+### 完成后自动入库
+
+Layer 6 完成后，对每条 HIGH/MEDIUM 发现调用 `add-claim`：
+
+```bash
+python3 .claude/skills/canon-mapper/scripts/db.py add-claim \
+  --id "DR<序号>" --text "<发现内容>" \
+  --type factual|causal --confidence high|medium \
+  --evidence "<来源简述>" --source-type search
+```
+
+同时更新方向状态：
+
+```bash
+python3 .claude/skills/canon-mapper/scripts/db.py query \
+  "UPDATE search_directions SET status='resolved', resolution_note='deep-research <date>' WHERE id IN (<ids>)"
+```
+
+### 手动输入搜索方向
+
+当研究问题来自 canon-mapper 方向时，运行 `directions --pending` 获得 ID。在 Layer 6 入库时映射这些 ID。
+
+| 环节 | 调用 | 用途 |
+|------|------|------|
+| 输入 | `db.py directions --pending` | 读取待消费方向 |
+| 分组 | AI 判断 | 按主题相似度自动分组 |
+| 入库 | `db.py add-claim` | 将修正后的发现写入 claims 表 |
+| 闭环 | `db.py query "UPDATE..."` | 标记方向为 resolved |
 
 ---
 

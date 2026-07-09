@@ -1,0 +1,41 @@
+field:
+  id: illusion-generator
+  name: "幻觉生成器"
+  description: "叙事构造引擎——输入任何词，输出多角度包围式美化叙事。选择性引用事实+情感氛围编织+大包围覆盖。claim-verification的镜像"
+  status: active
+  planted: 2026-07-08
+  last_harvest: 2026-07-08
+
+seed:
+  topic: "人类幻觉构造——叙事如何被制造"
+  mechanism: "搜索→筛选(只留正面)→分类(科学/历史/文学/经济/心理/哲学)→编织(情绪线+修辞)→大包围(六面无死角)"
+  inverse_of: "claim-verification"
+  key_insight: "验证引擎拆幻觉，这个引擎造幻觉。同一个工具的反向使用——你能造出多真的幻觉，就能识别多真的幻觉"
+
+cultivation:
+  schedule: on-demand
+  search_engines: [exa, tavily, youdotcom]
+  processing:
+    on_demand: "输入词→六层叙事构造管线→输出包围式美化文本"
+
+harvest_trigger:
+  narrative_mutation: false
+  confidence_threshold: MEDIUM
+  staleness: 30d
+
+budget:
+  token_per_cycle: 50000
+  priority: 4
+
+output:
+  format: "full-report"
+  channel: "session"
+
+pollination:
+  feeds_into: [deep-research-queue]
+  consumes_from: [claim-verification]
+
+health:
+  d5_end_to_end_tested: false
+  detectors_connected: false
+  notes: "2026-07-08创建。初始版本——六层叙事构造管线。与claim-verification互为镜像"

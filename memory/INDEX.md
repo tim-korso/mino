@@ -3,7 +3,7 @@
 > **Gateway file.** Always read this first when waking up in a new session.
 > 04-MEMORY.md is auto-loaded core memory (critical lessons). This file is the archival index — what topics exist, where they are, when they were last touched.
 
-**Stats**: 14 topics | 17 journal days | last rebuilt 2026-07-06
+**Stats**: 16 topics | 19 journal days | last rebuilt 2026-07-10
 
 ---
 
@@ -26,11 +26,16 @@
 | 12 | **deep-research** | `memory/topics/deep-research.md` | 06-27 | search, research-engine, skill, verification, challenger |
 | 13 | **life-change-notes** | `memory/topics/life-change-notes.md` | 06-30 | life-org, change-tracking, accountability, habits, minimalism |
 | 14 | **agent-farm** | `memory/topics/agent-farm.md` | 07-06 | farm, portfolio, goal-loop, meta-system, agent-orchestration |
+| 15 | **personal-goal-loop** | `memory/topics/personal-goal-loop.md` | 07-08 | philosophy, happiness, goal-loop, meta-cognition, personal |
+
+| 16 | **book-writing-tool** | `memory/topics/book-writing-tool.md` | 07-10 | writing, claims, database, pipeline, canon-mapper |
 
 ## Recent Sessions
 
 | Date | Session ID | Manifest | Main Topic |
 |------|-----------|----------|------------|
+| 07-10 | — | `memory/sessions/2026-07-10-book-writing-tool-mvp.md` | 写书工具 MVP——Canon Mapper + claims.db + 全管线打通 |
+| 07-08 | — | — | Personal Goal Loop 框架——操作者哲学层 |
 | 07-06 | — | — | 希望麦田农场管理系统设计 |
 | 06-30 | — | `memory/sessions/2026-06-30-life-change-notes.md` | 生活 change notes 系统设计 + 问责模型 |
 | 06-27 | — | `memory/sessions/2026-06-27-deep-research-skill.md` | deep-research skill 设计+落地+实测 |
