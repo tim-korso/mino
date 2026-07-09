@@ -135,6 +135,26 @@ CREATE INDEX IF NOT EXISTS idx_mappings_book ON framework_mappings(target_book);
 CREATE INDEX IF NOT EXISTS idx_mappings_type ON framework_mappings(mapping_type);
 CREATE INDEX IF NOT EXISTS idx_directions_status ON search_directions(status);
 CREATE INDEX IF NOT EXISTS idx_directions_priority ON search_directions(priority);
+
+CREATE TABLE IF NOT EXISTS projects (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    topic TEXT NOT NULL,
+    domain TEXT NOT NULL,
+    skeleton_file TEXT,
+    workspace_dir TEXT,
+    status TEXT DEFAULT 'active',
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+
+INSERT OR IGNORE INTO projects (id, name, topic, domain, skeleton_file, workspace_dir, status)
+VALUES ('finance', '金融知识的五根骨头', '中国金融体系', 'finance',
+        'workspace/finance-book/00-总纲-五根骨头.md', 'workspace/finance-book', 'active');
+
+INSERT OR IGNORE INTO projects (id, name, topic, domain, skeleton_file, workspace_dir, status)
+VALUES ('ai', 'AI知识的六根骨头', '人工智能', 'ai',
+        'workspace/ai-book/00-骨架.md', 'workspace/ai-book', 'active');
 """
 
 
@@ -402,6 +422,50 @@ def cmd_classic_detail():
     conn.close()
 
 
+def cmd_new_project():
+    """注册新书项目
+    用法: new-project --id 'health' --name '健康六根骨头' --topic '人体健康' --domain health
+    """
+    import argparse
+    p = argparse.ArgumentParser()
+    p.add_argument('--id', required=True)
+    p.add_argument('--name', required=True)
+    p.add_argument('--topic', required=True)
+    p.add_argument('--domain', required=True)
+    args = p.parse_args(sys.argv[2:])
+
+    conn = get_db()
+    skeleton = f'workspace/{args.id}-book/00-骨架.md'
+    workspace = f'workspace/{args.id}-book'
+    try:
+        conn.execute(
+            "INSERT INTO projects (id, name, topic, domain, skeleton_file, workspace_dir) VALUES (?,?,?,?,?,?)",
+            (args.id, args.name, args.topic, args.domain, skeleton, workspace)
+        )
+        conn.commit()
+        print(f"✅ 新书已注册: [{args.id}] {args.name}")
+        print(f"   骨架: {skeleton}")
+        print(f"   工作区: {workspace}")
+    except sqlite3.IntegrityError:
+        print(f"⚠️  项目 id='{args.id}' 已存在")
+    conn.close()
+
+
+def cmd_projects():
+    """列出所有书项目"""
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM projects ORDER BY created_at").fetchall()
+    if not rows:
+        print("(无项目)")
+    else:
+        print(f"\n📚 共 {len(rows)} 本书\n")
+        for r in rows:
+            s = {'active': '🟢', 'draft': '🟡', 'complete': '✅', 'paused': '⏸️'}.get(r['status'], '❓')
+            print(f"  {s} [{r['id']}] {r['name']}")
+            print(f"     领域: {r['domain']} | 状态: {r['status']} | 创建: {r['created_at'][:10]}")
+    conn.close()
+
+
 def cmd_claims_list():
     import argparse
     p = argparse.ArgumentParser()
@@ -622,6 +686,8 @@ def main():
         'claims': cmd_claims_list,
         'migrate': cmd_migrate,
         'affected': cmd_affected,
+        'new-project': cmd_new_project,
+        'projects': cmd_projects,
     }
 
     if cmd in commands:
