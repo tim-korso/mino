@@ -7,8 +7,9 @@ description: >
   automatically, claim-verification persists results. Manages claims.db (SQLite).
   Use when: finding classics ("金融领域必读经典"), extracting frameworks
   ("提取米什金的骨架"), mapping against projects, generating research questions
-  from gaps. Also triggers on: "经典映射", "拆书", "找经典", "directions --pending",
-  "claims stats".
+  from gaps. Also triggers on: "经典映射", "拆书", "找经典", "写书状态",
+  "书怎么样了", "同步", "关联引用", "查 DR", "工具做好了吗", "写书工具",
+  "怎么用".
 ---
 
 # Canon Mapper — 经典映射器 v1
@@ -101,8 +102,37 @@ description: >
 | **discover** | 用户给领域名 | 只跑 L1，输出推荐经典列表 |
 | **map** | 用户给书名+作者 | 跑 L2-L5，完整映射 |
 | **batch** | 用户给领域，说"全部映射" | L1→对每本 consensus_classic 跑 L2-L5 |
+| **status** | "写书状态" / "书怎么样了" | db.py stats + gaps + 低置信度清单 |
+| **sync** | "同步" / "关联引用" | db.py migrate + stats 一口气 |
+| **check** | "查 DR001" / "这个主张被哪引用了" | db.py affected <id> |
 
 默认：**map**（给了书名就映射，给了领域就先发现）。
+
+### 快捷模式行为
+
+**status** — 用户问"书怎么样了"时：
+```bash
+python3 .claude/skills/canon-mapper/scripts/db.py stats
+python3 .claude/skills/canon-mapper/scripts/db.py gaps finance
+python3 .claude/skills/canon-mapper/scripts/db.py gaps ai
+python3 .claude/skills/canon-mapper/scripts/db.py claims --book finance --low-conf
+python3 .claude/skills/canon-mapper/scripts/db.py directions --pending
+```
+一次性展示：总览 + 两本书的 gap + 低置信度主张 + 待消费搜索方向。
+
+**sync** — 用户说"同步"时：
+```bash
+python3 .claude/skills/canon-mapper/scripts/db.py migrate finance
+python3 .claude/skills/canon-mapper/scripts/db.py migrate ai
+python3 .claude/skills/canon-mapper/scripts/db.py stats
+```
+扫描所有章节 → 更新引用关系 → 显示最新统计。
+
+**check** — 用户说"查 DR001"时：
+```bash
+python3 .claude/skills/canon-mapper/scripts/db.py affected DR001
+```
+显示该主张的引用章节 + 依赖关系 + 修改影响范围。
 
 ## 执行规则
 
