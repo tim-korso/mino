@@ -568,7 +568,7 @@ def cmd_migrate():
     conn = get_db()
 
     import re
-    claim_pattern = re.compile(r'\b(DR\d{3}|C\d{3}|CV-[\w-]+|H\d{3})\b')
+    claim_pattern = re.compile(r'\b(DR\d{3}|C\d{3}|CV-[\w-]+|H\d{3}|S\d{3})\b')
     section_pattern = re.compile(r'[§#](\d+\.\d+(?:\.\d+)?)')
     total_linked = 0
     found_claims = set()
