@@ -126,9 +126,27 @@ python3 $DB affected DR001           # 看影响范围
 - 对 AI 书（六根骨头）的映射还没做
 - 模板是文本指令——不是可执行代码。执行质量取决于 Agent 是否严格走模板流程
 
+## Production Tools（2026-07-10）
+
+三个脚本把 markdown 章节变成可交付的成品：
+
+| 工具 | 命令 | 输出 |
+|------|------|------|
+| **渲染器** | `render.py all <book>` | HTML (143KB) + EPUB (67KB) + PDF (2MB) |
+| **引用清单** | `db.py cite <book> --style apa` | 按章节分组的 APA/Chicago 引用列表 |
+| **术语索引** | `db.py index <book>` | 351 术语, 按首字母分组, 含首次出现位置 |
+
+**渲染管线**：章节拼接 → YAML 元数据头 → pandoc (markdown→HTML5/EPUB3) → 内嵌 CSS（屏幕/打印/深色三模式）→ weasyprint (HTML→PDF)
+
+**引用管线**：claims JOIN claim_chapters → 按章节分组 → 来源格式：经典(作者+标题+年份) > evidence_summary 兜底 > "[无来源]"
+
+**索引管线**：章节扫描 → 正则提取(粗体概念+《书名》+大写缩写+标题) → 去重排序 → markdown 附录
+
 ## Session History
 
 | Date | What |
 |------|------|
 | 2026-07-10 | MVP 完成: Canon Mapper + deep-research 集成 + 19 claims 植入金融书 |
 | 2026-07-10 | Phase 2 深化模板库: 五个通用模板(A/B/C/D/E)写入 /write SKILL.md——从健康书具体内容抽成通用模板 |
+| 2026-07-10 | Phase 2 第二批模板(F/G/H/I): 误区爆破/发现故事/自评工具/反对声音——九模板全部通用化 |
+| 2026-07-10 | 第二层生产工具: render.py(HTML/EPUB/PDF) + db.py cite(引用清单) + db.py index(术语索引)——三工具全部实现并测试通过 |

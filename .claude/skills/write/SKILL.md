@@ -686,3 +686,33 @@ migrate + stats → 展示完成状态。
 ```
 
 /write 是入口，canon-mapper/deep-research/claim-verification 是引擎。
+
+## 生产工具
+
+写完书之后，三条命令把 markdown 章节变成可交付的成品：
+
+```bash
+# 渲染——markdown → HTML/EPUB/PDF
+python3 .claude/skills/canon-mapper/scripts/render.py all <book_id>
+# 输出 → workspace/<book>-output/book.html|epub|pdf
+
+# 引用清单——自动提取所有 [H00X] 主张的来源
+python3 .claude/skills/canon-mapper/scripts/db.py cite <book_id> --style apa
+# 输出 → 按章节分组的引用列表，可直接贴进附录
+
+# 术语索引——扫描全书提取关键概念+首次出现位置
+python3 .claude/skills/canon-mapper/scripts/db.py index <book_id>
+# 输出 → 按字母分组的术语索引，可直接贴进附录
+```
+
+| 工具 | 输入 | 输出 | 依赖 |
+|------|------|------|------|
+| `render.py all` | markdown 章节 | HTML + EPUB + PDF | pandoc, weasyprint |
+| `db.py cite` | claims.db | 引用清单（APA/Chicago/JSON） | 无 |
+| `db.py index` | markdown 章节 | 术语索引（markdown） | 无 |
+
+**渲染流程**：`render.py` 自动拼接所有章节 → 生成 YAML 元数据头 → pandoc 转换 → 注入内嵌 CSS + 扉页 → HTML/EPUB。PDF 由 weasyprint 将 HTML 转为 PDF（支持中文字体、深色模式、打印样式）。
+
+**引用清单**：`db.py cite` 查询 claims.db 中所有被章节引用的主张 → 提取来源信息（经典作者/标题/年份 或 evidence_summary 兜底） → 按 APA/Chicago 格式化 → 按章节分组输出。
+
+**术语索引**：`db.py index` 扫描所有章节 markdown → 提取 **粗体概念** / 《书名》 / 大写缩写（ATP, NAD+） / 章节标题 → 去重排序 → 每个术语标注首次出现的章节和节。

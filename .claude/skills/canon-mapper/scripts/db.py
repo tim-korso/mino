@@ -24,6 +24,7 @@ import sqlite3
 import os
 import sys
 import json
+import re
 from datetime import datetime
 
 # 数据库路径：相对于 mino 项目根目录
@@ -669,6 +670,249 @@ def cmd_affected():
     conn.close()
 
 
+def cmd_cite():
+    """生成主张引用列表（APA/Chicago 格式）
+    用法: cite <book_id> [--style apa|chicago] [--format md|json]
+    """
+    book_id = sys.argv[2] if len(sys.argv) > 2 else 'health'
+    style = 'apa'
+    fmt = 'md'
+
+    # 解析可选参数
+    for i, arg in enumerate(sys.argv):
+        if arg == '--style' and i + 1 < len(sys.argv):
+            style = sys.argv[i + 1]
+        if arg == '--format' and i + 1 < len(sys.argv):
+            fmt = sys.argv[i + 1]
+
+    if style not in ('apa', 'chicago'):
+        print(f"❌ 未知引用格式: {style}. 可用: apa, chicago")
+        sys.exit(1)
+
+    conn = get_db()
+
+    # 查询该 book 中所有被引用的主张及其来源信息
+    rows = conn.execute("""
+        SELECT DISTINCT c.id, c.text, c.claim_type, c.confidence,
+               c.source_type, c.source_url, c.source_classic_id,
+               c.evidence_summary,
+               cl.title as classic_title, cl.author as classic_author,
+               cl.year as classic_year,
+               GROUP_CONCAT(DISTINCT cc.chapter_file) as chapters,
+               GROUP_CONCAT(DISTINCT cc.section_ref) as sections
+        FROM claims c
+        JOIN claim_chapters cc ON c.id = cc.claim_id
+        LEFT JOIN classics cl ON c.source_classic_id = cl.id
+        WHERE cc.book_id = ?
+        GROUP BY c.id
+        ORDER BY c.id
+    """, (book_id,)).fetchall()
+
+    if not rows:
+        print(f"📭 {book_id} 还没有任何主张引用。先运行 migrate。")
+        conn.close()
+        return
+
+    if fmt == 'json':
+        results = []
+        for r in rows:
+            results.append({
+                'id': r['id'],
+                'text': r['text'],
+                'citation': _format_citation(r, style),
+                'chapters': r['chapters'].split(',') if r['chapters'] else [],
+            })
+        print(json.dumps(results, ensure_ascii=False, indent=2))
+        conn.close()
+        return
+
+    # Markdown 输出
+    print(f"# {book_id} 书引用主张清单\n")
+    print(f"> 格式: {style.upper()} | 生成: {datetime.now().strftime('%Y-%m-%d %H:%M')} | 共 {len(rows)} 条\n")
+
+    # 按章节分组
+    chapter_claims = {}
+    for r in rows:
+        chs = r['chapters'].split(',') if r['chapters'] else ['未关联']
+        for ch in chs:
+            ch = ch.strip()
+            if ch not in chapter_claims:
+                chapter_claims[ch] = []
+            chapter_claims[ch].append(r)
+
+    for ch_file in sorted(chapter_claims.keys()):
+        print(f"## {ch_file}\n")
+        for r in chapter_claims[ch_file]:
+            citation = _format_citation(r, style)
+            print(f"- **[{r['id']}]** {citation}")
+            print(f"  > \"{r['text'][:120]}{'...' if len(r['text']) > 120 else ''}\"")
+            print()
+        print()
+
+    conn.close()
+
+
+def _format_citation(row, style):
+    """格式化单条引用，优先用经典信息，其次用 evidence_summary"""
+    claim_id = row['id']
+    source_url = row['source_url'] or ''
+
+    # 有经典来源 → 用书籍格式
+    if row['classic_title']:
+        author = row['classic_author'] or 'Unknown'
+        title = row['classic_title']
+        year = row['classic_year'] or 'n.d.'
+
+        if style == 'apa':
+            return f"{author} ({year}). *{title}*. [{claim_id}]"
+        else:  # chicago
+            return f"{author}. *{title}*. {year}. [{claim_id}]"
+
+    # 网页来源
+    if source_url:
+        domain = source_url.split('/')[2] if '://' in source_url else source_url
+        if style == 'apa':
+            return f"Retrieved from {domain}: [{claim_id}]"
+        else:
+            return f"Web source ({domain}). [{claim_id}]"
+
+    # 用 evidence_summary 兜底（deep-research 写入的源信息）
+    evidence = row['evidence_summary'] or ''
+    if evidence:
+        # 取第一句作为源描述（通常是最重要的引用）
+        first_sentence = evidence.split('.')[0].strip()
+        if len(first_sentence) > 100:
+            first_sentence = first_sentence[:100] + '...'
+        return f"{first_sentence}. [{claim_id}]"
+
+    # 无来源
+    return f"[无来源] [{claim_id}]"
+
+
+def cmd_index():
+    """生成术语索引
+    用法: index <book_id>
+
+    扫描所有章节 markdown，提取：
+    - **粗体术语**（关键概念）
+    - 《书名》（引用书籍）
+    - 大写缩写（ATP, NAD+ 等）
+    按首字母/拼音排序，输出为 markdown 附录。
+    """
+    book_id = sys.argv[2] if len(sys.argv) > 2 else 'health'
+
+    book_configs = {
+        'health': {
+            'dir': 'workspace/health-book',
+            'files': ['01-能量与代谢.md', '02-营养与摄入.md', '03-运动与结构.md',
+                      '04-睡眠与修复.md', '05-衰老与疾病.md', '06-整合运用.md', '07-附录.md']
+        },
+        'finance': {
+            'dir': 'workspace/finance-book',
+            'files': ['01-货币创造.md', '02-风险定价.md', '03-时间搬运.md',
+                      '04-信用与债务周期.md', '05-联动运用.md', '06-附录.md']
+        },
+        'ai': {
+            'dir': 'workspace/ai-book',
+            'files': ['01-计算.md', '02-数据.md', '03-学习.md',
+                      '04-表示.md', '05-规模化.md', '06-对齐.md']
+        }
+    }
+
+    if book_id not in book_configs:
+        print(f"❌ 未知项目: {book_id}. 可用: {', '.join(book_configs.keys())}")
+        sys.exit(1)
+
+    config = book_configs[book_id]
+    project_dir = os.path.join(PROJECT_ROOT, config['dir'])
+
+    # 收集术语: {term: {first_chapter, first_section, count, type}}
+    terms = {}
+
+    for fname in config['files']:
+        fpath = os.path.join(project_dir, fname)
+        if not os.path.exists(fpath):
+            continue
+
+        with open(fpath, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        current_section = fname
+        for line in content.split('\n'):
+            # 跟踪当前节
+            sec = re.match(r'^(#{1,3})\s+(.+)$', line)
+            if sec:
+                current_section = sec.group(2).strip()
+                # 添加章节标题本身作为索引条目
+                _add_term(terms, sec.group(2).strip(), fname, current_section, 'heading')
+                continue
+
+            # 提取 **粗体术语**（过滤整句加粗）
+            for m in re.finditer(r'\*\*(.+?)\*\*', line):
+                term = m.group(1).strip()
+                # 过滤条件：2-25字符，不含中文标点（排除整句加粗），不含换行
+                if 2 <= len(term) <= 25 and not re.search(r'[，。；：、？！""''）】]', term) and '\n' not in term:
+                    _add_term(terms, term, fname, current_section, 'concept')
+
+            # 提取 《书名》
+            for m in re.finditer(r'《(.+?)》', line):
+                _add_term(terms, f"《{m.group(1)}》", fname, current_section, 'book')
+
+            # 提取 大写缩写（≥3个连续大写字母/数字/符号组合）
+            for m in re.finditer(r'\b([A-Z][A-Z0-9₂₀₁₃₄₅₆₇₈₉\+/]{2,}(?:\s?[A-Z][A-Z0-9₂₀₁₃₄₅₆₇₈₉\+/]+)?)\b', line):
+                acronym = m.group(1).strip()
+                if len(acronym) >= 3:
+                    _add_term(terms, acronym, fname, current_section, 'acronym')
+
+    # 排序：中文按拼音，英文按字母
+    def _sort_key(term):
+        c = term[0]
+        if '一' <= c <= '鿿':
+            return (0, term)  # 中文排前面
+        elif c.isalpha():
+            return (1, term.lower())
+        else:
+            return (2, term)
+
+    sorted_terms = sorted(terms.items(), key=lambda x: _sort_key(x[0]))
+
+    # 输出
+    print(f"# {book_id} 书术语索引\n")
+    print(f"> 共 {len(sorted_terms)} 个术语 | 生成: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
+
+    # 按类型分组统计
+    type_counts = {'concept': 0, 'book': 0, 'acronym': 0, 'heading': 0}
+    for _, info in terms.items():
+        type_counts[info['type']] += 1
+    print(f"概念: {type_counts['concept']} | 书名: {type_counts['book']} | 缩写: {type_counts['acronym']} | 标题: {type_counts['heading']}\n")
+
+    # 按首字母分组
+    current_letter = None
+    for term, info in sorted_terms:
+        first_char = term[0].upper() if term[0].isalpha() else '#' if not '一' <= term[0] <= '鿿' else term[0]
+        if first_char != current_letter:
+            current_letter = first_char
+            print(f"## {current_letter}\n")
+
+        count_str = f" ({info['count']})" if info['count'] > 1 else ""
+        print(f"- **{term}**{count_str} — {info['first_chapter']} §{info['first_section'][:40]}")
+
+    conn = get_db()
+    conn.close()
+
+
+def _add_term(terms, term, chapter, section, term_type):
+    """向术语字典添加条目"""
+    if term not in terms:
+        terms[term] = {
+            'first_chapter': chapter,
+            'first_section': section,
+            'type': term_type,
+            'count': 0
+        }
+    terms[term]['count'] += 1
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
@@ -693,6 +937,8 @@ def main():
         'affected': cmd_affected,
         'new-project': cmd_new_project,
         'projects': cmd_projects,
+        'cite': cmd_cite,
+        'index': cmd_index,
     }
 
     if cmd in commands:
