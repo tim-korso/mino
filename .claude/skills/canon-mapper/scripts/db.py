@@ -503,6 +503,11 @@ def cmd_migrate():
     book_id = sys.argv[2] if len(sys.argv) > 2 else 'finance'
 
     book_configs = {
+        'health': {
+            'dir': 'workspace/health-book',
+            'files': ['01-能量与代谢.md', '02-营养与摄入.md', '03-运动与结构.md',
+                      '04-睡眠与修复.md', '05-衰老与疾病.md', '06-整合运用.md']
+        },
         'finance': {
             'dir': 'workspace/finance-book',
             'files': ['01-货币创造.md', '02-风险定价.md', '03-时间搬运.md',
