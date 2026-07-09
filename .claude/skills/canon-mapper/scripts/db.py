@@ -551,6 +551,11 @@ def cmd_migrate():
             'dir': 'workspace/ai-book',
             'files': ['01-计算.md', '02-数据.md', '03-学习.md',
                       '04-表示.md', '05-规模化.md', '06-对齐.md']
+        },
+        'sex': {
+            'dir': 'workspace/sex-book',
+            'files': ['01-欲望系统.md', '02-血管系统.md', '03-神经系统.md',
+                      '04-结构系统.md', '05-功能障碍.md', '06-关系系统.md']
         }
     }
 
@@ -849,6 +854,11 @@ def cmd_index():
             'dir': 'workspace/ai-book',
             'files': ['01-计算.md', '02-数据.md', '03-学习.md',
                       '04-表示.md', '05-规模化.md', '06-对齐.md']
+        },
+        'sex': {
+            'dir': 'workspace/sex-book',
+            'files': ['01-欲望系统.md', '02-血管系统.md', '03-神经系统.md',
+                      '04-结构系统.md', '05-功能障碍.md', '06-关系系统.md']
         }
     }
 
