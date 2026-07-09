@@ -16,73 +16,44 @@ description: >
 
 | 命令 | 触发 | 行为 |
 |------|------|------|
-| **new** | "write new 健康" / "写本健康书" | 发现经典→生成骨架→注册项目→创建目录 |
-| **status** | "write status" / "书怎么样了" | projects 表 + gaps + 低置信度清单 |
-| **research** | "write research" | deep-research 消费所有 pending 方向 |
-| **verify** | "write verify" | claim-verification 验证所有 unverified |
-| **sync** | "write sync" | migrate 全部书 + stats |
-| **check** | "write check DR001" | affected <id> |
+| **new** | "write new 健康" | 发现经典→生成骨架→注册项目→首轮映射→**自动继续** |
+| **continue** | "write continue" / "继续写" | 从当前状态自动推进：映射剩余经典→消费方向→验证主张→写章节 |
+| **status** | "write status" | projects 表 + gaps + 低置信度清单 |
 
-## new — 启动一本新书
+## new — 全自动启动
 
-当用户说 "write new <话题>" 或 "写本<话题>书" 时，执行五步：
+当用户说 "write new <话题>" 时，**一气呵成跑到底**，不中断问"要不要继续"：
 
-### Step 1: Domain Discovery
-搜索该领域必读经典（canon-mapper L1）。
+### Step 1-5: 同之前（发现→骨架→批准→创建→首轮映射）
 
-```bash
-python3 .claude/skills/canon-mapper/scripts/db.py projects
-```
+### Step 6: 批量映射剩余经典
+对库中所有未映射的该领域经典→逐一 canon-mapper map → 生成全部搜索方向。
 
-若领域已有注册经典 → 复用。否则用 Tavily/Exa 搜索 "[话题] 必读书目" "[话题] 经典教材" → 交叉验证（3+ 来源推荐同一本才是 consensus）。
+### Step 7: 自动消费全部搜索方向
+`/deep-research 消费搜索方向` — 自动分组、搜索、验证、入库。
 
-### Step 2: Skeleton Generation
-综合经典的框架，生成项目骨架。规则：
-- 按**传导链**组织，不按学科分类
-- 每根骨头回答一个"怎么"问题
-- 骨头之间有因果箭头（A→B→C，不是并列）
-- 书名格式：`<话题>知识的<N>根骨头`
+### Step 8: Challenger 独立验证
+对全部新入库的 HIGH/MEDIUM 主张→Challenger Gate 否定性搜索→合并修正。
 
-从经典的目录中提取共同的模块维度 → 综合成 N 根骨头 → 输出骨架草稿给用户确认。
+### Step 9: 自动生成章节草稿
+基于骨架+验证后的主张，自动写每章的 markdown。主张用 [H00X] 格式植入。
 
-### Step 3: User Approval
-展示骨架草稿 → 用户确认/修改 → 锁定。
+### Step 10: 同步+报告
+migrate + stats → 展示完成状态。
 
-### Step 4: Project Creation
-```bash
-mkdir -p workspace/<id>-book
-# 写骨架文件
-# workspace/<id>-book/00-骨架.md
+## continue — 从当前状态推进
 
-# 注册到数据库
-python3 .claude/skills/canon-mapper/scripts/db.py new-project \
-  --id '<id>' --name '<书名>' --topic '<话题>' --domain '<领域>'
-```
+当用户说 "write continue" 时，检查当前状态：
+- 有未映射经典？→ 映射
+- 有 pending 搜索方向？→ 消费
+- 有 unverified 主张？→ Challenger 验证
+- 有章节缺内容？→ 续写
 
-### Step 5: First Canon Mapping
-对共识度最高的 2-3 本经典 → canon-mapper map → 生成初始搜索方向。
+循环执行直到没有可推进的步骤。
 
-## status — 全局仪表盘
+## status / sync / check
 
-```bash
-python3 .claude/skills/canon-mapper/scripts/db.py projects
-python3 .claude/skills/canon-mapper/scripts/db.py stats
-# 对每本 active 的书:
-python3 .claude/skills/canon-mapper/scripts/db.py gaps <book_id>
-python3 .claude/skills/canon-mapper/scripts/db.py claims --book <book_id> --low-conf
-python3 .claude/skills/canon-mapper/scripts/db.py directions --pending
-```
-
-## research / verify / sync / check
-
-直接代理给下游 skill：
-
-```
-research → /deep-research 消费搜索方向
-verify   → /claim-verification 验证并入库
-sync     → db.py migrate <all_books> + stats
-check    → db.py affected <id>
-```
+代理给 canon-mapper/deep-research/claim-verification。
 
 ## 项目骨架模板
 
