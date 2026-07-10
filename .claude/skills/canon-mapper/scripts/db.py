@@ -559,8 +559,8 @@ def cmd_migrate():
         },
         'pleasure': {
             'dir': 'workspace/pleasure-book',
-            'files': ['01-历史.md', '02-快感地图.md', '03-技巧.md',
-                      '04-工具.md', '05-沟通.md', '06-场景.md']
+            'files': ['01-历史.md', '02-自己.md', '03-感官.md',
+                      '04-技巧.md', '05-工具.md', '06-情欲.md', '07-场景.md']
         }
     }
 
@@ -867,8 +867,8 @@ def cmd_index():
         },
         'pleasure': {
             'dir': 'workspace/pleasure-book',
-            'files': ['01-历史.md', '02-快感地图.md', '03-技巧.md',
-                      '04-工具.md', '05-沟通.md', '06-场景.md']
+            'files': ['01-历史.md', '02-自己.md', '03-感官.md',
+                      '04-技巧.md', '05-工具.md', '06-情欲.md', '07-场景.md']
         }
     }
 
