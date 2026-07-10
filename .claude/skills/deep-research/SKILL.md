@@ -14,15 +14,100 @@ description: 'Seven-layer deep research engine with Challenger verification gate
 
 ---
 
-## 三种运行模式
+## 四种运行模式
 
 | 模式 | 层数 | Challenger | 双层递归 | 时间预算 | 何时用 |
 |------|------|-----------|---------|---------|--------|
 | **Quick** 🏃 | L0-L4（单轮） | 无 | 无 | 2-5 min | 事实核查、快速了解 |
 | **Deep** 🔬 | L0-L6（2-3 轮）+ Gate | 1 个 Challenger | 复杂子问题 | 10-25 min | 复杂问题、决策支撑 |
 | **Exhaustive** 🔬🔬 | L0-L6（收敛为止）+ Gate | **2 个独立** Challenger | 所有子问题 | 30-60 min | 高风险决策、投资研究 |
+| **Extract** 📖 | 4-pass 自动化 | Pass3=验证 | 每pass独立Agent | 30-50 min | 经典骨架提取——/write管线Step 2.1 |
 
-**默认模式：Deep。**
+**默认模式：Deep。** 经典提取用 Extract 模式。
+
+---
+
+## Extract 模式：经典骨架自动提取 📖
+
+> 为 /write 管线的 Step 2.1 设计。输入一本书的书名+作者——输出结构化经典骨架 JSON——直接喂给 `db.py extract --deep --json-file`。
+
+### 触发
+
+"extract classic: {书名} by {作者}"
+"deep-research extract {书名}"
+"刨经典: {书名}"
+
+### 4-pass 自动执行
+
+和 Write SKILL.md 的 4-pass 模板对齐——但这里是**自动化执行**——不是 AI 手动搜：
+
+```
+输入: 书名 + 作者
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Pass 1: 表层结构 (L0-L4 Quick, ~5 min)                        │
+│   Query 1: "{title} {author} table of contents structure"     │
+│   Query 2: "{title} {author} Wikipedia summary key concepts"  │
+│   Query 3: "{title} {author} organizational framework"        │
+│   Query 4: "{title} {author} introduction summary"            │
+│   → 并发搜索 → 提取: 组织原则/模块/主张/方法论                   │
+└──────────────────────────┬──────────────────────────────────┘
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Pass 2: 深层结构 (L0-L5 Deep, ~10 min)                        │
+│   Query 1: "{title} critique methodology limitations"        │
+│   Query 2: "{title} blind spots what it misses"               │
+│   Query 3: "{title} implicit assumptions unstated"            │
+│   Query 4: "{author} methodology criticism academic review"   │
+│   → 并发搜索 → 提取: 方法论盲区/隐含假设/回避的话题              │
+└──────────────────────────┬──────────────────────────────────┘
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Pass 3: 时间检验 (L0-L5 Deep + Challenger, ~10 min)           │
+│   Query 1: "{title} replication crisis what held up"         │
+│   Query 2: "{title} overturned debunked claims"               │
+│   Query 3: "{core_claim_1} failed to replicate"              │
+│   Query 4: "{title} updated evidence 2024 2025"               │
+│   → Challenger: 独立验证"塌了"和"站住了"的分类                  │
+│   → 提取: held_up[] / collapsed[] / replication_rate         │
+└──────────────────────────┬──────────────────────────────────┘
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Pass 4: 跨经典定位 (L0-L5 Deep, ~10 min)                      │
+│   Query 1: "{title} vs {related_book_1} comparison debate"   │
+│   Query 2: "{related_author} critique of {title}"            │
+│   Query 3: "{title} misreadings creative misinterpretations" │
+│   Query 4: "{title} self-contradiction structural irony"     │
+│   → 提取: creative_misreadings/unstated_contradictions/      │
+│           structural_ironies                                  │
+└──────────────────────────┬──────────────────────────────────┘
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 合成: 结构化 JSON                                             │
+│   按 /write SKILL.md 的 4-pass schema 输出                    │
+│   自动写入 /tmp/extract-{book-slug}.json                      │
+│   提示: python3 db.py extract --deep --json-file <path>      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 自动化要素
+
+**Layer 0 (DAG Planning)**: 自动生成 4-pass × 4 queries = 16 node DAG。Pass 间有依赖（Pass 2 需要 Pass 1 的关键主张列表来搜索"哪些塌了"）——但 Pass 内的 queries 全部并行。
+
+**Pass 间依赖**:
+- Pass 2 不依赖 Pass 1（可以并行）
+- Pass 3 需要 Pass 1 的 key_claims（用来搜"什么塌了"）
+- Pass 4 需要 Pass 1 的 relationships + 领域知识（有哪些相关经典）
+
+**优化**: Pass 1+2 并行 → Pass 3+4 并行（依赖 Pass 1 结果）
+
+**和人工提取的区别**:
+```
+人工: 8-10轮WebSearch——每轮等结果——下一轮依赖上一轮的理解——~45min
+Extract模式: Pass 1+2并行(同时16+ queries)→Pass 3+4并行→~15-20min
+             独立Agent做搜索——主Agent只收结构化输出——噪音隔离
+```
 
 ---
 
