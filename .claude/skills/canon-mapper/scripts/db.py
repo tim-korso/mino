@@ -1422,9 +1422,13 @@ def cmd_extract():
                --principle '组织原则' --modules '[{...}]' --claims '[{...}]'
                --relationships '{...}' --methodology '...' --limitations '[...]'
 
-    也支持 --json-file 从文件读取完整 JSON。
+    深层提取 (--deep): 4-pass——表层→深层→时间检验→跨经典定位
+    extract --deep --json-file /tmp/extract-deep.json
 
-    输出: 注册 classic + 自动创建 skeleton nodes
+    浅层提取 (默认): 仅 Pass 1——TOC+模块+主张+方法论
+    extract --json-file /tmp/extract-surface.json
+
+    输出: 注册 classic + 自动创建 skeleton nodes + 深层数据存入 notes 字段
     """
     import argparse
     p = argparse.ArgumentParser(description='经典骨架提取器')
@@ -1433,6 +1437,7 @@ def cmd_extract():
     p.add_argument('--year', type=int, help='出版年份')
     p.add_argument('--domain', help='领域标签')
     p.add_argument('--url', help='来源URL')
+    p.add_argument('--deep', action='store_true', help='深层提取（4-pass完整schema）')
     p.add_argument('--principle', help='组织原则（一句话: 这本书按什么分类）')
     p.add_argument('--modules', help='一级模块 JSON: [{"name":"I","title":"...","children":[...]},...]')
     p.add_argument('--claims', help='关键主张 JSON: [{"text":"...","location":"...","evidence":""},...]')
@@ -1443,28 +1448,56 @@ def cmd_extract():
     args = p.parse_args(sys.argv[2:])
 
     # 如果指定了 JSON 文件——从文件读取
+    deep_data = {}
     if args.json_file:
         with open(args.json_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        args.title = data.get('title', args.title)
-        args.author = data.get('author', args.author)
-        args.year = data.get('year', args.year)
-        args.domain = data.get('domain', args.domain)
-        args.url = data.get('url', args.url)
-        args.principle = data.get('organizing_principle', args.principle)
-        args.methodology = data.get('methodology', args.methodology)
-        # modules/claims/relationships/limitations 保持 JSON 字符串格式
-        if 'modules' in data:
-            args.modules = json.dumps(data['modules'], ensure_ascii=False)
-        if 'key_claims' in data:
-            args.claims = json.dumps(data['key_claims'], ensure_ascii=False)
-        if 'relationships' in data:
-            args.relationships = json.dumps(data['relationships'], ensure_ascii=False)
-        if 'temporal_limitations' in data:
-            args.limitations = json.dumps(data['temporal_limitations'], ensure_ascii=False)
+
+        # 支持两种 JSON 格式: 浅层（flat）和 深层（pass1_surface/pass2_deep/...）
+        if 'pass1_surface' in data:
+            # 深层格式——拆出 pass1 给基础字段
+            p1 = data['pass1_surface']
+            args.title = data.get('title', args.title)
+            args.author = data.get('author', args.author)
+            args.year = data.get('year', args.year)
+            args.domain = data.get('domain', args.domain)
+            args.url = data.get('url', args.url)
+            args.principle = p1.get('organizing_principle', args.principle)
+            args.methodology = p1.get('methodology', args.methodology)
+            if 'modules' in p1:
+                args.modules = json.dumps(p1['modules'], ensure_ascii=False)
+            if 'key_claims' in p1:
+                args.claims = json.dumps(p1['key_claims'], ensure_ascii=False)
+            if 'relationships' in data:
+                args.relationships = json.dumps(data['relationships'], ensure_ascii=False)
+            if 'temporal_limitations' in data:
+                args.limitations = json.dumps(data['temporal_limitations'], ensure_ascii=False)
+            # 保存完整深层数据
+            deep_data = {
+                'pass2_deep': data.get('pass2_deep', {}),
+                'pass3_temporal': data.get('pass3_temporal', {}),
+                'pass4_cross_classic': data.get('pass4_cross_classic', {}),
+            }
+        else:
+            # 浅层格式——保持向后兼容
+            args.title = data.get('title', args.title)
+            args.author = data.get('author', args.author)
+            args.year = data.get('year', args.year)
+            args.domain = data.get('domain', args.domain)
+            args.url = data.get('url', args.url)
+            args.principle = data.get('organizing_principle', args.principle)
+            args.methodology = data.get('methodology', args.methodology)
+            if 'modules' in data:
+                args.modules = json.dumps(data['modules'], ensure_ascii=False)
+            if 'key_claims' in data:
+                args.claims = json.dumps(data['key_claims'], ensure_ascii=False)
+            if 'relationships' in data:
+                args.relationships = json.dumps(data['relationships'], ensure_ascii=False)
+            if 'temporal_limitations' in data:
+                args.limitations = json.dumps(data['temporal_limitations'], ensure_ascii=False)
 
     if not args.title:
-        print("❌ 需要 --title '书名'")
+        print("❌ 需要 --title '书名' 或 --json-file")
         sys.exit(1)
 
     conn = get_db()
@@ -1476,7 +1509,11 @@ def cmd_extract():
         'methodology': args.methodology,
         'temporal_limitations': json.loads(args.limitations) if args.limitations else [],
         'relationships': json.loads(args.relationships) if args.relationships else {},
+        'extraction_depth': 'deep' if (args.deep or deep_data) else 'surface',
     }
+    # 合并深层数据
+    if deep_data:
+        notes.update(deep_data)
 
     if existing:
         cid = existing['id']
@@ -1493,13 +1530,14 @@ def cmd_extract():
         cid = cur.lastrowid
         print(f"✅ 注册经典: [{cid}] {args.title}")
 
-    # 2. 创建骨架节点——每个模块一个 node
+    extraction_type = "深层(4-pass)" if (args.deep or deep_data) else "浅层(Pass1)"
+    print(f"   📖 提取深度: {extraction_type}")
+
+    # 2. 创建骨架节点
     if args.modules:
         modules = json.loads(args.modules)
-        # 删除旧骨架（如果重新提取）
         conn.execute("DELETE FROM classic_skeletons WHERE classic_id = ? AND node_type IN ('module','chapter','principle')", (cid,))
 
-        # 先创建组织原则节点
         if args.principle:
             conn.execute("""
                 INSERT INTO classic_skeletons (classic_id, node_type, parent_id, title, content_summary, sort_order)
@@ -1515,7 +1553,6 @@ def cmd_extract():
             """, (cid, f"{mod_name}: {mod_title}", mod.get('summary', ''), i+1))
             parent_id = cur.lastrowid
 
-            # 子模块
             children = mod.get('children', [])
             for j, child in enumerate(children):
                 conn.execute("""
@@ -1533,10 +1570,18 @@ def cmd_extract():
         claim_count = 0
         for c in claims_data:
             claim_id = f"C{cid:03d}-{claim_count+1:02d}"
+            # 时间稳定性——如果Pass3知道某些主张已塌——标记为evolving
+            stability = 'stable'
+            if deep_data and 'pass3_temporal' in deep_data:
+                collapsed = deep_data['pass3_temporal'].get('collapsed', [])
+                if any(c.get('text', '')[:30] in str(collapsed) for _ in [1]):
+                    pass  # 简化检测——实际可更精确
+                if c.get('text', '')[:50] in str(collapsed):
+                    stability = 'evolving'
             conn.execute("""
                 INSERT OR REPLACE INTO claims (id, text, claim_type, confidence, source_type, source_classic_id, evidence_summary, temporal_stability)
-                VALUES (?, ?, 'factual', 'medium', 'classic', ?, ?, 'stable')
-            """, (claim_id, c.get('text', ''), cid, c.get('evidence', '')))
+                VALUES (?, ?, 'factual', 'medium', 'classic', ?, ?, ?)
+            """, (claim_id, c.get('text', ''), cid, c.get('evidence', ''), stability))
             claim_count += 1
         if claim_count > 0:
             print(f"   📎 {claim_count} 条关键主张入库")
@@ -1549,16 +1594,20 @@ def cmd_extract():
         print(f"   组织原则: {args.principle}")
     if args.methodology:
         print(f"   方法论: {args.methodology}")
-    if args.relationships:
-        rels = json.loads(args.relationships)
-        for k, v in rels.items():
-            if v:
-                label = {'inherits': '继承', 'challenged_by': '被反驳', 'complements': '互补'}.get(k, k)
-                print(f"   {label}: {v}")
-    if args.limitations:
-        lims = json.loads(args.limitations)
-        if lims:
-            print(f"   时代局限: {len(lims)} 条")
+
+    # 深层报告
+    if deep_data:
+        p3 = deep_data.get('pass3_temporal', {})
+        if p3.get('held_up'):
+            print(f"   ✅ 站住了: {', '.join(p3['held_up'][:3])}")
+        if p3.get('collapsed'):
+            print(f"   ❌ 塌了: {', '.join(p3['collapsed'][:3])}")
+        if p3.get('replication_rate'):
+            print(f"   📊 复制率: {p3['replication_rate']}")
+
+        p4 = deep_data.get('pass4_cross_classic', {})
+        if p4.get('structural_ironies'):
+            print(f"   🔄 结构性讽刺: {len(p4['structural_ironies'])} 条")
 
     conn.close()
 
