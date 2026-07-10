@@ -1563,6 +1563,261 @@ def cmd_extract():
     conn.close()
 
 
+def cmd_skeleton():
+    """骨架验证 + 提案——五步算法的可执行部分
+    用法: skeleton validate <book_id>    — 验证已有骨架（互斥性/传导/来源/完整性）
+          skeleton propose <domain>      — 从经典维度提案候选骨头
+    """
+    if len(sys.argv) < 3:
+        print("用法: skeleton validate <book_id>     — 验证已有骨架")
+        print("      skeleton propose <domain>       — 从经典提案候选骨头")
+        sys.exit(1)
+
+    sub = sys.argv[2]
+    if sub == 'propose':
+        _skeleton_propose(sys.argv[3] if len(sys.argv) > 3 else None)
+    elif sub == 'validate':
+        _skeleton_validate(sys.argv[3] if len(sys.argv) > 3 else None)
+    else:
+        print(f"❌ 未知子命令: {sub}")
+        print("可用: validate, propose")
+
+
+def _skeleton_propose(domain=None):
+    """从已提取的经典维度提案候选骨头"""
+    conn = get_db()
+
+    where = "WHERE domain = ?" if domain else ""
+    params = (domain,) if domain else ()
+
+    classics = conn.execute(f"""
+        SELECT id, title, notes FROM classics
+        {where}
+        ORDER BY id
+    """, params).fetchall()
+
+    if not classics:
+        print(f"📭 没有找到{'领域='+domain if domain else '任何'}经典。先运行 extract。")
+        conn.close()
+        return
+
+    print(f"# {'领域: '+domain if domain else '全部经典'} 骨架提案\n")
+    print(f"> 从 {len(classics)} 本经典的维度聚类生成\n")
+
+    # 提取每本经典的组织原则
+    dimensions = []
+    for c in classics:
+        notes_str = c['notes'] or '{}'
+        try:
+            notes = json.loads(notes_str)
+        except json.JSONDecodeError:
+            notes = {}
+        principle = notes.get('organizing_principle', '')
+        if principle:
+            dimensions.append({
+                'classic_id': c['id'],
+                'title': c['title'],
+                'principle': principle,
+            })
+
+    if not dimensions:
+        print("❌ 没有经典包含组织原则。先运行 extract。")
+        conn.close()
+        return
+
+    # 按组织原则聚类
+    print("## 经典维度矩阵\n")
+    for i, d in enumerate(dimensions):
+        print(f"{i+1}. **[{d['classic_id']}] {d['title']}**")
+        print(f"   → {d['principle']}")
+        print()
+
+    # 检测原则间的互补/冲突
+    print("## 维度分析\n")
+    principles = [d['principle'] for d in dimensions]
+
+    # 分类检测
+    categories = set()
+    for p in principles:
+        cats = re.findall(r'按(.+?)[分组织类]', p)
+        for cat in cats:
+            categories.add(cat.strip())
+
+    if len(categories) > 1:
+        print(f"⚠️  经典使用了 {len(categories)} 种不同的分类维度:")
+        for cat in sorted(categories):
+            print(f"   - 按{cat}")
+        print("\n   → 骨架必须选择一种主导维度——或合成新的维度")
+        print("   → 不同维度可能互补（阶段+技巧）——也可能是冲突的（理性vs情绪）\n")
+
+    if len(categories) == 1:
+        cat = list(categories)[0]
+        print(f"✅ 所有经典使用相同的分类维度: 按{cat}")
+        print(f"   → 骨架可以继承这个维度\n")
+
+    # 建议骨头数
+    total_modules = conn.execute(f"""
+        SELECT COUNT(*) FROM classic_skeletons cs
+        JOIN classics c ON cs.classic_id = c.id
+        WHERE cs.node_type = 'module' {f"AND c.domain = ?" if domain else ""}
+    """, params if domain else ()).fetchone()[0]
+
+    suggested = min(total_modules // len(classics) if classics else 7, 8)
+    print(f"## 建议")
+    print(f"  经典模块总数: {total_modules}")
+    print(f"  建议骨头数: ≤ {suggested} (经典模块÷经典数的聚类)")
+    print(f"  下一步: skeleton validate <book_id> — 验证你的骨架")
+
+    conn.close()
+
+
+def _skeleton_validate(book_id=None):
+    """验证骨架质量——互斥性/传导/来源/完整性"""
+    if not book_id:
+        print("❌ 需要 book_id. 用法: skeleton validate <book_id>")
+        return
+
+    conn = get_db()
+
+    # 查该书的骨架文件
+    project = conn.execute("SELECT * FROM projects WHERE id = ?", (book_id,)).fetchone()
+    if not project:
+        print(f"❌ 未找到项目: {book_id}")
+        conn.close()
+        return
+
+    skel_file = os.path.join(PROJECT_ROOT, project['skeleton_file'])
+    if not os.path.exists(skel_file):
+        print(f"❌ 骨架文件不存在: {skel_file}")
+        conn.close()
+        return
+
+    # 解析骨架——提取骨头定义
+    with open(skel_file, 'r', encoding='utf-8') as f:
+        skel_text = f.read()
+
+    # 提取章节标题（# 第一章: ... 或 ## 第一章: ...）
+    bone_pattern = re.findall(r'#{1,2}\s*第[一二三四五六七八九十\d]+[章根].*?:?\s*(.+)', skel_text)
+    bones = [b.strip() for b in bone_pattern]
+
+    # 也尝试提取骨架表中的骨头名
+    if not bones:
+        # 找表格中的骨头名
+        table_bones = re.findall(r'\|\s*(?:Ch)?\d+\s*\|\s*([^|]+)\s*\|', skel_text)
+        bones = [b.strip() for b in table_bones if b.strip() and '回答' not in b and '核心' not in b and '---' not in b]
+
+    if not bones:
+        print(f"⚠️  无法从骨架文件中自动解析骨头列表。")
+        print(f"   文件: {skel_file}")
+        print(f"   请确保骨架使用了'第X章: <名称>'或表格格式")
+        conn.close()
+        return
+
+    n = len(bones)
+    print(f"# {book_id} 骨架验证: {project['name']}\n")
+    print(f"## 解析到的骨头 ({n} 根)\n")
+    for i, b in enumerate(bones):
+        print(f"  {i+1}. {b}")
+
+    # ── Check 1: N ≤ 8 ──
+    print(f"\n## 检查 1: 骨头数 ≤ 8")
+    if n <= 8:
+        print(f"  ✅ {n} ≤ 8 ——在短期记忆上限内")
+    else:
+        print(f"  ❌ {n} > 8 ——超过人类短期记忆上限(7±2)。考虑合并")
+
+    # ── Check 2: 经典来源审计 ──
+    print(f"\n## 检查 2: 经典来源审计")
+    # 查该领域的经典
+    domain = project['domain']
+    classics = conn.execute("""
+        SELECT id, title, notes FROM classics
+        WHERE domain = ? OR notes LIKE ?
+    """, (domain, f'%{domain}%')).fetchall()
+
+    # 查 framework_mappings
+    mappings = conn.execute("""
+        SELECT DISTINCT c.title, fm.target_chapter_file
+        FROM framework_mappings fm
+        JOIN classics c ON fm.classic_id = c.id
+        WHERE fm.target_book = ?
+    """, (book_id,)).fetchall()
+
+    mapped_classics = set(m[0] for m in mappings)
+    if classics:
+        covered = 0
+        for c in classics:
+            if c['title'] in mapped_classics:
+                covered += 1
+            else:
+                notes_str = c['notes'] or '{}'
+                try:
+                    notes = json.loads(notes_str)
+                except json.JSONDecodeError:
+                    notes = {}
+                principle = notes.get('organizing_principle', '')
+                if principle:
+                    print(f"  ⚠️  [{c['id']}] {c['title']} 未被映射到任何章节")
+                    print(f"     组织原则: {principle[:80]}...")
+        total_c = len(classics)
+        print(f"  {covered}/{total_c} 经典已映射到章节")
+    else:
+        print(f"  ⚠️  该领域没有注册的经典——无法审计来源")
+
+    # ── Check 3: 传导链 ──
+    print(f"\n## 检查 3: 传导链")
+    # 找骨架中的箭头关系
+    arrows = re.findall(r'[→⟶▶].*?[→⟶▶]', skel_text)
+    if arrows:
+        print(f"  ✅ 发现 {len(arrows)} 条传导关系")
+    else:
+        print(f"  ⚠️  未发现显式传导链。骨架是主题列表还是传导链？")
+
+    # 检查是否有平行标记
+    parallel = re.findall(r'平行|可乱序|独立阅读', skel_text)
+    if parallel:
+        print(f"  ℹ️  标记了 {len(parallel)} 处平行/可乱序关系")
+
+    # ── Check 4: 时效性标记 ──
+    print(f"\n## 检查 4: 时效性标记")
+    stability_tags = re.findall(r'[🟢🟡🔴]', skel_text)
+    stable = sum(1 for t in stability_tags if '🟢' in t)
+    evolving = sum(1 for t in stability_tags if '🟡' in t)
+    volatile = sum(1 for t in stability_tags if '🔴' in t)
+    if stability_tags:
+        print(f"  🟢 stable: {stable}  🟡 evolving: {evolving}  🔴 volatile: {volatile}")
+    else:
+        print(f"  ❌ 骨架中没有时效性标签(🟢🟡🔴)。每根骨头都应该标注")
+
+    # ── Check 5: 前沿覆盖 ──
+    print(f"\n## 检查 5: 前沿覆盖")
+    # 查该书的 volatile/evolving 主张
+    evolving_claims = conn.execute("""
+        SELECT COUNT(*) FROM claims c
+        JOIN claim_chapters cc ON c.id = cc.claim_id
+        WHERE cc.book_id = ? AND c.temporal_stability != 'stable'
+    """, (book_id,)).fetchone()[0]
+    if evolving_claims > 0:
+        print(f"  ℹ️  {evolving_claims} 条 non-stable 主张——需定期刷新")
+    else:
+        print(f"  ⚠️  没有 non-stable 主张——'所有主张都是永恒真理'？")
+
+    # ── 总分 ──
+    print(f"\n{'─'*50}")
+    checks_passed = 0
+    checks_total = 5
+    if n <= 8: checks_passed += 1
+    if classics and mapped_classics: checks_passed += 1
+    if arrows: checks_passed += 1
+    if stability_tags: checks_passed += 1
+    if evolving_claims > 0: checks_passed += 1  # Having them is good - means awareness
+    print(f"骨架健康: {checks_passed}/{checks_total} 通过")
+    if checks_passed < 5:
+        print(f"待修复: 运行 skeleton propose {domain} 获取候选维度——然后重构骨架")
+
+    conn.close()
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
@@ -1595,6 +1850,7 @@ def main():
         'reused': cmd_reused,
         'frontier': cmd_frontier,
         'extract': cmd_extract,
+        'skeleton': cmd_skeleton,
     }
 
     if cmd in commands:
