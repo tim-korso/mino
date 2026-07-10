@@ -560,7 +560,7 @@ def cmd_migrate():
         'pleasure': {
             'dir': 'workspace/pleasure-book',
             'files': ['01-历史.md', '02-自己.md', '03-感官.md',
-                      '04-技巧.md', '05-工具.md', '06-情欲.md', '07-场景.md']
+                      '04-技巧.md', '05-工具.md', '06-情欲.md', '07-场景.md', '08-附录.md']
         }
     }
 
@@ -573,7 +573,7 @@ def cmd_migrate():
     conn = get_db()
 
     import re
-    claim_pattern = re.compile(r'\b(DR\d{3}|C\d{3}|CV-[\w-]+|H\d{3}|S\d{3})\b')
+    claim_pattern = re.compile(r'\b(DR\d{3}|C\d{3}|CV-[\w-]+|H\d{3}|S\d{3}|T\d{3})\b')
     section_pattern = re.compile(r'[§#](\d+\.\d+(?:\.\d+)?)')
     total_linked = 0
     found_claims = set()
@@ -868,7 +868,7 @@ def cmd_index():
         'pleasure': {
             'dir': 'workspace/pleasure-book',
             'files': ['01-历史.md', '02-自己.md', '03-感官.md',
-                      '04-技巧.md', '05-工具.md', '06-情欲.md', '07-场景.md']
+                      '04-技巧.md', '05-工具.md', '06-情欲.md', '07-场景.md', '08-附录.md']
         }
     }
 
