@@ -165,9 +165,18 @@ description: >
 [读者画像的阅读路径]
 ```
 
-### Step 3: 注册项目 → Step 4: 经典映射 → Step 5: 自动继续
+### Step 3: 注册项目 → Step 4: 经典提取 → Step 5: 自动继续
 
-### Step 6: 批量映射剩余经典
+**经典提取**——自动化两条路:
+
+A. 单本: 用 8通道 Workflow（`classic-downloader`）并行搜索 → 结构化JSON → `db.py extract --deep --json-file`
+B. 批量: `db.py extract --batch <domain>` 生成查询矩阵 → Workflow 批量运行 → 逐本入库
+
+**骨架验证**——自动 5 维自检: `db.py skeleton validate <book_id>`
+
+之后: 自动映射/研究/验证/写章（Step 6-10）。
+
+### Step 6: 批量映射 + 前沿扫描
 对库中所有未映射的该领域经典→逐一 canon-mapper map → 生成全部搜索方向。
 
 ### Step 7: 自动消费全部搜索方向
@@ -187,10 +196,13 @@ migrate + stats → 展示完成状态。
 当用户说 "write continue" 时，分两阶段检查：
 
 ### Phase 1: 基础建设
+- 有未提取经典？→ `extract --batch <domain>` + Workflow 并行提取
+- 骨架需要验证？→ `skeleton validate <book_id>` + `skeleton compare` 如果有多个版本
 - 有未映射经典？→ 批量映射
 - 有 pending 搜索方向？→ 消费
 - 有 unverified 主张？→ Challenger 验证
 - 有章节缺内容/行数不足？→ 续写
+- 有时效性风险？→ `frontier --scan <book_id>` 检测 volatile 主张过期
 
 ### Phase 2: 深化增强（Phase 1 完成后自动检测）
 
@@ -974,3 +986,33 @@ python3 db.py pattern-save <book1> <claim1> <book2> <claim2> <pattern_type> '<no
 | `measurement_illusion` | 指标正常≠系统健康 | 空腹血糖正常≠代谢健康 | VaR正常≠风险可控 |
 
 **设计洞见**：这些模式不是巧合——是复杂系统在不同领域的同一组底层动力学。发现这些模式是跨书写作的核心价值：健康书不是"也适用于金融的类比"——两本书是同一组系统原理在不同基底的投影。
+
+---
+
+## 工具速查
+
+```bash
+# ── 经典提取 ──
+db.py extract --deep --json-file /tmp/extract-xxx.json    # 单本入库
+db.py extract --batch <domain> --deep                      # 批量查询矩阵
+# Workflow: classic-downloader                              8通道并行提取(Internet Archive/Wikipedia/Google Books/Goodreads/Scholar/Amazon/Gutenberg/YouTube)
+
+# ── 骨架 ──
+db.py skeleton propose <domain>                            # 经典维度聚类→候选骨头
+db.py skeleton validate <book_id>                         # 5维自检(≤8/来源/传导/时效/前沿)
+db.py skeleton compare <id1> <id2> <id3>                 # 三轨对比计分卡
+
+# ── 前沿 ──
+db.py frontier --scan <book_id>                           # 前沿缺口+时效检测
+db.py frontier --mark <claim_id> stable|evolving|volatile # 标记主张稳定性
+
+# ── 生产 ──
+render.py all <book_id>                                    # HTML+EPUB+PDF
+db.py cite <book_id> --style apa                          # 引用清单
+db.py index <book_id>                                     # 术语索引
+
+# ── 跨书 ──
+db.py patterns <book1> <book2>                            # 跨书同构模式发现
+db.py reuse <claim_id> --to <book> --from <source>        # 主张复用
+db.py reused <book_id>                                    # 复用关系查询
+```
