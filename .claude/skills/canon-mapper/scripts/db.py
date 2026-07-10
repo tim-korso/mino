@@ -1766,13 +1766,15 @@ def cmd_extract_batch():
 
 
 def cmd_skeleton():
-    """骨架验证 + 提案——五步算法的可执行部分
-    用法: skeleton validate <book_id>    — 验证已有骨架（互斥性/传导/来源/完整性）
+    """骨架验证 + 提案 + 对比——五步算法的可执行部分
+    用法: skeleton validate <book_id>    — 验证已有骨架（5维自检）
           skeleton propose <domain>      — 从经典维度提案候选骨头
+          skeleton compare <id1> <id2> [<id3>]  — 三轨对比（A/B/C质量计分卡）
     """
     if len(sys.argv) < 3:
         print("用法: skeleton validate <book_id>     — 验证已有骨架")
         print("      skeleton propose <domain>       — 从经典提案候选骨头")
+        print("      skeleton compare <id1> <id2> [<id3>] — 三轨对比")
         sys.exit(1)
 
     sub = sys.argv[2]
@@ -1780,9 +1782,15 @@ def cmd_skeleton():
         _skeleton_propose(sys.argv[3] if len(sys.argv) > 3 else None)
     elif sub == 'validate':
         _skeleton_validate(sys.argv[3] if len(sys.argv) > 3 else None)
+    elif sub == 'compare':
+        ids = sys.argv[3:]
+        if len(ids) < 2:
+            print("❌ 需要至少2个project ID. 用法: skeleton compare health sex pleasure")
+            sys.exit(1)
+        _skeleton_compare(ids)
     else:
         print(f"❌ 未知子命令: {sub}")
-        print("可用: validate, propose")
+        print("可用: validate, propose, compare")
 
 
 def _skeleton_propose(domain=None):
@@ -2016,6 +2024,145 @@ def _skeleton_validate(book_id=None):
     print(f"骨架健康: {checks_passed}/{checks_total} 通过")
     if checks_passed < 5:
         print(f"待修复: 运行 skeleton propose {domain} 获取候选维度——然后重构骨架")
+
+    conn.close()
+
+
+def _skeleton_compare(ids):
+    """三轨对比——纯算法质量计分卡。输入2-3个project ID——输出对比矩阵"""
+    conn = get_db()
+
+    # 收集每个骨架的数据
+    skeletons = {}
+    for bid in ids:
+        project = conn.execute("SELECT id, name, domain, skeleton_file FROM projects WHERE id=?", (bid,)).fetchone()
+        if not project:
+            print(f"⚠️  项目不存在: {bid}")
+            continue
+
+        skel_file = os.path.join(PROJECT_ROOT, project['skeleton_file'])
+        if not os.path.exists(skel_file):
+            print(f"⚠️  骨架文件不存在: {skel_file}")
+            continue
+
+        with open(skel_file, 'r', encoding='utf-8') as f:
+            text = f.read()
+
+        # 解析骨头
+        bones = re.findall(r'#{1,2}\s*第[一二三四五六七八九十\d]+[章根].*?:?\s*(.+)', text)
+        if not bones:
+            bones = re.findall(r'\|\s*(?:Ch)?\d+\s*\|\s*([^|]+)\s*\|', text)
+        bones = [b.strip() for b in bones if b.strip() and '回答' not in b and '核心' not in b and '---' not in b and '骨头' not in b]
+
+        n = len(bones)
+
+        # 检查指标
+        has_stability = bool(re.findall(r'[🟢🟡🔴]', text))
+        has_chain = bool(re.findall(r'[→⟶▶].*?[→⟶▶]', text))
+        has_classic_source = bool(re.findall(r'经典依据|从哪本经典|从.*经典.*学|《', text))
+        has_frontier = bool(re.findall(r'前沿|≤2年|volatile|evolving|最新|202[4-6]', text))
+        has_organizing_principle = bool(re.findall(r'组织原则|传导链|分类.*原则', text))
+
+        # 查claims表获取时效标记
+        evolving_count = conn.execute("""
+            SELECT COUNT(*) FROM claims c
+            JOIN claim_chapters cc ON c.id = cc.claim_id
+            WHERE cc.book_id = ? AND c.temporal_stability != 'stable'
+        """, (bid,)).fetchone()[0]
+
+        # 查经典映射数
+        classic_map_count = conn.execute("""
+            SELECT COUNT(DISTINCT classic_id) FROM framework_mappings
+            WHERE target_book = ?
+        """, (bid,)).fetchone()[0]
+
+        skeletons[bid] = {
+            'name': project['name'],
+            'n_bones': n,
+            'bones': bones,
+            'n_under_8': n <= 8,
+            'has_stability': has_stability,
+            'has_chain': has_chain,
+            'has_classic_source': has_classic_source,
+            'has_frontier': has_frontier,
+            'has_organizing_principle': has_organizing_principle,
+            'evolving_count': evolving_count,
+            'classic_map_count': classic_map_count,
+        }
+
+    if len(skeletons) < 2:
+        print("❌ 至少需要2个有效的骨架进行对比")
+        conn.close()
+        return
+
+    # 输出对比矩阵
+    labels = list(skeletons.keys())
+    print(f"# 骨架三轨对比: {' vs '.join(labels)}\n")
+
+    # 基本信息
+    print("## 基本信息\n")
+    print(f"| 指标 | {' | '.join(labels)} |")
+    print(f"|------|{'|'.join(['------' for _ in labels])}|")
+    names = [skeletons[b]['name'] for b in labels]
+    print(f"| 书名 | {' | '.join(names)} |")
+    ns = [str(skeletons[b]['n_bones']) for b in labels]
+    print(f"| 骨头数 | {' | '.join(ns)} |")
+    bone_summary = [' + '.join(skeletons[b]['bones'][:3]) + ('...' if len(skeletons[b]['bones'])>3 else '') for b in labels]
+    print(f"| 骨头 | {' | '.join(bone_summary)} |")
+    print(f"| 经典映射 | {' | '.join([str(skeletons[b]['classic_map_count']) for b in labels])} |")
+    print(f"| Non-stable主张 | {' | '.join([str(skeletons[b]['evolving_count']) for b in labels])} |")
+
+    # 质量计分卡
+    print(f"\n## 质量计分卡\n")
+
+    metrics = [
+        ('骨头数 ≤8', 'n_under_8', '✅ ≤8' if True else '❌ >8', lambda v: '✅' if v else '❌'),
+        ('时效性标签', 'has_stability', '✅ 有🟢🟡🔴', lambda v: '✅' if v else '❌'),
+        ('传导链', 'has_chain', '✅ 有箭头关系', lambda v: '✅' if v else '⚠️ 无'),
+        ('经典来源', 'has_classic_source', '✅ 标注了经典来源', lambda v: '✅' if v else '⚠️ 无'),
+        ('前沿覆盖', 'has_frontier', '✅ 有前沿数据', lambda v: '✅' if v else '⚠️ 无'),
+        ('组织原则', 'has_organizing_principle', '✅ 说明了传导链', lambda v: '✅' if v else '⚠️ 未说明'),
+    ]
+
+    print(f"| 指标 | {' | '.join(labels)} |")
+    print(f"|------|{'|'.join(['------' for _ in labels])}|")
+    for metric_name, key, _, fmt_func in metrics:
+        values = [fmt_func(skeletons[b][key]) for b in labels]
+        print(f"| {metric_name} | {' | '.join(values)} |")
+
+    # 总分
+    print(f"\n## 总分\n")
+    for b in labels:
+        s = skeletons[b]
+        score = sum([
+            s['n_under_8'],
+            s['has_stability'],
+            s['has_chain'],
+            s['has_classic_source'],
+            s['has_frontier'],
+            s['has_organizing_principle'],
+        ])
+        bar = '█' * score + '░' * (6 - score)
+        print(f"  {s['name']}: {score}/6  {bar}")
+
+    # 差异诊断
+    print(f"\n## 差异诊断\n")
+    all_keys = ['n_under_8', 'has_stability', 'has_chain', 'has_classic_source', 'has_frontier', 'has_organizing_principle']
+    for key in all_keys:
+        values = [skeletons[b][key] for b in labels]
+        if len(set(values)) > 1:
+            # 有差异
+            for b in labels:
+                if not skeletons[b][key]:
+                    metric_names = {
+                        'n_under_8': '骨头数>8',
+                        'has_stability': '缺时效性标签(🟢🟡🔴)',
+                        'has_chain': '缺传导链',
+                        'has_classic_source': '缺经典来源标注',
+                        'has_frontier': '缺前沿数据覆盖',
+                        'has_organizing_principle': '缺组织原则说明',
+                    }
+                    print(f"  ❌ {skeletons[b]['name']}: {metric_names.get(key, key)}")
 
     conn.close()
 
