@@ -1445,7 +1445,14 @@ def cmd_extract():
     p.add_argument('--methodology', help='方法论')
     p.add_argument('--limitations', help='时代局限 JSON: ["...","..."]')
     p.add_argument('--json-file', help='从 JSON 文件读取（替代以上所有参数）')
+    p.add_argument('--batch', help='批量模式: 生成领域查询矩阵 (extract --batch <domain>)')
     args = p.parse_args(sys.argv[2:])
+
+    # 批量模式——路由到批量提取器
+    if args.batch:
+        sys.argv = [sys.argv[0], 'extract-batch', args.batch] + ([sys.argv[3]] if len(sys.argv) > 3 else [])
+        cmd_extract_batch()
+        return
 
     # 如果指定了 JSON 文件——从文件读取
     deep_data = {}
@@ -1610,6 +1617,152 @@ def cmd_extract():
             print(f"   🔄 结构性讽刺: {len(p4['structural_ironies'])} 条")
 
     conn.close()
+
+
+def cmd_extract_batch():
+    """批量经典提取——生成全部经典的查询矩阵
+    用法: extract --batch <domain> [--deep]
+
+    输出: 每本经典的16条查询（4-pass × 4角度）——AI一次性并行执行
+    所有查询——结果回来后——逐本结构化→入库。
+
+    效果: 5本经典×20min串行=100min → 并行=20min
+    """
+    domain = sys.argv[3] if len(sys.argv) > 3 else None
+    deep = '--deep' in sys.argv
+
+    if not domain:
+        print("❌ 需要 domain. 用法: extract --batch <domain> [--deep]")
+        print("   可用领域: negotiation, supplements, psychology, sexual-health, pleasure")
+        sys.exit(1)
+
+    conn = get_db()
+
+    # 找该领域的所有已注册经典
+    classics = conn.execute("""
+        SELECT id, title, author, year, notes FROM classics
+        WHERE domain = ?
+        ORDER BY id
+    """, (domain,)).fetchall()
+
+    if not classics:
+        print(f"📭 领域 '{domain}' 没有经典。先注册: db.py add-classic --title '...' --domain '{domain}'")
+        conn.close()
+        return
+
+    # 检查提取状态
+    need_extraction = []
+    already_deep = []
+    for c in classics:
+        notes_str = c['notes'] or '{}'
+        try:
+            notes = json.loads(notes_str)
+        except json.JSONDecodeError:
+            notes = {}
+        depth = notes.get('extraction_depth', 'none')
+        if depth == 'deep':
+            already_deep.append(c)
+        else:
+            need_extraction.append(c)
+
+    print(f"# 批量经典提取: {domain}\n")
+    print(f"  已深层提取: {len(already_deep)} 本")
+    print(f"  待提取: {len(need_extraction)} 本\n")
+
+    if not need_extraction:
+        print("✅ 所有经典已完成深层提取。")
+        conn.close()
+        return
+
+    # 生成查询矩阵
+    all_queries = {}
+    for c in need_extraction:
+        title = c['title']
+        author = c['author'] or ''
+        slug = re.sub(r'[^a-z0-9]+', '-', title.lower())[:40]
+
+        queries = {
+            "classic_id": c['id'],
+            "title": title,
+            "author": author,
+            "year": c['year'],
+            "slug": slug,
+            "pass1_surface": [
+                f'"{title}" {author} table of contents chapter structure organization',
+                f'"{title}" {author} Wikipedia summary key concepts framework',
+                f'"{title}" {author} main ideas key claims summary',
+                f'"{title}" {author} methodology how did they reach conclusions',
+            ],
+            "pass2_deep": [
+                f'"{title}" critique limitations methodology criticism',
+                f'"{title}" blind spots what it misses ignores',
+                f'"{title}" implicit assumptions unstated premises',
+                f'{author} "{title}" academic review critical analysis',
+            ],
+            "pass3_temporal": [
+                f'"{title}" replication crisis what held up overturned 2024',
+                f'"{title}" debunked claims failed to replicate collapsed',
+                f'"{title}" updated evidence 2024 2025 current status',
+                f'"{title}" author later corrections retractions acknowledged errors',
+            ],
+            "pass4_cross_classic": [
+                f'"{title}" vs compared to related books debate',
+                f'critique of "{title}" by other scholars authors',
+                f'"{title}" misreadings creative misinterpretations how it is used',
+                f'"{title}" self-contradiction structural irony limitations',
+            ],
+        }
+
+        if deep:
+            # 深层提取：找相关经典用于 Pass4 比较
+            related = conn.execute("""
+                SELECT title, author FROM classics
+                WHERE domain = ? AND id != ?
+                LIMIT 3
+            """, (domain, c['id'])).fetchall()
+            for r in related:
+                queries["pass4_cross_classic"].append(
+                    f'"{title}" vs "{r["title"]}" comparison differences'
+                )
+
+        all_queries[slug] = queries
+
+    conn.close()
+
+    # 输出查询矩阵
+    total_queries = sum(
+        len(q['pass1_surface']) + len(q['pass2_deep']) +
+        len(q['pass3_temporal']) + len(q['pass4_cross_classic'])
+        for q in all_queries.values()
+    )
+
+    print(f"## 查询矩阵: {len(need_extraction)} 本经典 × ~16 queries = {total_queries} 次搜索\n")
+    print("> 一次性并行执行所有搜索——结果回来后——逐本结构化→入库\n")
+
+    for slug, qdata in all_queries.items():
+        print(f"### [{qdata['classic_id']}] {qdata['title']} ({qdata['year']})")
+        print(f"   作者: {qdata['author']}")
+        print(f"   Pass1 表层 ({len(qdata['pass1_surface'])} queries)")
+        for q in qdata['pass1_surface']:
+            print(f"     - {q}")
+        print(f"   Pass2 深层 ({len(qdata['pass2_deep'])} queries)")
+        for q in qdata['pass2_deep']:
+            print(f"     - {q}")
+        print(f"   Pass3 时间检验 ({len(qdata['pass3_temporal'])} queries)")
+        for q in qdata['pass3_temporal']:
+            print(f"     - {q}")
+        print(f"   Pass4 跨经典 ({len(qdata['pass4_cross_classic'])} queries)")
+        for q in qdata['pass4_cross_classic']:
+            print(f"     - {q}")
+        print()
+
+    # 输出快速命令
+    print("---")
+    print("## 执行后入库")
+    for slug, qdata in all_queries.items():
+        print(f"  python3 db.py extract --deep --json-file /tmp/extract-{slug}.json")
+
+    print(f"\n⏱️  预计: {len(need_extraction)}本 × 20min串行 = {len(need_extraction)*20}min → 并行 = ~20min")
 
 
 def cmd_skeleton():
@@ -1899,6 +2052,7 @@ def main():
         'reused': cmd_reused,
         'frontier': cmd_frontier,
         'extract': cmd_extract,
+        'extract-batch': cmd_extract_batch,
         'skeleton': cmd_skeleton,
     }
 
