@@ -1416,6 +1416,153 @@ def cmd_frontier():
     cmd_frontier()
 
 
+def cmd_extract():
+    """经典骨架提取——从在线信息构建结构化经典骨架
+    用法: extract --title '书名' --author '作者' --year 1981 --domain '领域'
+               --principle '组织原则' --modules '[{...}]' --claims '[{...}]'
+               --relationships '{...}' --methodology '...' --limitations '[...]'
+
+    也支持 --json-file 从文件读取完整 JSON。
+
+    输出: 注册 classic + 自动创建 skeleton nodes
+    """
+    import argparse
+    p = argparse.ArgumentParser(description='经典骨架提取器')
+    p.add_argument('--title', help='书名')
+    p.add_argument('--author', help='作者')
+    p.add_argument('--year', type=int, help='出版年份')
+    p.add_argument('--domain', help='领域标签')
+    p.add_argument('--url', help='来源URL')
+    p.add_argument('--principle', help='组织原则（一句话: 这本书按什么分类）')
+    p.add_argument('--modules', help='一级模块 JSON: [{"name":"I","title":"...","children":[...]},...]')
+    p.add_argument('--claims', help='关键主张 JSON: [{"text":"...","location":"...","evidence":""},...]')
+    p.add_argument('--relationships', help='与其他经典的关系 JSON: {"inherits":"","challenged_by":"","complements":""}')
+    p.add_argument('--methodology', help='方法论')
+    p.add_argument('--limitations', help='时代局限 JSON: ["...","..."]')
+    p.add_argument('--json-file', help='从 JSON 文件读取（替代以上所有参数）')
+    args = p.parse_args(sys.argv[2:])
+
+    # 如果指定了 JSON 文件——从文件读取
+    if args.json_file:
+        with open(args.json_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        args.title = data.get('title', args.title)
+        args.author = data.get('author', args.author)
+        args.year = data.get('year', args.year)
+        args.domain = data.get('domain', args.domain)
+        args.url = data.get('url', args.url)
+        args.principle = data.get('organizing_principle', args.principle)
+        args.methodology = data.get('methodology', args.methodology)
+        # modules/claims/relationships/limitations 保持 JSON 字符串格式
+        if 'modules' in data:
+            args.modules = json.dumps(data['modules'], ensure_ascii=False)
+        if 'key_claims' in data:
+            args.claims = json.dumps(data['key_claims'], ensure_ascii=False)
+        if 'relationships' in data:
+            args.relationships = json.dumps(data['relationships'], ensure_ascii=False)
+        if 'temporal_limitations' in data:
+            args.limitations = json.dumps(data['temporal_limitations'], ensure_ascii=False)
+
+    if not args.title:
+        print("❌ 需要 --title '书名'")
+        sys.exit(1)
+
+    conn = get_db()
+
+    # 1. 注册或更新 classic
+    existing = conn.execute("SELECT id FROM classics WHERE title = ?", (args.title,)).fetchone()
+    notes = {
+        'organizing_principle': args.principle,
+        'methodology': args.methodology,
+        'temporal_limitations': json.loads(args.limitations) if args.limitations else [],
+        'relationships': json.loads(args.relationships) if args.relationships else {},
+    }
+
+    if existing:
+        cid = existing['id']
+        conn.execute("""
+            UPDATE classics SET author=?, year=?, domain=?, notes=?, updated_at=datetime('now')
+            WHERE id=?
+        """, (args.author, args.year, args.domain, json.dumps(notes, ensure_ascii=False), cid))
+        print(f"📝 更新经典: [{cid}] {args.title}")
+    else:
+        cur = conn.execute("""
+            INSERT INTO classics (title, author, year, domain, status, source_url, notes)
+            VALUES (?,?,?,?,'mapped',?,?)
+        """, (args.title, args.author, args.year, args.domain, args.url, json.dumps(notes, ensure_ascii=False)))
+        cid = cur.lastrowid
+        print(f"✅ 注册经典: [{cid}] {args.title}")
+
+    # 2. 创建骨架节点——每个模块一个 node
+    if args.modules:
+        modules = json.loads(args.modules)
+        # 删除旧骨架（如果重新提取）
+        conn.execute("DELETE FROM classic_skeletons WHERE classic_id = ? AND node_type IN ('module','chapter','principle')", (cid,))
+
+        # 先创建组织原则节点
+        if args.principle:
+            conn.execute("""
+                INSERT INTO classic_skeletons (classic_id, node_type, parent_id, title, content_summary, sort_order)
+                VALUES (?, 'principle', NULL, ?, ?, 0)
+            """, (cid, f"组织原则: {args.principle}", args.principle))
+
+        for i, mod in enumerate(modules):
+            mod_name = mod.get('name', f'Module {i+1}')
+            mod_title = mod.get('title', mod_name)
+            cur = conn.execute("""
+                INSERT INTO classic_skeletons (classic_id, node_type, parent_id, title, content_summary, sort_order)
+                VALUES (?, 'module', NULL, ?, ?, ?)
+            """, (cid, f"{mod_name}: {mod_title}", mod.get('summary', ''), i+1))
+            parent_id = cur.lastrowid
+
+            # 子模块
+            children = mod.get('children', [])
+            for j, child in enumerate(children):
+                conn.execute("""
+                    INSERT INTO classic_skeletons (classic_id, node_type, parent_id, title, content_summary, sort_order)
+                    VALUES (?, 'chapter', ?, ?, ?, ?)
+                """, (cid, parent_id, child.get('title', child) if isinstance(child, dict) else child,
+                      child.get('summary', '') if isinstance(child, dict) else '', j+1))
+
+        skel_count = conn.execute("SELECT COUNT(*) FROM classic_skeletons WHERE classic_id=?", (cid,)).fetchone()[0]
+        print(f"   📑 {skel_count} 个骨架节点")
+
+    # 3. 存储关键主张
+    if args.claims:
+        claims_data = json.loads(args.claims)
+        claim_count = 0
+        for c in claims_data:
+            claim_id = f"C{cid:03d}-{claim_count+1:02d}"
+            conn.execute("""
+                INSERT OR REPLACE INTO claims (id, text, claim_type, confidence, source_type, source_classic_id, evidence_summary, temporal_stability)
+                VALUES (?, ?, 'factual', 'medium', 'classic', ?, ?, 'stable')
+            """, (claim_id, c.get('text', ''), cid, c.get('evidence', '')))
+            claim_count += 1
+        if claim_count > 0:
+            print(f"   📎 {claim_count} 条关键主张入库")
+
+    conn.commit()
+
+    # 4. 报告
+    print(f"\n📊 经典骨架: {args.title}")
+    if args.principle:
+        print(f"   组织原则: {args.principle}")
+    if args.methodology:
+        print(f"   方法论: {args.methodology}")
+    if args.relationships:
+        rels = json.loads(args.relationships)
+        for k, v in rels.items():
+            if v:
+                label = {'inherits': '继承', 'challenged_by': '被反驳', 'complements': '互补'}.get(k, k)
+                print(f"   {label}: {v}")
+    if args.limitations:
+        lims = json.loads(args.limitations)
+        if lims:
+            print(f"   时代局限: {len(lims)} 条")
+
+    conn.close()
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
@@ -1447,6 +1594,7 @@ def main():
         'reuse': cmd_reuse,
         'reused': cmd_reused,
         'frontier': cmd_frontier,
+        'extract': cmd_extract,
     }
 
     if cmd in commands:
