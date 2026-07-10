@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS claims (
     source_type TEXT,
     source_classic_id INTEGER REFERENCES classics(id),
     source_url TEXT,
+    temporal_stability TEXT DEFAULT 'stable',
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now'))
 );
@@ -195,6 +196,11 @@ CREATE INDEX IF NOT EXISTS idx_reuse_imported ON claim_reuse(imported_from_book)
 def cmd_init():
     conn = get_db()
     conn.executescript(SCHEMA)
+    # 迁移已存在的数据库——添加新列（忽略已存在错误）
+    try:
+        conn.execute("ALTER TABLE claims ADD COLUMN temporal_stability TEXT DEFAULT 'stable'")
+    except sqlite3.OperationalError:
+        pass  # 列已存在
     conn.commit()
     conn.close()
     print(f"✅ 数据库已初始化: {DB_PATH}")
@@ -1310,6 +1316,106 @@ def cmd_reused():
     conn.close()
 
 
+def cmd_frontier():
+    """扫描前沿层标记——识别哪些主张来自经典，哪些来自前沿，哪些需要刷新
+    用法: frontier <book_id>  — 分析该书主张的 temporal_stability 分布 + 前沿缺口
+          frontier --mark <claim_id> <stable|evolving|volatile>  — 手动标记主张稳定性
+    """
+    if len(sys.argv) < 3:
+        print("用法: frontier <book_id>       — 分析主张稳定性分布")
+        print("      frontier --mark <claim_id> <stable|evolving|volatile>")
+        print("      frontier --scan <book_id>  — 扫描前沿维度缺口")
+        sys.exit(1)
+
+    conn = get_db()
+
+    if sys.argv[2] == '--mark':
+        claim_id = sys.argv[3]
+        stability = sys.argv[4]
+        if stability not in ('stable', 'evolving', 'volatile'):
+            print("❌ 稳定性必须是: stable, evolving, volatile")
+            sys.exit(1)
+        conn.execute("UPDATE claims SET temporal_stability = ? WHERE id = ?", (stability, claim_id))
+        conn.commit()
+        print(f"✅ [{claim_id}] temporal_stability → {stability}")
+        conn.close()
+        return
+
+    if sys.argv[2] == '--scan':
+        book_id = sys.argv[3] if len(sys.argv) > 3 else 'pleasure'
+        # 扫描每根骨头对应的前沿领域
+        print(f"# {book_id} 前沿扫描缺口\n")
+        print("> 经典层给维度——前沿层给坐标。以下检测每根骨头是否有前沿覆盖。\n")
+
+        # 查该书的 claim_chapters 覆盖了哪些章节
+        chapters = conn.execute("""
+            SELECT DISTINCT cc.chapter_file FROM claim_chapters cc
+            WHERE cc.book_id = ?
+        """, (book_id,)).fetchall()
+
+        # 前沿维度模板——按书类型
+        frontier_dimensions = {
+            '健康/医学': ['可穿戴设备数据', '新批准药物/疗法(≤2年)', '指南更新(≤3年)', '数字健康App'],
+            '金融/经济': ['当前市场数据(≤1年)', '监管政策变化(≤2年)', '新兴金融工具', '央行最新报告'],
+            '性/关系': ['性科技产品(≤2年)', 'AI伴侣/Robot最新状态', '远程触觉技术', '生物反馈/量化高潮数据', '同意/伦理的法律变化'],
+            '通用': ['该领域2025-2026最新meta分析', '近2年推翻的旧假设', '近2年新提出的框架/模型'],
+        }
+
+        # 检测: 对于性/关系类书籍
+        domain_match = [d for d in frontier_dimensions if d in ('性/关系', '通用')]
+        for domain in domain_match:
+            print(f"## {domain}前沿维度\n")
+            for dim in frontier_dimensions[domain]:
+                print(f"- [ ] **{dim}**: 是否有主张/来源距今≤2年？")
+            print()
+
+        # 查已有主张的 temporal_stability 分布
+        stability_dist = conn.execute("""
+            SELECT cc.chapter_file, c.temporal_stability, COUNT(*)
+            FROM claims c
+            JOIN claim_chapters cc ON c.id = cc.claim_id
+            WHERE cc.book_id = ?
+            GROUP BY cc.chapter_file, c.temporal_stability
+            ORDER BY cc.chapter_file
+        """, (book_id,)).fetchall()
+
+        if stability_dist:
+            print("## 当前主张稳定性分布\n")
+            current_ch = None
+            for row in stability_dist:
+                ch, stab, cnt = row
+                if ch != current_ch:
+                    print(f"**{ch}**")
+                    current_ch = ch
+                icon = {'stable': '🟢', 'evolving': '🟡', 'volatile': '🔴'}.get(stab, '⚪')
+                print(f"  {icon} {stab}: {cnt} 条")
+            print()
+
+        # 前沿引用年龄检查
+        evolving_volatile = conn.execute("""
+            SELECT c.id, c.temporal_stability, cc.chapter_file, c.text
+            FROM claims c
+            JOIN claim_chapters cc ON c.id = cc.claim_id
+            WHERE cc.book_id = ? AND c.temporal_stability != 'stable'
+        """, (book_id,)).fetchall()
+
+        if evolving_volatile:
+            print("## ⚠️ 需要关注时效性的主张\n")
+            for row in evolving_volatile:
+                print(f"- [{row[0]}] ({row[1]}) {row[3][:100]}...")
+            print(f"\n共 {len(evolving_volatile)} 条 non-stable 主张——建议在标注的刷新期限前核查\n")
+
+        conn.close()
+        return
+
+    # 默认: 分析指定 book 的稳定性分布
+    book_id = sys.argv[2]
+    conn.close()
+    # 重定向到 --scan
+    sys.argv = [sys.argv[0], sys.argv[1], '--scan', book_id]
+    cmd_frontier()
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
@@ -1340,6 +1446,7 @@ def main():
         'pattern-save': cmd_pattern_save,
         'reuse': cmd_reuse,
         'reused': cmd_reused,
+        'frontier': cmd_frontier,
     }
 
     if cmd in commands:

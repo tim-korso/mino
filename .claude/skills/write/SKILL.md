@@ -687,6 +687,49 @@ migrate + stats → 展示完成状态。
 
 /write 是入口，canon-mapper/deep-research/claim-verification 是引擎。
 
+## 经典+前沿双轨
+
+经典给维度——前沿给坐标。单轨的 canon-mapper 只能从经典中提取骨架结构。但性科技、AI 伴侣、生物反馈等维度发展速度快于任何经典。
+
+### 双轨架构
+
+```
+/write new <话题>
+    │
+    ├── 经典轨（canon-mapper）               ├── 前沿轨（frontier scan）
+    │   discover → extract skeleton          │   frontier --scan → surface
+    │   → map → search directions            │   → 维度缺口检测 → 标记时效性
+    │                                        │
+    └── 交汇: 骨架 = 经典维度 × 前沿坐标
+```
+
+### 时效性标记
+
+每条主张入库时标记 `temporal_stability`：
+
+| 标记 | 含义 | 刷新周期 | 示例 |
+|------|------|---------|------|
+| `stable` | 不太会过时 | 5年+ | 解剖学事实、经典原理、神经通路 |
+| `evolving` | 可能在 5 年内更新 | 2-5年 | 治疗指南、市场数据、meta分析 |
+| `volatile` | 可能在 1-2 年内过时 | 6-12月 | 产品信息、AI能力、公司市值、App用户数 |
+
+### 命令
+
+```bash
+# 扫描前沿缺口（哪些维度没有 ≤2 年的数据覆盖）
+python3 db.py frontier --scan <book_id>
+
+# 手动标记主张时效性
+python3 db.py frontier --mark <claim_id> volatile
+
+# 查看全局稳定性分布
+python3 db.py frontier <book_id>
+```
+
+### 管线集成
+
+`/write continue` 自动执行前沿扫描——如果发现 volatile 主张的刷新期已过，提示"以下主张可能已过时，建议重新搜索验证"。
+
 ## 生产工具
 
 写完书之后，三条命令把 markdown 章节变成可交付的成品：
