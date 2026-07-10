@@ -92,6 +92,21 @@ BOOKS = {
             '05-功能障碍.md',
             '06-关系系统.md',
         ]
+    },
+    'pleasure': {
+        'dir': 'workspace/pleasure-book',
+        'title': '性爱情趣的六根骨头',
+        'subtitle': '从历史到技巧——性快感的学习指南',
+        'author': '汤姆 + 娜娜',
+        'lang': 'zh-CN',
+        'files': [
+            '01-历史.md',
+            '02-快感地图.md',
+            '03-技巧.md',
+            '04-工具.md',
+            '05-沟通.md',
+            '06-场景.md',
+        ]
     }
 }
 

@@ -556,6 +556,11 @@ def cmd_migrate():
             'dir': 'workspace/sex-book',
             'files': ['01-欲望系统.md', '02-血管系统.md', '03-神经系统.md',
                       '04-结构系统.md', '05-功能障碍.md', '06-关系系统.md', '07-附录.md']
+        },
+        'pleasure': {
+            'dir': 'workspace/pleasure-book',
+            'files': ['01-历史.md', '02-快感地图.md', '03-技巧.md',
+                      '04-工具.md', '05-沟通.md', '06-场景.md']
         }
     }
 
@@ -859,6 +864,11 @@ def cmd_index():
             'dir': 'workspace/sex-book',
             'files': ['01-欲望系统.md', '02-血管系统.md', '03-神经系统.md',
                       '04-结构系统.md', '05-功能障碍.md', '06-关系系统.md', '07-附录.md']
+        },
+        'pleasure': {
+            'dir': 'workspace/pleasure-book',
+            'files': ['01-历史.md', '02-快感地图.md', '03-技巧.md',
+                      '04-工具.md', '05-沟通.md', '06-场景.md']
         }
     }
 
