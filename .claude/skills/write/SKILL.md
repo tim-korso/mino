@@ -24,6 +24,26 @@ description: >
 
 当用户说 "write new <话题>" 时，**一气呵成跑到底**，不中断问"要不要继续"。
 
+### 执行总览：两阶段 Workflow
+
+```
+Step 1: 发现经典（手动并行搜索，~2min）
+    │  经典轨: 5-10本奠基著作
+    │  前沿轨: ≤2年的新维度
+    │
+    ▼
+Step 2: 骨架搭建（Workflow: skeleton-builder，~5-8min）
+    │  Step 2.1: pipeline()——每本经典一个Agent并行提取维度
+    │  Step 2.2-2.3: 一个合成Agent做互斥聚类+DAG传导链
+    │  Step 2.4: parallel()——每根骨头一个Agent并行扫前沿
+    │  Step 2.5: 一个质检Agent做五维自检→输出00-骨架.md
+    │
+    ▼
+Step 3: 注册项目 → Step 4: 经典提取（Workflow: pipeline 并行深层刨） → Step 5: 自动继续
+```
+
+> **关键分叉**：Step 1 发现经典后，**不手动搭骨架**——调用 `Workflow({name: 'skeleton-builder', args: {books, domain}})`。详见下方「Workflow 之道」章节。
+
 ### Step 1: 领域分层——经典轨 + 前沿轨并行
 
 ```
@@ -123,6 +143,260 @@ description: >
 全部通过 → 生成 00-骨架.md → 给用户看 → 等"可以了"
 ```
 
+## Workflow 之道：五步算法 × Agent 编排
+
+> 参考：`/agent-orchestration` — `pipeline()` 默认优先，`parallel()` 只在需要跨 item 聚合时用；`agent()` + `schema` 做结构化提取；`phase()` 做进度分组。
+
+五步骨架算法不是"你一个人读十本经典然后归纳"——是**十个人各读一本、一个人在交叉比较、一个人建传导链、N个人并行扫前沿**。下面的 Workflow 脚本把这个过程从 ~30min 手搓变成 ~5-8min 自动跑。
+
+### Workflow 脚本：`skeleton-builder`
+
+```javascript
+export const meta = {
+  name: 'skeleton-builder',
+  description: '五步骨架算法——经典维度矩阵→聚类→传导链→前沿注入→自检',
+  phases: [
+    { title: 'Step1 经典维度矩阵', detail: '每本经典一个Agent并行提取组织原则' },
+    { title: 'Step2 聚类+DAG', detail: '合成Agent做互斥聚类+传导链构建' },
+    { title: 'Step3 前沿注入', detail: '每根骨头并行扫前沿缺口' },
+    { title: 'Step4 自检输出', detail: '五维自检→生成骨架MD' },
+  ],
+}
+
+// books 和 domain 由调用方通过 args 传入
+const { books, domain } = args
+// books: [{title, author, year}] — Step1 发现的经典列表
+// domain: string — 领域名
+
+// ═══ Step 2.1: 经典维度矩阵（pipeline——每本经典独立走） ═══
+phase('Step1 经典维度矩阵')
+
+const DIMENSION_SCHEMA = {
+  type: 'object',
+  properties: {
+    title: { type: 'string' },
+    organizing_principle: { type: 'string', description: '这本书的目录按什么组织？时间/主题/难度/部位/类型？' },
+    core_question: { type: 'string', description: '如果这本书只能回答一个问题——是什么？' },
+    dimensions: { type: 'array', items: { type: 'string' }, description: '从这本书中提取的2-4个候选维度——不是"说了什么"，是"按什么分类"' },
+    how_different: { type: 'string', description: '它的分类方式和别的经典有什么不同？互补还是重叠？' },
+  },
+  required: ['title', 'organizing_principle', 'core_question', 'dimensions', 'how_different']
+}
+
+const dimensionResults = await pipeline(
+  books,
+  book => agent(
+    `你是经典维度提取Agent。分析《${book.title}》（${book.author}, ${book.year}）。
+
+不要提取"这本书说了什么"——提取"这本书按什么分类"。
+
+回答三个问题：
+1. 目录是按什么组织的？（时间/主题/难度/身体部位/类型？）
+2. 如果这本书只能回答一个问题——是什么？
+3. 它的分类方式和同领域其他经典有什么不同？
+
+搜索策略：
+- 搜索 "${book.title} ${book.author} table of contents chapter structure"
+- 搜索 "${book.title} ${book.author} summary key concepts framework"
+
+返回结构化JSON。中文。`,
+    { label: book.author, schema: DIMENSION_SCHEMA, effort: 'low' }
+  )
+)
+
+const validDimensions = dimensionResults.filter(Boolean)
+log(`维度矩阵完成: ${validDimensions.length}/${books.length} 本`)
+
+// ═══ Step 2.2-2.3: 维度聚类 + 传导链（一个Agent做交叉比较） ═══
+phase('Step2 聚类+DAG')
+
+const SKELETON_SCHEMA = {
+  type: 'object',
+  properties: {
+    bones: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          chapter_num: { type: 'number' },
+          title: { type: 'string', description: '骨头名称（简短）' },
+          core_question: { type: 'string', description: '这根骨头回答什么核心问题？' },
+          classic_basis: { type: 'string', description: '从哪本经典学的？（书名+分类原则）' },
+          merged_from: { type: 'array', items: { type: 'string' }, description: '合并了哪些候选维度？' },
+        },
+        required: ['chapter_num', 'title', 'core_question', 'classic_basis']
+      }
+    },
+    conduction_dag: { type: 'string', description: '传导链——ASCII DAG。标注哪些是线性传导(A→B→C)、哪些平行(A→B, A→C)、哪些汇聚(A+B→D)' },
+    mutual_exclusivity_check: { type: 'string', description: '互斥性自检——每对骨头：删掉其中一根读者会漏掉什么？如果答案是"没什么"→标记为冗余' },
+    dropped_dimensions: { type: 'array', items: { type: 'string' }, description: '哪些候选维度被合并/丢弃了？为什么？' },
+    bone_count: { type: 'number' },
+  },
+  required: ['bones', 'conduction_dag', 'mutual_exclusivity_check', 'dropped_dimensions', 'bone_count']
+}
+
+const skeleton = await agent(
+  `你是骨架合成Agent。以下是${domain}领域${validDimensions.length}本经典的维度提取结果。
+
+## 经典维度矩阵
+${JSON.stringify(validDimensions, null, 2)}
+
+## 任务：五步算法的第2.2和2.3步
+
+### 2.2 维度聚类——互斥性检查
+- 每对候选维度：它们回答的是同一个问题吗？
+  - 是→合并（一个是另一个的子维度）
+  - 否→保留为独立骨头
+- 一根骨头=一个核心问题。两根骨头的核心问题可以合并为一句→这两根应该是一根
+- 目标：≤8根互斥的骨头
+
+### 2.3 传导链——DAG不只是→→→
+- 每对骨头："理解A是否帮助理解B？"
+  - 是→A→B（有向边）
+  - 否→"平行视角吗？"→标记parallel
+  - 否→检查是否A和B回答同一个问题的不同侧面
+- 输出DAG——标注线性传导/平行视角/分叉汇聚
+- 自检：读者能否跳过Ch3直接读Ch6？能→不是传导链，是主题列表
+
+返回结构化JSON。中文。`,
+  { label: '骨架合成', schema: SKELETON_SCHEMA, effort: 'medium' }
+)
+
+if (!skeleton) throw new Error('骨架合成失败')
+log(`${skeleton.bone_count} 根骨头，传导链已构建`)
+
+// ═══ Step 2.4: 前沿缺口注入（每根骨头一个Agent并行扫） ═══
+phase('Step3 前沿注入')
+
+const FRONTIER_SCHEMA = {
+  type: 'object',
+  properties: {
+    bone_title: { type: 'string' },
+    classic_layer: { type: 'string', description: '经典层给了什么稳定维度？' },
+    frontier_layer: { type: 'string', description: '前沿层有什么新东西？≤2年的数据/产品/争议' },
+    temporal_stability: { type: 'string', enum: ['stable', 'evolving', 'volatile'], description: '🟢/🟡/🔴 时效性评估' },
+    stale_risk: { type: 'string', description: '五年后这章还准吗？最可能过时的具体是什么？' },
+  },
+  required: ['bone_title', 'classic_layer', 'frontier_layer', 'temporal_stability', 'stale_risk']
+}
+
+const frontierResults = await parallel(
+  skeleton.bones.map(bone => () =>
+    agent(
+      `你是前沿扫描Agent。对这根骨头做前沿注入：
+
+骨头：${bone.title}
+核心问题：${bone.core_question}
+经典依据：${bone.classic_basis}
+
+搜索策略：
+- "${domain} ${bone.title} latest developments 2024 2025 2026"
+- "${domain} ${bone.title} emerging trends controversies"
+- "${domain} ${bone.title} new research breakthroughs"
+
+回答：
+1. 经典层给了什么稳定维度？（千年不变的结构）
+2. 前沿层有什么≤2年的新东西？
+3. 时效性：🟢stable/🟡mixed/🔴volatile？
+4. 五年后这章最可能过时的具体是什么？
+
+返回结构化JSON。中文。`,
+      { label: bone.title, schema: FRONTIER_SCHEMA, effort: 'low' }
+    )
+  )
+)
+
+const validFrontiers = frontierResults.filter(Boolean)
+log(`前沿扫描完成: ${validFrontiers.length}/${skeleton.bones.length} 根`)
+
+// ═══ Step 2.5: 五维自检 + 生成骨架MD ═══
+phase('Step4 自检输出')
+
+const finalSkeleton = await agent(
+  `你是骨架质检Agent。基于以下数据生成最终骨架MD。
+
+## 骨架数据
+${JSON.stringify({ bones: skeleton.bones, conduction: skeleton.conduction_dag }, null, 2)}
+
+## 前沿数据
+${JSON.stringify(validFrontiers, null, 2)}
+
+## 任务
+
+### 先做五维自检：
+1. N ≤ 8？
+2. 每根骨头的核心问题是否独特？（两两不能合并）
+3. 传导链至少有一个起点和一个终点？
+4. 时效性标签是否每根骨头都有？
+5. 找一本注册的经典——它的分类方式有没有出现在骨架中？如果没有→为什么？冗余还是遗漏？
+
+### 然后生成完整的 00-骨架.md：
+\`\`\`markdown
+# <领域>知识的<N>根骨头 · 骨架 v1
+
+> 这本书写给谁——一句话
+
+## 骨架是怎么搭的（可审计——每根骨头的学术血统）
+| 骨头 | 回答的问题 | 经典依据（从哪学的） | 前沿缺口 | 时效性 |
+|------|-----------|-------------------|---------|--------|
+（每根骨头一行）
+
+## 核心洞见：<一句话>
+[骨头关系图——ASCII art]
+
+## 传导链（DAG——不只是线性箭头）
+[标注线性传导/平行视角/分叉汇聚]
+
+## 每根骨头的经典×前沿
+| 骨头 | 经典层（稳定结构） | 前沿层（当前坐标） |
+|------|-----------------|-----------------|
+（每根骨头一行）
+
+## 本书结构
+[每章的节计划——§X.1 §X.2 ...]
+
+## 如何使用
+[三种读者画像的阅读路径——标注哪些章可跳过、哪些是前提]
+\`\`\`
+
+直接输出完整的 00-骨架.md 内容。不要JSON包裹——输出纯markdown。`,
+  { label: '骨架输出', effort: 'medium' }
+)
+
+return { skeleton_md: finalSkeleton, bone_count: skeleton.bone_count }
+```
+
+### 使用方式
+
+```bash
+# 在 /write new <话题> 的 Step 1 发现经典后，调用 Workflow：
+Workflow({
+  name: 'skeleton-builder',
+  args: {
+    books: [
+      {title: '经典1', author: '作者1', year: 2000},
+      {title: '经典2', author: '作者2', year: 1995},
+      // ... Step 1 发现的5-10本经典
+    ],
+    domain: '美国警察'
+  }
+})
+# 输出 → 完整的 00-骨架.md + 每根骨头的经典血统+时效性标签
+```
+
+### 手动 vs Workflow 对比
+
+| | 手动（一人读十本） | Workflow 之道（十人各读一本） |
+|---|---|---|
+| Step 2.1 维度提取 | 串行——认知负荷爆了 | `pipeline()`——每本经典一个Agent，并行深读 |
+| Step 2.2-2.3 聚类+DAG | 一个人交叉比较十本 | 一个合成Agent拿所有维度结果做聚类 |
+| Step 2.4 前沿注入 | 逐根搜 | `parallel()`——N根骨头N个Agent并行扫 |
+| Step 2.5 自检+输出 | 手动写MD | 一个质检Agent跑五维自检→直接输出骨架MD |
+| **时间** | ~30min | **~5-8min** |
+| **每本经典的深度** | 取决于你能同时记住几本 | 每个Agent专读一本——不会稀释 |
+
+> **铁律**：`pipeline()` 用于 Step 2.1（每本经典独立走，不需要等其他经典）——不是 `parallel()`。`parallel()` 用于 Step 2.4（前沿扫描之间无依赖，但骨架合成需要所有前沿结果——所以前沿扫描用 `parallel()` 做 barrier）。Step 2.2-2.3 是一个Agent做交叉比较——这是整个流程中唯一不能并行化的步骤，也是最有价值的步骤。
+
 ### 经典提取: 4-pass 深层刨
 
 经典提取不是"搜一下目录"——是四轮下钻。刨不动的代价不是在表层少了一些细节——是在沙滩上盖楼。
@@ -169,8 +443,10 @@ description: >
 
 **经典提取**——自动化两条路:
 
-A. 单本: 用 8通道 Workflow（`classic-downloader`）并行搜索 → 结构化JSON → `db.py extract --deep --json-file`
+A. 单本: `db.py extract --deep --json-file <file>` 入库
 B. 批量: `db.py extract --batch <domain>` 生成查询矩阵 → Workflow 批量运行 → 逐本入库
+
+**经典提取 Workflow 模板**：10本书、4-pass深层提取、pipeline并行化——参考 `agent-orchestration` skill 中的 pipeline + schema 模式。脚本结构与上面的 `skeleton-builder` 同构：`pipeline(books, book => agent(extractPrompt, {schema: EXTRACTION_SCHEMA}))`，只是 prompt 从"提取维度"换成"四轮深层刨"。
 
 **骨架验证**——自动 5 维自检: `db.py skeleton validate <book_id>`
 
@@ -992,10 +1268,15 @@ python3 db.py pattern-save <book1> <claim1> <book2> <claim2> <pattern_type> '<no
 ## 工具速查
 
 ```bash
-# ── 经典提取 ──
+# ── 骨架搭建（Workflow 之道） ──
+# Workflow: skeleton-builder                              五步算法并行化——经典维度矩阵→聚类→DAG→前沿→自检
+#   调用: Workflow({name: 'skeleton-builder', args: {books: [...], domain: '...'}})
+#   参考: /agent-orchestration — pipeline/parallel/agent+schema 模式
+
+# ── 经典提取（Workflow 之道） ──
 db.py extract --deep --json-file /tmp/extract-xxx.json    # 单本入库
 db.py extract --batch <domain> --deep                      # 批量查询矩阵
-# Workflow: classic-downloader                              8通道并行提取(Internet Archive/Wikipedia/Google Books/Goodreads/Scholar/Amazon/Gutenberg/YouTube)
+# Workflow: 经典提取 pipeline(books, book => agent(4-pass extract, {schema}))  10本并行深层刨
 
 # ── 骨架 ──
 db.py skeleton propose <domain>                            # 经典维度聚类→候选骨头
