@@ -575,7 +575,11 @@ migrate + stats → 展示完成状态。
     │   ★发现故事 + ★历史深化 + ★误区爆破 + [EXXX]主张 + 前沿注入 + 经典深层注
     │   七项一次性织入——不允许"写完了再补"
     │
-    ├── Phase 1.5: 发展编辑（通读全书→结构修复+传导补全）
+    ├── Phase 1.3: 同步合成（读所有章核心产出→对齐表——断裂/重复/冲突/深度不均）
+    │
+    ├── Phase 1.5: 发展编辑（拿对齐表→结构修复——不给从零扫）
+    │
+    ├── Phase 1.6: 对抗充实（每章一个Challenger攻击论证→Agent补强薄弱处）
     │
     ├── Phase 2: 连贯性检查+自动修复（术语/论点/传导→自动修）
     │
@@ -606,8 +610,10 @@ export const meta = {
   phases: [
     { title: '状态检测', detail: '扫描文件+DB判断缺什么' },
     { title: 'Book Bible', detail: '读骨架→生成术语表+风格规则+跨章依赖图' },
-    { title: '写章', detail: 'pipeline——每根缺失骨头一个Agent写章+Book Bible' },
-    { title: '发展编辑', detail: '一个Agent通读全书→结构级修复' },
+    { title: '写章', detail: 'pipeline——每根骨头一个Agent，七项一轮织入' },
+    { title: '同步合成', detail: '读所有章的核心产出→对齐表（断裂/重复/冲突）' },
+    { title: '发展编辑', detail: '拿对齐表→结构修复（不给从零扫）' },
+    { title: '对抗充实', detail: '每章一个Challenger攻击→Agent补强论证' },
     { title: '充实', detail: 'parallel——每章检测薄弱点并自动补充' },
     { title: '深化检测', detail: '扫描模板A-I标记→报告可自动生成的附录' },
     { title: '连贯性检查', detail: '扫全书找术语/论点/分析起点矛盾' },
@@ -803,44 +809,155 @@ if (state.chapters_missing.length > 0) {
   }
   log(`写章完成: ${validChapters.length}/${missingBones.length} 章`)
 
-  // ═══ Phase 1.5: 发展编辑（一个Agent通读全书→结构级修复） ═══
-  // 对应出版社的 Developmental Edit——不是找错别字，是找骨架和血肉之间的裂缝
+  // ═══ Phase 1.3: 同步合成（一个Agent读所有章的核心产出→对齐表） ═══
+  // pipeline独立写章=每个Agent看不见对方写了什么。Book Bible告诉它们"应该连接什么"——但不知道对方实际写了什么。
+  // 同步合成器：不读全文——读每章的结构化摘要→找出断裂、重复、冲突→生成对齐表→给发展编辑用
+  if (validChapters.length > 1) {
+    phase('同步合成')
+
+    const SYNC_SCHEMA = {
+      type: 'object',
+      properties: {
+        chapter_summaries: { type: 'array', items: { type: 'object', properties: { chapter: { type: 'string' }, core_thesis: { type: 'string' }, key_terms_defined: { type: 'array', items: { type: 'string' } }, references_to_other_chapters: { type: 'array', items: { type: 'string' } }, evidence_anchors: { type: 'array', items: { type: 'string' } } } } } },
+        alignment_issues: { type: 'array', items: { type: 'object', properties: { type: { type: 'string', enum: ['duplicate_definition', 'broken_reference', 'term_conflict', 'missing_conduction', 'uneven_depth'] }, severity: { type: 'string', enum: ['minor', 'major'] }, chapters_involved: { type: 'array', items: { type: 'string' } }, description: { type: 'string' }, suggested_fix: { type: 'string' } } } } },
+        overall_alignment: { type: 'string', enum: ['tight', 'loose', 'broken'] },
+      },
+      required: ['chapter_summaries', 'alignment_issues', 'overall_alignment']
+    }
+
+    const sync = await agent(
+      `你是同步合成Agent。所有章节已由独立Agent写完成——你需要找出它们之间的对齐问题。
+
+## 任务
+1. 快速扫描 workspace/${book_id}/ 下所有章节文件（只读01-07开头的）
+2. 对每章提取结构化摘要：核心命题（一句话）、定义的关键术语（列表）、引用了哪些其他章、用了哪些证据锚点
+3. 生成对齐问题列表：
+   - duplicate_definition: 同一概念在两章中分别定义（哪个是权威版？）
+   - broken_reference: 一章说"如第二章所述"但第二章没有那个内容
+   - term_conflict: 同一术语在不同章中有不同含义
+   - missing_conduction: 骨架标注A→B但正文中没有连接
+   - uneven_depth: B2把莫斯处理成200行、B4只用了一句话引用——读者从Ch2到Ch4会感觉"丢了东西"
+
+## Book Bible参考（应该连接什么）
+${JSON.stringify(bible.cross_chapter_deps, null, 1)}
+
+返回结构化JSON。每个对齐问题给出 severity + suggested_fix。`,
+      { label: '同步合成', schema: SYNC_SCHEMA, effort: 'medium' }
+    )
+
+    if (sync) {
+      log(`同步合成: ${sync.alignment_issues?.length || 0}个对齐问题 | 整体: ${sync.overall_alignment}`)
+    }
+  }
+
+  // ═══ Phase 1.5: 发展编辑（拿同步合成对齐表→结构级修复） ═══
   if (validChapters.length > 0) {
     phase('发展编辑')
 
     const devEdit = await agent(
       `你是发展编辑（Developmental Editor）。通读 workspace/${book_id}/ 下所有章节。
 
-## 出版社发展编辑的标准检查
+## 同步合成器已发现的对齐问题（从这里开始——不需要从零发现）
+${sync ? JSON.stringify(sync.alignment_issues, null, 1) : '（无同步合成数据——从零扫描）'}
+整体对齐度: ${sync?.overall_alignment || 'unknown'}
 
-### 1. 传导链实际成立吗？
-骨架标注的A→B传导——正文中真的有逻辑连接吗？不只是"两章都提到同一个概念"，而是"前一章的结论或概念是后一章论证的前提"。
+## 你的任务——修复以下问题
+1. 传导断裂：对齐表中的 missing_conduction → 生成过渡段落+传导注
+2. 术语冲突：对齐表中的 term_conflict → 统一术语或添加术语注标注差异
+3. 重复定义：对齐表中的 duplicate_definition → 保留一处，另一处改为引用
+4. 深度不均：对齐表中的 uneven_depth → 在下游章补充引用或在上游章精简
+5. 额外发现：通读过程中发现的对齐表未覆盖的问题
 
-### 2. 冗余检测
-两个章是否大段重复同一经典的核心论证？同一发现故事出现了两次？同一概念在两个章中重复定义？
+## 修复输出
+对每个问题生成：fix_text（可插入的markdown）+ where_to_apply（文件名+插入位置）
 
-### 3. 结构完整性
-每章是否有：开场钩子（不是"本章将介绍"）、★发现故事、至少3条主张[EXXX]、结尾过渡到下一章？缺任何一项→标记。
-
-### 4. 语气一致性
-Ch1的"你"（直接对读者说话）和Ch5的"我们"（学术主语）是否冲突？论证驱动的章（B1/B3/B7）和叙事驱动的章（B2/B4）的语气切换是否太突兀？
-
-### 5. 本章内自相矛盾
-一章的正文和它自己的经典深层注是否矛盾？（如Ch4先建立证据感、深层注撤回）
-
-### 修复内容
-对每个发现的问题——生成修复文字（过渡段落、术语统一、冗余标记、结构补全）。不要只报告——给出可插入的修复文字。
-
-Book Bible供参考：
-- 跨章依赖: ${JSON.stringify(bible.cross_chapter_deps, null, 1)}
-- 术语表: ${JSON.stringify(bible.terminology?.slice(0,5), null, 1)}
-
-返回: { findings: [{ severity, chapter, issue, fix_text, where_to_apply }], overall_grade, structural_issues_count }`,
+返回: { findings: [{ severity, chapter, issue, fix_text, where_to_apply }], overall_grade, structural_issues_count, fixes_applied: number }`,
       { label: '发展编辑', effort: 'high' }
     )
 
     if (devEdit) {
-      log(`发展编辑: ${devEdit.structural_issues_count || 0}个结构问题 | 整体评级: ${devEdit.overall_grade}`)
+      log(`发展编辑: ${devEdit.structural_issues_count || 0}个结构问题 | ${devEdit.fixes_applied || 0}处修复`)
+    }
+
+    // ═══ Phase 1.6: 对抗充实（每章一个Challenger攻击→Agent补强） ═══
+    // 不是"检查有没有标记"（那是形式完整性）——是"攻击论证本身"（这是论证强度）
+    if (devEdit) {
+      phase('对抗充实')
+
+      const ADVERSARIAL_SCHEMA = {
+        type: 'object',
+        properties: {
+          chapter: { type: 'string' },
+          attacks: { type: 'array', items: { type: 'object', properties: {
+            claim_id: { type: 'string', description: '被攻击的主张 [EXXX]' },
+            attack_type: { type: 'string', enum: ['evidence_gap', 'logic_leap', 'missing_counterargument', 'overclaim', 'stale_frontier'] },
+            severity: { type: 'string', enum: ['minor', 'major', 'fatal'] },
+            attack_text: { type: 'string', description: '具体攻击——为什么这个主张可能不成立' },
+            suggested_fix: { type: 'string', description: '怎么加强——更多证据？限定词？补充反面论证？' },
+          } } },
+          overall_grade: { type: 'string', enum: ['strong', 'adequate', 'weak'] },
+        },
+        required: ['chapter', 'attacks', 'overall_grade']
+      }
+
+      const enrichmentResults = await parallel(
+        validChapters.map(ch => () => {
+          const chNum = ch.chapter_num
+          return agent(
+            `你是章节Challenger。只读 workspace/${book_id}/ 下的一章（第${chNum}章）。你只能看到这一章——不知道其他章的内容。
+
+## 攻击任务
+对该章的每条 [EXXX] 主张进行否定性攻击：
+
+### 攻击维度
+1. **证据缺失**: 这条主张有没有引用实际的证据来源？还是纯逻辑推演？
+2. **逻辑跳跃**: 从前提能推到结论吗？中间有没有省略的步骤？
+3. **反例遗漏**: 有没有已知的反例或反面论证被忽略了？
+4. **过度声称**: 主张的范围是否超出了证据能支持的范围？
+5. **前沿陈旧**: 如果主张依赖≤2年的数据——数据还准吗？
+
+### 攻击输出
+对每个发现的问题：标注被攻击的主张ID、攻击类型、严重度、具体攻击文字、修正建议
+
+### 重要
+- 不要礼貌——你有且只有一次机会找到问题
+- 如果一个主张确实没有问题——不要编造攻击
+- 区分"我不同意这个结论"和"这个论证有漏洞"——只报告后者
+
+返回结构化JSON。`,
+            { label: `攻击Ch${chNum}`, schema: ADVERSARIAL_SCHEMA, effort: 'high' }
+          )
+        })
+      )
+
+      // 将Challenger攻击报告交给各章Agent补强
+      const validAttacks = enrichmentResults.filter(Boolean)
+      const majorAttacks = validAttacks.filter(a => a.overall_grade !== 'strong')
+      log(`对抗充实: ${validAttacks.length}章受攻击 | ${majorAttacks.length}章需补强`)
+
+      for (const attack of validAttacks) {
+        if (attack.overall_grade === 'strong') continue
+
+        const fix = await agent(
+          `你是章节补强Agent。你的章（第${attack.chapter}章）被Challenger找到了以下弱点：
+
+${JSON.stringify(attack.attacks, null, 1)}
+
+## 补强任务
+对每个攻击，不要删除主张——而是加强它：
+- evidence_gap → 添加证据来源（搜索验证）
+- logic_leap → 补中间推理步骤
+- missing_counterargument → 加"反对者会说X，但证据指向Y"
+- overclaim → 加限定词（"在X条件下""现有证据支持但不排除Y"）
+- stale_frontier → 搜索更新数据
+
+输出：can_insert_directly的markdown片段 + where_to_insert
+
+返回: { chapter, fixes: [{ attack_id, fix_text, where_to_insert }] }`,
+          { label: `补强Ch${attack.chapter}`, effort: 'medium' }
+        )
+        if (fix) log(`  补强Ch${attack.chapter}: ${fix.fixes?.length || 0}处`)
+      }
     }
   }
 }
