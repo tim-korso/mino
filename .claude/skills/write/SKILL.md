@@ -560,25 +560,47 @@ migrate + stats → 展示完成状态。
 
 `/write new` 搭骨架。`/write continue` 织血肉。一个命令——自动检测状态、自动写缺失的章、自动充实薄弱的章、自动检查跨章矛盾。
 
-### 执行总览
+### 执行总览：出版社四级管线 × Agent 并行
+
+> 参考：专业出版社的四级编辑管线——Developmental → Line → Copyedit → Proofread。核心原则：**结构先行，后逐级下沉**。在锁结构前不动句子。在锁一致性前不改格式。
 
 ```
 /write continue
     │
     ├── Phase 0: 状态检测（1个Agent扫描文件+DB）
     │
-    ├── Phase 1: 写章（pipeline——每根缺失的骨头→独立Agent写完整章节）
-    │   输出: 01-xxx.md ~ 07-xxx.md（每章含发现故事+主张+经典依据）
+    ├── Phase 0.5: Book Bible（1个Agent读骨架→生成术语表+风格规则+跨章依赖图）
+    │   输出: 共享参考文档——所有后续Agent必读
     │
-    ├── Phase 2: 充实（parallel——每章一个Agent检测薄弱点并自动补发现故事/误区爆破/深层注）
-    │   输出: 增强后的章节（★发现故事/★误区爆破/经典深层注）
+    ├── Phase 1: 写章（pipeline——每根缺失骨头→独立Agent写章，每个Agent拿到Book Bible）
+    │   输出: 01-xxx.md ~ 07-xxx.md
     │
-    ├── Phase 3: 深化检测（扫描模板A-I缺口→报告哪些附录可以自动生成）
+    ├── Phase 1.5: 发展编辑（一个Agent通读全书→结构级修复——不是找错别字，是找骨架和血肉之间的裂缝）
+    │   输出: 结构调整建议+跨章过渡补全+传导断裂修复
     │
-    ├── Phase 4: 连贯性检查（一个Agent扫全书找术语/论点/分析起点矛盾）
+    ├── Phase 2: 充实（parallel——每章检测薄弱点+自动补发现故事/误区爆破/深层注）
     │
-    └── Phase 4.5: 自动修复（传导断裂→过渡段落 / 术语漂移→术语注 / 证据张力→证据注）
+    ├── Phase 3: 深化检测（扫描模板A-I缺口）
+    │
+    ├── Phase 4: 连贯性检查（Agent扫全书找术语/论点/起点矛盾）
+    │
+    └── Phase 4.5: 自动修复（传导断裂→过渡段落 / 术语漂移→术语注）
 ```
+
+### 核心创新：Book Bible + 发展编辑
+
+**问题**：pipeline 独立写章是正确的（各章不需要等其他章），但独立写=每个Agent看不到其他Agent写了什么→术语漂移、传导断裂、风格不一致。
+
+**出版社解法**：所有作者在动笔前拿到同一份 **Style Sheet**（术语表+风格规则）。写完初稿后，一个 **Developmental Editor** 通读全书做结构级修复——不是改错别字，是找骨架和血肉之间的裂缝。
+
+**Workflow 适配**：
+
+| 出版社 | Workflow |
+|--------|----------|
+| Style Sheet / Book Bible | Phase 0.5——一个Agent读骨架→生成共享参考文档 |
+| Developmental Edit | Phase 1.5——一个Agent通读全书→修复结构级问题 |
+| Copyedit | Phase 4——术语/风格/一致性检查 |
+| Proofread | Phase 4.5——自动修复模式化问题 |
 
 ### Workflow 脚本：`write-continue`
 
@@ -588,7 +610,9 @@ export const meta = {
   description: '织血肉——写缺失章节+充实薄弱章节+连贯性检查',
   phases: [
     { title: '状态检测', detail: '扫描文件+DB判断缺什么' },
-    { title: '写章', detail: 'pipeline——每根缺失骨头一个Agent写完整章节' },
+    { title: 'Book Bible', detail: '读骨架→生成术语表+风格规则+跨章依赖图' },
+    { title: '写章', detail: 'pipeline——每根缺失骨头一个Agent写章+Book Bible' },
+    { title: '发展编辑', detail: '一个Agent通读全书→结构级修复' },
     { title: '充实', detail: 'parallel——每章检测薄弱点并自动补充' },
     { title: '深化检测', detail: '扫描模板A-I标记→报告可自动生成的附录' },
     { title: '连贯性检查', detail: '扫全书找术语/论点/分析起点矛盾' },
@@ -642,11 +666,64 @@ const state = await agent(
 if (!state) throw new Error('状态检测失败')
 log(`${state.chapter_files.length}章已写，缺${state.chapters_missing.length}章，${state.chapters_thin.length}章薄弱 | ${state.total_words}字 | Phase2缺口${state.phase2_gaps.length}项`)
 
-// ═══ Phase 1: 写章（pipeline——每根缺失骨头一个Agent独立写） ═══
+// ═══ Phase 0.5: Book Bible（一个Agent读骨架→生成共享参考文档） ═══
+// 所有后续Agent必须拿到这份文档——防止pipeline独立写章导致术语漂移和风格不一致
+phase('Book Bible')
+
+const BIBLE_SCHEMA = {
+  type: 'object',
+  properties: {
+    terminology: { type: 'array', items: { type: 'object', properties: { term: { type: 'string' }, definition: { type: 'string' }, use_in_chapters: { type: 'string' }, do_not_confuse_with: { type: 'string' } } } },
+    style_rules: { type: 'array', items: { type: 'string' }, description: '风格铁律——如"不写本章将介绍""简短段落""不写根据"' },
+    cross_chapter_deps: { type: 'array', items: { type: 'object', properties: { from_chapter: { type: 'string' }, to_chapter: { type: 'string' }, relationship: { type: 'string' }, must_reference: { type: 'boolean' } } } },
+    claim_id_ranges: { type: 'array', items: { type: 'object', properties: { chapter: { type: 'string' }, id_range: { type: 'string' }, format: { type: 'string', enum: ['E001-E010', 'H001-H010', 'P001-P010'] } } } },
+    tone_guidelines: { type: 'string', description: '全书的语气指南——如"论证驱动的，不是叙事驱动的。读者是思考者不是被动接收者。"' },
+    forbidden_phrases: { type: 'array', items: { type: 'string' }, description: '禁止使用的短语——如"值得注意的是""根据""总而言之"' },
+  },
+  required: ['terminology', 'style_rules', 'cross_chapter_deps', 'claim_id_ranges']
+}
+
+const bible = await agent(
+  `你是Book Bible Agent。读 workspace/${book_id}/00-骨架.md 和已存在的章节，生成一份共享参考文档——所有后续Agent在写章和充实阶段都必须拿到这份文档。
+
+## 输出内容
+
+### 1. 术语表（terminology）
+- 从骨架和已有章节中提取关键术语
+- 对每个术语给出：标准定义、出现章节、**不要混淆为**的同义/近义词
+- 例: "抽象劳动——Marx指抽掉具体形态后的人类劳动力耗费（区别于'具体劳动'）。出现在Ch1、Ch3、Ch5。不要混淆为'社会必要劳动时间'（那是价值的度量而非价值的实体）。"
+
+### 2. 风格铁律（style_rules）
+- 从已有章节中提取风格一致性判断
+- 例: "不写'值得注意的是'""每章2-6个小节，每节可以独立阅读""引用经典时说'斯密在《国富论》中论证'而不是'根据斯密(1776)'"
+
+### 3. 跨章依赖图（cross_chapter_deps）
+- 从骨架的传导链中提取
+- 标注每条边的方向、关系类型、**是否必须在正文中显式引用**（传导注）还是隐性即可
+- 例: B2→B4（礼物嵌入 vs 市场脱嵌的对照物）——必须显式引用。B3→B4（货币抽象→脱嵌加速）——建议显式引用。
+
+### 4. 主张ID分配（claim_id_ranges）
+- 为每章分配主张ID范围
+- 如已存在[E001]-[E031]，检查分配是否合理、无冲突
+
+### 5. 语气指南（tone_guidelines）
+- 全书的语气——论证驱动还是叙事驱动？读者是谁？
+- 基于已有章节判断
+
+### 6. 禁用短语（forbidden_phrases）
+- 扫描已有章节→提取所有"学术套话"/弱化语气的短语
+
+返回结构化JSON。中文。`,
+  { label: 'Book Bible', schema: BIBLE_SCHEMA, effort: 'medium' }
+)
+
+if (!bible) throw new Error('Book Bible生成失败')
+log(`Book Bible: ${bible.terminology.length}术语 | ${bible.cross_chapter_deps.length}跨章依赖 | ${bible.style_rules.length}风格规则`)
+
+// ═══ Phase 1: 写章（pipeline——每根缺失骨头一个Agent独立写+Book Bible） ═══
 if (state.chapters_missing.length > 0) {
   phase('写章')
 
-  // 从状态检测中获取缺失骨头的骨架信息
   const missingBones = state.chapters_missing
 
   const CHAPTER_SCHEMA = {
@@ -667,6 +744,13 @@ if (state.chapters_missing.length > 0) {
     missingBones,
     (bone, idx) => agent(
       `你是章节写作Agent。为《${domain}》这本书写第${bone.chapter_num}章。
+
+## Book Bible（共享参考——所有章必须遵循）
+**术语表**：${JSON.stringify(bible.terminology, null, 1)}
+**风格铁律**：${bible.style_rules.join('；')}
+**禁用短语**：${bible.forbidden_phrases.join('、')}
+**跨章依赖**：${JSON.stringify(bible.cross_chapter_deps.filter(d => d.to_chapter?.includes(bone.chapter_num) || d.from_chapter?.includes(bone.chapter_num)), null, 1)}
+**你的主张ID范围**：${bible.claim_id_ranges.find(r => r.chapter?.includes(bone.chapter_num))?.id_range || '根据已有主张自行分配'}
 
 ## 你的骨头
 - **标题**: ${bone.title}
@@ -713,6 +797,47 @@ if (state.chapters_missing.length > 0) {
     )
   }
   log(`写章完成: ${validChapters.length}/${missingBones.length} 章`)
+
+  // ═══ Phase 1.5: 发展编辑（一个Agent通读全书→结构级修复） ═══
+  // 对应出版社的 Developmental Edit——不是找错别字，是找骨架和血肉之间的裂缝
+  if (validChapters.length > 0) {
+    phase('发展编辑')
+
+    const devEdit = await agent(
+      `你是发展编辑（Developmental Editor）。通读 workspace/${book_id}/ 下所有章节。
+
+## 出版社发展编辑的标准检查
+
+### 1. 传导链实际成立吗？
+骨架标注的A→B传导——正文中真的有逻辑连接吗？不只是"两章都提到同一个概念"，而是"前一章的结论或概念是后一章论证的前提"。
+
+### 2. 冗余检测
+两个章是否大段重复同一经典的核心论证？同一发现故事出现了两次？同一概念在两个章中重复定义？
+
+### 3. 结构完整性
+每章是否有：开场钩子（不是"本章将介绍"）、★发现故事、至少3条主张[EXXX]、结尾过渡到下一章？缺任何一项→标记。
+
+### 4. 语气一致性
+Ch1的"你"（直接对读者说话）和Ch5的"我们"（学术主语）是否冲突？论证驱动的章（B1/B3/B7）和叙事驱动的章（B2/B4）的语气切换是否太突兀？
+
+### 5. 本章内自相矛盾
+一章的正文和它自己的经典深层注是否矛盾？（如Ch4先建立证据感、深层注撤回）
+
+### 修复内容
+对每个发现的问题——生成修复文字（过渡段落、术语统一、冗余标记、结构补全）。不要只报告——给出可插入的修复文字。
+
+Book Bible供参考：
+- 跨章依赖: ${JSON.stringify(bible.cross_chapter_deps, null, 1)}
+- 术语表: ${JSON.stringify(bible.terminology?.slice(0,5), null, 1)}
+
+返回: { findings: [{ severity, chapter, issue, fix_text, where_to_apply }], overall_grade, structural_issues_count }`,
+      { label: '发展编辑', effort: 'high' }
+    )
+
+    if (devEdit) {
+      log(`发展编辑: ${devEdit.structural_issues_count || 0}个结构问题 | 整体评级: ${devEdit.overall_grade}`)
+    }
+  }
 }
 
 // ═══ Phase 2: 充实（parallel——每章检测薄弱点+自动补） ═══
