@@ -575,7 +575,9 @@ migrate + stats → 展示完成状态。
     │
     ├── Phase 3: 深化检测（扫描模板A-I缺口→报告哪些附录可以自动生成）
     │
-    └── Phase 4: 连贯性检查（一个Agent扫全书找术语/论点/分析起点矛盾）
+    ├── Phase 4: 连贯性检查（一个Agent扫全书找术语/论点/分析起点矛盾）
+    │
+    └── Phase 4.5: 自动修复（传导断裂→过渡段落 / 术语漂移→术语注 / 证据张力→证据注）
 ```
 
 ### Workflow 脚本：`write-continue`
@@ -590,6 +592,7 @@ export const meta = {
     { title: '充实', detail: 'parallel——每章检测薄弱点并自动补充' },
     { title: '深化检测', detail: '扫描模板A-I标记→报告可自动生成的附录' },
     { title: '连贯性检查', detail: '扫全书找术语/论点/分析起点矛盾' },
+    { title: '自动修复', detail: '传导断裂→过渡段落 / 术语漂移→术语注 / 证据张力→证据注' },
   ],
 }
 
@@ -827,10 +830,117 @@ const coherence = await agent(
 )
 
 const coherenceStatus = coherence
-  ? `${coherence.severity === 'clean' ? '✅' : '⚠️'} ${coherence.overall}${coherence.term_inconsistencies.length > 0 ? ` | 术语: ${coherence.term_inconsistencies.length}处` : ''}${coherence.argument_conflicts.length > 0 ? ` | 冲突: ${coherence.argument_conflicts.length}处` : ''}`
+  ? `${coherence.severity === 'clean' ? '✅' : '⚠️'} ${coherence.overall}${coherence.term_inconsistencies?.length > 0 ? ` | 术语: ${coherence.term_inconsistencies.length}处` : ''}${coherence.argument_conflicts?.length > 0 ? ` | 冲突: ${coherence.argument_conflicts.length}处` : ''}`
   : '连贯性检查未运行'
 
 log(coherenceStatus)
+
+// ═══ Phase 4.5: 自动修复（模式化修复——传导断裂+术语漂移） ═══
+phase('自动修复')
+
+let autoFixLog = []
+const FIXABLE_CATEGORIES = ['conduction_break', 'term_drift', 'evidence_caveat_needed', 'overclaim']
+
+if (coherence) {
+  const fixTasks = []
+
+  // 传导断裂 → 自动生成过渡段落+传导注
+  const conductionGaps = coherence.structural_gaps || []
+  for (const gap of conductionGaps) {
+    fixTasks.push((async () => {
+      const fix = await agent(
+        `你是传导修复Agent。修复以下传导断裂：
+
+断裂: ${gap}
+
+## 修复方式
+1. 确定"下游章节"（应该引用但没引用的那一章）
+2. 为下游章节的开头生成一个「传导注」段落（3-5行），格式：
+   > ⚠️ **传导注**：本章依赖 ChX（...）和 ChY（...）。ChX 建立了...。ChY 建立了...。本章把这两个前提合在一起...。如果你跳过了 ChX 直接读这里——...会缺少质感。
+3. 生成过渡文字——把上游章节的核心概念和下游章节的核心概念显式对接
+4. 指定插入位置（如"替换章首引言段落"或"插入在章首引言和§X.1之间"）
+
+返回: { chapter: 下游章节文件名, fix_content: 补充的markdown, where_to_insert: 插入位置 }`,
+        { label: `修复传导: ${gap.slice(0, 40)}`, effort: 'low' }
+      )
+      return fix
+    })())
+  }
+
+  // 术语漂移 → 自动标注术语注
+  const termIssues = coherence.term_inconsistencies || []
+  for (const term of termIssues) {
+    fixTasks.push((async () => {
+      const fix = await agent(
+        `你是术语修复Agent。为术语漂移添加标注：
+
+漂移: ${term}
+
+## 修复方式
+生成一个「⚠️ **术语注**」段落（2-3行），说明这个词在不同章中有不同含义。
+指定插入位置（哪个文件的哪个节）。
+
+返回: { chapter: 文件名, fix_content: 术语注markdown, where_to_insert: 插入位置 }`,
+        { label: `修复术语: ${term.slice(0, 40)}`, effort: 'low' }
+      )
+      return fix
+    })())
+  }
+
+  // 证据-论证张力 → 自动加证据注
+  const argConflicts = coherence.argument_conflicts || []
+  for (const conflict of argConflicts) {
+    if (conflict.includes('经验基础') || conflict.includes('证据') || conflict.includes('被推翻') || conflict.includes('崩塌')) {
+      fixTasks.push((async () => {
+        const fix = await agent(
+          `你是诚实标记Agent。为以下证据-论证张力添加预警告：
+
+张力: ${conflict}
+
+## 修复方式
+如果某章用了一个已被质疑的经验案例作为发现故事/论证入口——在该节开头加一个「⚠️ **证据注**」（3-4行），格式：
+   > ⚠️ **证据注**：<案例>是<作者>最重要的经验案例。但自<年份>年代以来，<领域>研究基本推翻了其核心经验主张：<具体什么被推翻了>。<引用来源>承认<作者>"被历史资料严重误导"。本章先按原始叙事讲述（因为这是他的论证入口），然后在章末「经典深层注」中摊开经验基础的崩塌。**读这一节时——你读到的是<作者>的论证，不是被证实的史实。**
+
+指定插入位置。
+
+返回: { chapter: 文件名, fix_content: 证据注markdown, where_to_insert: 插入位置 }`,
+          { label: `修复证据: ${conflict.slice(0, 40)}`, effort: 'low' }
+        )
+        return fix
+      })())
+    }
+  }
+
+  // 过度声称 → 收窄传导声明
+  for (const conflict of argConflicts) {
+    if (conflict.includes('过度声称') || conflict.includes('不一致') || conflict.includes('暗示')) {
+      if (!conflict.includes('经验基础') && !conflict.includes('证据') && !conflict.includes('被推翻') && !conflict.includes('崩塌')) {
+        fixTasks.push((async () => {
+          const fix = await agent(
+            `你是传导精确化Agent。修复过度声称：
+
+冲突: ${conflict}
+
+## 修复方式
+在某章的导言/开场段落中——收窄传导声明（如"B1的四条线都对B5有传导"→"B1中只有马克思线对B5有传导"）。标注哪些线确实传导、哪些缺席但缺席有原因。
+
+返回: { chapter: 文件名, fix_content: 修正后的导言段落, where_to_insert: 替换位置 }`,
+            { label: `修复声称: ${conflict.slice(0, 40)}`, effort: 'low' }
+          )
+          return fix
+        })())
+      }
+    }
+  }
+
+  if (fixTasks.length > 0) {
+    const fixResults = (await Promise.all(fixTasks)).filter(Boolean)
+    autoFixLog = fixResults
+    log(`自动修复: ${fixResults.length} 处（传导${conductionGaps.length}/术语${termIssues.length}/证据${fixResults.filter(f => f.fix_content?.includes('证据注')).length}/声称${fixResults.filter(f => f.fix_content?.includes('传导注') === false && f.fix_content?.includes('术语注') === false && f.fix_content?.includes('证据注') === false).length}）`)
+  } else {
+    log('自动修复: 无可自动修复项（论点冲突需人工判断）')
+  }
+}
 
 return {
   state: {
@@ -843,6 +953,8 @@ return {
   phase2_gap_count: state.phase2_gaps.length,
   coherence: coherenceStatus,
   coherence_detail: coherence,
+  auto_fixes: autoFixLog.length > 0 ? `${autoFixLog.length}处自动修复已生成` : '无',
+  auto_fix_detail: autoFixLog,
 }
 ```
 
@@ -859,9 +971,9 @@ Workflow({ name: 'write-continue', args: { book_id: 'xxx', domain: 'xxx' } })
 | 缺章 | 报告"缺少Ch3" | **自动写Ch3**（pipeline——每根骨头一个Agent） |
 | 薄章 | 不检测 | **检测→自动充实**（补发现故事/误区爆破/深层注） |
 | Phase2 | 只报告缺口 | 报告缺口+提示哪些附录可自动生成 |
-| 连贯性 | 不做 | **一个Agent扫全书找术语/论点/起点矛盾** |
+| 连贯性 | 不做 | **Agent扫全书→自动修复传导断裂/术语漂移/证据张力** |
 | 时间 | ~1-2min | **~10-20min**（视缺章数） |
-| AI干预 | 读报告→手动写章→手动充实 | 调用Workflow→收到完整章节+充实片段+连贯性报告 |
+| AI干预 | 读报告→手动写章→手动充实→手动修矛盾 | 调用Workflow→收到完整章节+充实片段+连贯性报告+**自动修复片段**（仅论点冲突需人工判断） |
 
 > **设计原则**：Phase 1（写章）和 Phase 2（充实）用 `pipeline()`/`parallel()`——各章独立，不需要等其他章。Phase 4（连贯性检查）需要全部章节→在 Phase 1+2 之后运行。Phase 3（深化检测）和 Phase 2 可以并行——它们互不依赖。
 
