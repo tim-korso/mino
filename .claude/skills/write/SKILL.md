@@ -565,26 +565,21 @@ migrate + stats → 展示完成状态。
 > 参考：专业出版社的四级编辑管线——Developmental → Line → Copyedit → Proofread。核心原则：**结构先行，后逐级下沉**。在锁结构前不动句子。在锁一致性前不改格式。
 
 ```
-/write continue
+/write continue（一轮跑完——不需要多轮）
     │
-    ├── Phase 0: 状态检测（1个Agent扫描文件+DB）
+    ├── Phase 0: 状态检测
     │
-    ├── Phase 0.5: Book Bible（1个Agent读骨架→生成术语表+风格规则+跨章依赖图）
-    │   输出: 共享参考文档——所有后续Agent必读
+    ├── Phase 0.5: Book Bible（术语表+风格规则+跨章依赖→所有Agent共享）
     │
-    ├── Phase 1: 写章（pipeline——每根缺失骨头→独立Agent写章，每个Agent拿到Book Bible）
-    │   输出: 01-xxx.md ~ 07-xxx.md
+    ├── Phase 1: 写章（pipeline——每根骨头一个Agent，一轮写完完整章节）
+    │   ★发现故事 + ★历史深化 + ★误区爆破 + [EXXX]主张 + 前沿注入 + 经典深层注
+    │   七项一次性织入——不允许"写完了再补"
     │
-    ├── Phase 1.5: 发展编辑（一个Agent通读全书→结构级修复——不是找错别字，是找骨架和血肉之间的裂缝）
-    │   输出: 结构调整建议+跨章过渡补全+传导断裂修复
+    ├── Phase 1.5: 发展编辑（通读全书→结构修复+传导补全）
     │
-    ├── Phase 2: 充实（parallel——每章检测薄弱点+自动补发现故事/误区爆破/深层注）
+    ├── Phase 2: 连贯性检查+自动修复（术语/论点/传导→自动修）
     │
-    ├── Phase 3: 深化检测（扫描模板A-I缺口）
-    │
-    ├── Phase 4: 连贯性检查（Agent扫全书找术语/论点/起点矛盾）
-    │
-    └── Phase 4.5: 自动修复（传导断裂→过渡段落 / 术语漂移→术语注）
+    └── Phase 3: 深化检测（扫描模板缺口→报告哪些附录可自动生成）
 ```
 
 ### 核心创新：Book Bible + 发展编辑
@@ -731,13 +726,25 @@ if (state.chapters_missing.length > 0) {
     properties: {
       chapter_num: { type: 'number' },
       title: { type: 'string' },
-      filename: { type: 'string', description: '如 01-价值的源头.md' },
-      content: { type: 'string', description: '章节完整markdown正文' },
-      claims: { type: 'array', items: { type: 'string' }, description: '本章中的 [EXXX] 主张ID列表' },
-      has_discovery_story: { type: 'boolean' },
+      filename: { type: 'string' },
+      content: { type: 'string', description: '完整markdown正文' },
+      claims: { type: 'array', items: { type: 'string' } },
+      completeness_checklist: {
+        type: 'object',
+        properties: {
+          has_discovery_story: { type: 'boolean' },
+          has_history_deepening: { type: 'boolean', description: '★历史深化——认知进化线' },
+          has_myth_busting: { type: 'boolean', description: '★误区爆破——≥2个' },
+          has_deep_notes: { type: 'boolean', description: '经典深层注' },
+          has_frontier_injection: { type: 'boolean', description: '前沿层已织入正文' },
+          has_transition: { type: 'boolean', description: '结尾过渡到下一章' },
+          claim_count: { type: 'number' },
+        },
+        required: ['has_discovery_story', 'has_history_deepening', 'has_myth_busting', 'has_transition']
+      },
       word_count: { type: 'number' },
     },
-    required: ['title', 'filename', 'content', 'claims']
+    required: ['title', 'filename', 'content', 'claims', 'completeness_checklist']
   }
 
   const written = await pipeline(
@@ -757,31 +764,29 @@ if (state.chapters_missing.length > 0) {
 - **核心问题**: ${bone.core_question}
 - **经典依据**: ${bone.classic_basis}
 
-## 写作要求
+## 一章写完的标准——缺任何一项都算未完成
 
-### 结构（必须包含）
-1. **开头**：一句话概括+一个引人入胜的问题/场景。不要"本章将介绍"。直接进入。
-2. **★发现故事**：500-1000字。选一个和本章核心问题直接相关的历史人物/事件。有冲突——被嘲笑/被忽视/意外发现。有方法——实验/观察能被普通读者理解。有转折——"当时没人信→后来改变了世界"。
-3. **主体论证**：2-6个小节。每小节有自己的★发现故事或★误区爆破标记。把经典依据和前沿发展交织在一起——不是"先讲经典再讲前沿"两段式。
-4. **主张标记**：重要主张用 [EXXX] 格式标注（如 [E001], [E002]）。每章至少3条主张。主张必须是可被证实或证伪的——不是观点。
-5. **结尾过渡**：一句话引向下一章。不是"下一章我们将讨论"——是抛一个钩子。
+你的任务是**一轮写出完整章节**。不允许多轮补充。写完必须通过以下清单自检：
 
-### 风格铁律
-- 不写"根据""值得注意的是""总而言之"
-- 不写"本章将介绍""本章首先讨论"——直接开始
-- 简短段落。中文学术写作的最大敌人是长段落。
-- 表格和ASCII图只在它们比文字解释更清晰时用
-- 引用经典时——说"斯密在《国富论》中论证……"而不是"根据斯密（1776）……"
-- 把经典依据和前沿发展交织——不是博物馆陈列
+### ✅ 必须有的七项（缺一不可）
+1. ★发现故事（1个，500-1000字，有冲突/有方法/有转折）
+2. ★历史深化（1-2处，在论证中自然嵌入——不是单独一节，是论证本身的认知进化线）
+3. ★误区爆破（≥2个流行误区，用读者会说的话描述+实际证据+正确理解+一句金句）
+4. [EXXX] 主张标记（≥3条，可被证实或证伪，标注在核心论证句后）
+5. 经典×前沿交织（不是先讲经典再讲前沿两段式——每节里两者同时出现）
+6. 结尾过渡（一句话钩子引向下一章——不写"下一章我们将讨论"）
+7. 章末「经典深层注」（如果经典已做4-pass提取——挑最犀利的方法论批评+时间检验+结构反讽。3-5段，不重复正文）
+
+### ❌ 禁止
+- "本章将介绍""值得注意的是""总而言之""根据XXX（YYYY）"
+- 长段落（>8行的段落必须拆）
+- 博物馆陈列——"先是斯密说了A，然后是马克思说了B，最后是门格尔说了C"
+- 套公式——每章有自己的声音。读已写章节匹配语气但不复制结构
 
 ### 长度
-150-250行markdown。如果你的章少了，你可能漏了一节。
+200-350行markdown（因为要求了七项，不能太短）
 
-### 已有章节的风格参考
-读 workspace/${book_id}/ 下的其他已写章节——匹配它们的语气和格式。
-不要复制——不要套公式——每章有自己的声音。
-
-搜索策略: 搜索本章的核心概念+最新发展来充实前沿层。
+搜索策略: 搜索本章核心概念+"history evolution paradigm shift"用于★历史深化；搜索核心概念+"myths misconceptions debunked"用于★误区爆破。
 
 返回结构化JSON。content字段是完整markdown。`,
       { label: bone.title, schema: CHAPTER_SCHEMA, effort: 'high' }
@@ -1091,14 +1096,12 @@ Workflow({ name: 'write-continue', args: { book_id: 'xxx', domain: 'xxx' } })
 
 ### 管线对比
 
-| | 旧版（检测+报告） | 新版（织血肉） |
+| | 旧版（分层推进） | 新版（一轮跑完） |
 |---|---|---|
-| 缺章 | 报告"缺少Ch3" | **自动写Ch3**（pipeline——每根骨头一个Agent） |
-| 薄章 | 不检测 | **检测→自动充实**（补发现故事/误区爆破/深层注） |
-| Phase2 | 只报告缺口 | 报告缺口+提示哪些附录可自动生成 |
-| 连贯性 | 不做 | **Agent扫全书→自动修复传导断裂/术语漂移/证据张力** |
-| 时间 | ~1-2min | **~10-20min**（视缺章数） |
-| AI干预 | 读报告→手动写章→手动充实→手动修矛盾 | 调用Workflow→收到完整章节+充实片段+连贯性报告+**自动修复片段**（仅论点冲突需人工判断） |
+| 写章 | 先写骨架→再充实→再深化→再连贯 | **一次写完七项**（发现故事+历史+误区+主张+前沿+深层注+过渡） |
+| 轮次 | 需要3-5轮 `/write continue` | **1轮**（写章→发展编辑→连贯检查自动跑完） |
+| 血肉质量 | 层层叠加——每轮只加一层 | **一轮织入**——每节论证里历史/误区/前沿同时出现 |
+| 时间 | ~40-60min（多轮） | **~15-25min**（一轮） |
 
 > **设计原则**：Phase 1（写章）和 Phase 2（充实）用 `pipeline()`/`parallel()`——各章独立，不需要等其他章。Phase 4（连贯性检查）需要全部章节→在 Phase 1+2 之后运行。Phase 3（深化检测）和 Phase 2 可以并行——它们互不依赖。
 
