@@ -19,6 +19,8 @@ import os
 import sys
 import re
 import shutil
+import base64
+import urllib.request
 from pathlib import Path
 from datetime import datetime
 
@@ -108,8 +110,55 @@ BOOKS = {
             '06-情欲.md',
             '07-场景.md',
         ]
+    },
+    'police': {
+        'dir': 'workspace/police-book',
+        'title': '全美警察故事',
+        'subtitle': '从奴隶巡逻队到AI监控——美国警察的七根骨头',
+        'author': '汤姆 + 娜娜',
+        'lang': 'zh-CN',
+        'files': [
+            '01-起源.md',
+            '02-街头.md',
+            '03-权力.md',
+            '04-种族.md',
+            '05-转折.md',
+            '06-代价.md',
+            '07-改革.md',
+        ]
+    },
+    'exchange-value': {
+        'dir': 'workspace/exchange-value-book',
+        'title': '交换与价值',
+        'subtitle': '从劳动、礼物到生态崩溃——七根骨头',
+        'author': '汤姆 + 娜娜',
+        'lang': 'zh-CN',
+        'files': [
+            '01-价值的源头.md',
+            '02-交换的社会逻辑.md',
+            '03-货币的双重生命.md',
+            '04-市场与社会的边界.md',
+            '05-不平等的生产机制.md',
+            '06-经济史的方向.md',
+            '07-分析起点的政治.md',
+            '08-反对声音.md',
+            '09-深度阅读路径.md',
+            '10-自评工具.md',
+            '11-主张索引.md',
+        ]
     }
 }
+
+# ── Mermaid support ────────────────────────────────────────────────
+MERMAID_JS = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"
+MERMAID_INIT = """
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+});
+</script>
+"""
+MERMAID_INK = "https://mermaid.ink/svg/"
 
 # ── CSS ───────────────────────────────────────────────────────────
 # 内嵌样式表——自包含 HTML，不依赖外部 CSS 文件
@@ -342,6 +391,41 @@ def build_title_page_html(book_id):
 """
 
 
+# ── Mermaid helpers ─────────────────────────────────────────────────
+
+def _inject_mermaid_html(html):
+    """注入 mermaid.js CDN——让 HTML 中的 mermaid 代码块自动渲染为图"""
+    mermaid_tag = f'<script src="{MERMAID_JS}"></script>\n{MERMAID_INIT}'
+    return html.replace('</head>', f'{mermaid_tag}\n</head>')
+
+
+def _pre_render_mermaid_md(md_text):
+    """将 markdown 中的 mermaid 代码块预渲染为 SVG 图片
+
+    用 mermaid.ink API——免费、无需安装、支持复杂图。
+    这对 EPUB（不支持 JS）和 PDF（weasyprint 不执行 JS）是必须的。
+    """
+    def replace_mermaid_block(match):
+        code = match.group(1)
+        # base64 编码 mermaid 代码
+        encoded = base64.urlsafe_b64encode(code.encode('utf-8')).decode('ascii')
+        url = f"{MERMAID_INK}{encoded}"
+
+        try:
+            # 尝试获取 SVG
+            req = urllib.request.Request(url, headers={'User-Agent': 'render.py/1.0'})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                svg = resp.read().decode('utf-8')
+            return f'<figure>\n{svg}\n</figure>'
+        except Exception as e:
+            # Fallback: 如果 mermaid.ink 不可用，保留代码块并加注
+            print(f"  ⚠️  Mermaid.ink 预渲染失败（{e}）——保留代码块")
+            return f'```mermaid\n{code}\n```\n\n> ⚠️ 此图需要支持 Mermaid 的阅读器才能渲染。[在线预览](https://mermaid.live/edit#pako:{encoded})'
+
+    # 匹配 ```mermaid ... ``` 代码块
+    return re.sub(r'```mermaid\n(.*?)```', replace_mermaid_block, md_text, flags=re.DOTALL)
+
+
 # ── Renderers ──────────────────────────────────────────────────────
 
 def render_html(book_id):
@@ -369,8 +453,9 @@ def render_html(book_id):
     with open(html_path, 'r', encoding='utf-8') as f:
         html = f.read()
 
-    # 在 </head> 前插入 CSS
+    # 在 </head> 前插入 CSS + Mermaid.js
     html = html.replace('</head>', f'<style>{STYLE}</style>\n</head>')
+    html = _inject_mermaid_html(html)
 
     # 在 <body> 后插入扉页
     title_html = build_title_page_html(book_id)
@@ -388,12 +473,18 @@ def render_html(book_id):
 
 
 def render_epub(book_id):
-    """生成 EPUB（pandoc 原生支持，无需额外依赖）"""
+    """生成 EPUB（pandoc 原生支持，无需额外依赖。Mermaid → SVG 预渲染）"""
     check_deps()
     book = BOOKS[book_id]
     print(f"📖 渲染 EPUB: {book['title']}")
 
     combined_md = build_combined_md(book_id)
+    # EPUB 不能执行 JS——将 mermaid 预渲染为 SVG
+    with open(combined_md, 'r', encoding='utf-8') as f:
+        md_text = f.read()
+    md_text = _pre_render_mermaid_md(md_text)
+    with open(combined_md, 'w', encoding='utf-8') as f:
+        f.write(md_text)
 
     # 写 CSS 到临时文件（pandoc --css 需要文件路径）
     css_tmp = os.path.join(output_dir(book_id), '_epub.css')
@@ -422,13 +513,40 @@ def render_epub(book_id):
 
 
 def render_pdf(book_id):
-    """生成 PDF（HTML → weasyprint CLI）"""
+    """生成 PDF（HTML → weasyprint CLI。Mermaid → SVG 预渲染）"""
     check_deps(need_weasyprint=True)
     book = BOOKS[book_id]
     print(f"📖 渲染 PDF: {book['title']}")
 
-    # 先生成 HTML
-    html_path = render_html(book_id)
+    # weasyprint 不执行 JS——先预渲染 mermaid → SVG
+    combined_md = build_combined_md(book_id)
+    with open(combined_md, 'r', encoding='utf-8') as f:
+        md_text = f.read()
+    md_text = _pre_render_mermaid_md(md_text)
+    with open(combined_md, 'w', encoding='utf-8') as f:
+        f.write(md_text)
+    # 用预渲染后的 markdown 重新生成，绕过 render_html（那边加 mermaid.js CDN 但我们不需要）
+    # 复用 render_html 的逻辑但跳过 mermaid.js 注入
+    html_path = os.path.join(output_dir(book_id), f'{book_id}.html')
+    subprocess.run([
+        'pandoc', combined_md,
+        '--from', 'markdown+smart',
+        '--to', 'html5',
+        '--standalone',
+        '--toc', '--toc-depth=2',
+        '--metadata', f'title={book["title"]}',
+        '--metadata', f'lang={book["lang"]}',
+        '-o', html_path,
+    ], check=True)
+    os.remove(combined_md)
+    with open(html_path, 'r', encoding='utf-8') as f:
+        html = f.read()
+    html = html.replace('</head>', f'<style>{STYLE}</style>\n</head>')
+    title_html = build_title_page_html(book_id)
+    html = html.replace('<body>', f'<body>\n{title_html}')
+    # 注意：不注入 mermaid.js——图已经是 SVG 了
+    with open(html_path, 'w', encoding='utf-8') as f:
+        f.write(html)
 
     # HTML → PDF（用 weasyprint CLI，brew 安装的独立命令）
     pdf_path = os.path.join(output_dir(book_id), f'{book_id}.pdf')
