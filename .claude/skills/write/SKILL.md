@@ -159,7 +159,8 @@ export const meta = {
     { title: 'Step1 经典维度矩阵', detail: '每本经典一个Agent并行提取组织原则' },
     { title: 'Step2 聚类+DAG', detail: '合成Agent做互斥聚类+传导链构建' },
     { title: 'Step3 前沿注入', detail: '每根骨头并行扫前沿缺口' },
-    { title: 'Step4 自检输出', detail: '五维自检→生成骨架MD' },
+    { title: 'Step4 对抗验证', detail: '3个独立Challenger从不同角度攻击骨架' },
+    { title: 'Step5 生成输出', detail: '通过验证后综合所有反馈生成骨架MD' },
   ],
 }
 
@@ -309,11 +310,97 @@ const frontierResults = await parallel(
 const validFrontiers = frontierResults.filter(Boolean)
 log(`前沿扫描完成: ${validFrontiers.length}/${skeleton.bones.length} 根`)
 
-// ═══ Step 2.5: 五维自检 + 生成骨架MD ═══
-phase('Step4 自检输出')
+// ═══ Step 2.5: 对抗验证 + 生成骨架MD ═══
+phase('Step4 对抗验证')
+
+// 三个独立 Challenger——各从不同角度攻击骨架，互不知道对方
+// 参考: agent-orchestration Pattern 3 (Adversarial Verify) + Pattern 5 (Perspective-diverse Verify)
+const VERDICT_SCHEMA = {
+  type: 'object',
+  properties: {
+    lens: { type: 'string', description: '攻击角度' },
+    passed: { type: 'boolean', description: '骨架在这个角度下是否通过？' },
+    severity: { type: 'string', enum: ['none', 'minor', 'major', 'fatal'], description: '问题严重程度' },
+    findings: { type: 'array', items: { type: 'string' }, description: '发现的具体问题——如果有的话' },
+    recommendation: { type: 'string', description: '修正建议——如果有的话' },
+  },
+  required: ['lens', 'passed', 'severity', 'findings']
+}
+
+const challenges = await parallel([
+  // Challenger 1: 维度完整性——有没有漏掉的经典维度？
+  () => agent(
+    `你是骨架攻击者。你的任务：从"维度遗漏"角度攻击这个骨架。
+
+## 骨架
+${JSON.stringify({ bones: skeleton.bones, conduction: skeleton.conduction_dag, dropped: skeleton.dropped_dimensions }, null, 2)}
+
+## 原始经典维度矩阵
+${JSON.stringify(validDimensions, null, 2)}
+
+## 攻击规则
+1. 找一本经典——它的分类方式有没有出现在骨架中？如果没有→为什么？是合理的冗余还是我们漏了一个维度？
+2. 被丢弃的维度中——有没有不该丢的？
+3. 有没有两根骨头实际上在回答同一个问题？（互斥性失败）
+4. 如果这个骨架少了一根骨头——读者会漏掉什么？
+
+如果你认为骨架通过——给出理由。如果你找到问题——标注 severity 并给出修正建议。`,
+    { label: '维度完整性攻击', schema: VERDICT_SCHEMA, effort: 'high' }
+  ),
+
+  // Challenger 2: 传导链——DAG 有没有断裂？
+  () => agent(
+    `你是骨架攻击者。你的任务：从"传导链断裂"角度攻击这个骨架。
+
+## 骨架
+${JSON.stringify({ bones: skeleton.bones, conduction: skeleton.conduction_dag }, null, 2)}
+
+## 攻击规则
+1. 读者能否跳过 Ch3 直接读 Ch6？如果能→不是传导链，是主题列表
+2. 有没有两根骨头标记为"平行"但实际有依赖关系？（漏了边）
+3. 有没有边是假的——A→B 在逻辑上不成立？
+4. 传导链至少有一个起点和一个终点吗？
+5. 有没有骨头孤立——既不被任何骨头依赖，也不依赖任何骨头？如果是→它需要存在吗？
+
+如果你认为骨架通过——给出理由。如果你找到断裂——标注 severity 并给出修正建议。`,
+    { label: '传导链攻击', schema: VERDICT_SCHEMA, effort: 'high' }
+  ),
+
+  // Challenger 3: 前沿盲区——时效性判断对不对？
+  () => agent(
+    `你是骨架攻击者。你的任务：从"前沿盲区"角度攻击这个骨架。
+
+## 骨架（含前沿标签）
+${JSON.stringify({ bones: skeleton.bones, frontiers: validFrontiers }, null, 2)}
+
+## 攻击规则
+1. 有没有标记为 🟢stable 但实际在快速变化的维度？
+2. 有没有标记为 🔴volatile 但实际上是稳定结构的维度？
+3. 前沿层有没有重大遗漏——≤2年的关键发展、争议、或范式转换没有被覆盖？
+4. 五年后——哪根骨头最可能被嘲笑？
+
+如果你认为骨架通过——给出理由。如果你找到盲区——标注 severity 并给出修正建议。`,
+    { label: '前沿盲区攻击', schema: VERDICT_SCHEMA, effort: 'high' }
+  ),
+])
+
+const validChallenges = challenges.filter(Boolean)
+const failedChallenges = validChallenges.filter(c => !c.passed)
+const fatalChallenges = validChallenges.filter(c => c.severity === 'fatal')
+
+log(`对抗验证: ${validChallenges.filter(c => c.passed).length}/${validChallenges.length} 通过${failedChallenges.length > 0 ? '，' + failedChallenges.length + ' 个有问题' : ''}`)
+
+// 如果有 fatal → 骨架需要大修 → 报告问题，不生成MD
+if (fatalChallenges.length > 0) {
+  const fatalReport = `## 骨架对抗验证失败 ❌\n\n${fatalChallenges.map(c => `### ${c.lens}\n${c.findings.join('\n')}\n\n**建议**: ${c.recommendation}`).join('\n\n')}`
+  return { skeleton_md: fatalReport, bone_count: skeleton.bone_count, status: 'FAILED_ADVERSARIAL_VERIFY' }
+}
+
+// ═══ 通过验证 → 生成骨架MD（综合所有Challenger反馈） ═══
+phase('Step4 生成输出')
 
 const finalSkeleton = await agent(
-  `你是骨架质检Agent。基于以下数据生成最终骨架MD。
+  `你是骨架最终合成Agent。骨架已通过三轮对抗验证。现在生成完整的 00-骨架.md。
 
 ## 骨架数据
 ${JSON.stringify({ bones: skeleton.bones, conduction: skeleton.conduction_dag }, null, 2)}
@@ -321,20 +408,21 @@ ${JSON.stringify({ bones: skeleton.bones, conduction: skeleton.conduction_dag },
 ## 前沿数据
 ${JSON.stringify(validFrontiers, null, 2)}
 
+## Challenger 反馈（全部已通过，但有以下建议）
+${JSON.stringify(validChallenges.filter(c => c.findings.length > 0), null, 2)}
+
 ## 任务
+综合骨架数据、前沿数据和Challenger建议，生成完整的 00-骨架.md：
 
-### 先做五维自检：
-1. N ≤ 8？
-2. 每根骨头的核心问题是否独特？（两两不能合并）
-3. 传导链至少有一个起点和一个终点？
-4. 时效性标签是否每根骨头都有？
-5. 找一本注册的经典——它的分类方式有没有出现在骨架中？如果没有→为什么？冗余还是遗漏？
-
-### 然后生成完整的 00-骨架.md：
 \`\`\`markdown
 # <领域>知识的<N>根骨头 · 骨架 v1
 
 > 这本书写给谁——一句话
+
+## 对抗验证结果 ✅
+| 攻击维度 | 结果 | 备注 |
+|---------|------|------|
+${validChallenges.map(c => `| ${c.lens} | ${c.passed ? '✅ 通过' : '⚠️ ' + c.severity} | ${c.findings.length > 0 ? c.findings.slice(0,2).join('; ') : '—'} |`).join('\n')}
 
 ## 骨架是怎么搭的（可审计——每根骨头的学术血统）
 | 骨头 | 回答的问题 | 经典依据（从哪学的） | 前沿缺口 | 时效性 |
@@ -363,7 +451,7 @@ ${JSON.stringify(validFrontiers, null, 2)}
   { label: '骨架输出', effort: 'medium' }
 )
 
-return { skeleton_md: finalSkeleton, bone_count: skeleton.bone_count }
+return { skeleton_md: finalSkeleton, bone_count: skeleton.bone_count, adversarial_verify: 'PASSED', challenges: validChallenges }
 ```
 
 ### 使用方式
@@ -391,11 +479,12 @@ Workflow({
 | Step 2.1 维度提取 | 串行——认知负荷爆了 | `pipeline()`——每本经典一个Agent，并行深读 |
 | Step 2.2-2.3 聚类+DAG | 一个人交叉比较十本 | 一个合成Agent拿所有维度结果做聚类 |
 | Step 2.4 前沿注入 | 逐根搜 | `parallel()`——N根骨头N个Agent并行扫 |
-| Step 2.5 自检+输出 | 手动写MD | 一个质检Agent跑五维自检→直接输出骨架MD |
-| **时间** | ~30min | **~5-8min** |
+| Step 2.5 对抗验证 | 自己检查自己——确认偏误 | **3个独立Challenger**——维度完整性/传导链断裂/前沿盲区各一角度攻击。≥2通过→合格。fatal→自动打回 |
+| **时间** | ~30min | **~6-10min**（加了adversarial verify） |
 | **每本经典的深度** | 取决于你能同时记住几本 | 每个Agent专读一本——不会稀释 |
+| **骨架质量** | 取决于你一个人会不会漏 | 三个人从不同角度找漏——构建者不自检 |
 
-> **铁律**：`pipeline()` 用于 Step 2.1（每本经典独立走，不需要等其他经典）——不是 `parallel()`。`parallel()` 用于 Step 2.4（前沿扫描之间无依赖，但骨架合成需要所有前沿结果——所以前沿扫描用 `parallel()` 做 barrier）。Step 2.2-2.3 是一个Agent做交叉比较——这是整个流程中唯一不能并行化的步骤，也是最有价值的步骤。
+> **铁律**：`pipeline()` 用于 Step 2.1（每本经典独立走，不需要等其他经典）——不是 `parallel()`。`parallel()` 用于 Step 2.4（前沿扫描之间无依赖，但合成需要全部前沿结果——所以前沿扫描用 `parallel()` 做 barrier）和 Step 2.5（三个Challenger独立攻击——互不知道对方的角度）。Step 2.2-2.3 是一个Agent做交叉比较——这是整个流程中唯一不能并行化的步骤，也是最有价值的步骤。**Step 2.5 的 adversarial verify 是硬门禁——不出于"构建者不能验证自己"的偏好，出于是结构必然。见 agent-orchestration Pattern 3+5。**
 
 ### 经典提取: 4-pass 深层刨
 
