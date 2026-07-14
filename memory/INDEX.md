@@ -3,7 +3,7 @@
 > **Gateway file.** Always read this first when waking up in a new session.
 > 04-MEMORY.md is auto-loaded core memory (critical lessons). This file is the archival index — what topics exist, where they are, when they were last touched.
 
-**Stats**: 16 topics | 19 journal days | last rebuilt 2026-07-10
+**Stats**: 18 topics | 20 journal days | last rebuilt 2026-07-15
 
 ---
 
@@ -29,11 +29,14 @@
 | 15 | **personal-goal-loop** | `memory/topics/personal-goal-loop.md` | 07-08 | philosophy, happiness, goal-loop, meta-cognition, personal |
 
 | 16 | **book-writing-tool** | `memory/topics/book-writing-tool.md` | 07-10 | writing, claims, database, pipeline, canon-mapper |
+| 17 | **book-figure** | `memory/topics/book-figure.md` | 07-15 | illustration, SVG, VLM, diffusion, DPT-CP1, auto-annotate |
+| 18 | **smmart** | `memory/topics/smmart.md` | 07-15 | download, multi-source, aria2c, yt-dlp, libgen, sci-hub, cloud-drive |
 
 ## Recent Sessions
 
 | Date | Session ID | Manifest | Main Topic |
 |------|-----------|----------|------------|
+| 07-15 | — | — | smmart 三层管线实测 + see-clearly/agent-orchestration 改进 + book-figure 猫 |
 | 07-10 | — | `memory/sessions/2026-07-10-book-writing-tool-mvp.md` | 写书工具 MVP——Canon Mapper + claims.db + 全管线打通 |
 | 07-08 | — | — | Personal Goal Loop 框架——操作者哲学层 |
 | 07-06 | — | — | 希望麦田农场管理系统设计 |
