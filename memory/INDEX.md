@@ -3,7 +3,7 @@
 > **Gateway file.** Always read this first when waking up in a new session.
 > 04-MEMORY.md is auto-loaded core memory (critical lessons). This file is the archival index — what topics exist, where they are, when they were last touched.
 
-**Stats**: 18 topics | 20 journal days | last rebuilt 2026-07-15
+**Stats**: 20 topics | 21 journal days | last rebuilt 2026-07-18
 
 ---
 
@@ -30,12 +30,15 @@
 
 | 16 | **book-writing-tool** | `memory/topics/book-writing-tool.md` | 07-10 | writing, claims, database, pipeline, canon-mapper |
 | 17 | **book-figure** | `memory/topics/book-figure.md` | 07-15 | illustration, SVG, VLM, diffusion, DPT-CP1, auto-annotate |
-| 18 | **smmart** | `memory/topics/smmart.md` | 07-15 | download, multi-source, aria2c, yt-dlp, libgen, sci-hub, cloud-drive |
+| 18 | **smmart** | `memory/topics/smmart.md` | 07-18 | download, multi-source, aria2c, yt-dlp, libgen, sci-hub, cloud-drive, link-validation |
+| 19 | **white-mafia** | `memory/topics/white-mafia.md` | 07-07 | china, corruption, finance, power, regulation, deep-research |
+| 20 | **deep-research-paths** | `memory/topics/deep-research-paths.md` | 07-12 | search, research-engine, query-archive, strategy-reuse |
 
 ## Recent Sessions
 
 | Date | Session ID | Manifest | Main Topic |
 |------|-----------|----------|------------|
+| 07-18 | — | `memory/sessions/2026-07-18-dl-validate-multiplatform.md` | dl-validate 11平台 + smmart验证管线 + cognitive-license复检 |
 | 07-15 | — | — | smmart 三层管线实测 + see-clearly/agent-orchestration 改进 + book-figure 猫 |
 | 07-10 | — | `memory/sessions/2026-07-10-book-writing-tool-mvp.md` | 写书工具 MVP——Canon Mapper + claims.db + 全管线打通 |
 | 07-08 | — | — | Personal Goal Loop 框架——操作者哲学层 |

@@ -4,15 +4,16 @@ field:
   description: "按需深度调研——单个复杂问题的七层深度研究。不是定期循环，是队列模式"
   status: active
   planted: 2026-06-27
-  last_harvest: 2026-06-30
+  last_harvest: 2026-07-12
 
 seed:
   topic: "按需深度调研队列"
   recent_questions:
+    - "DeepSeek 510亿融资+商业化转折 (2026-07-12)"
     - "AI芯片竞争格局 (2026-06-27)"
     - "量子计算商业化进展 (2026-06-27)"
     - "生活 change notes 系统调研 (2026-06-30)"
-  queue: []  # 待调研问题列表
+  queue: []  # 人类可读备忘录。Agent不读这个——巡田时直接起Agent执行
 
 cultivation:
   schedule: on-demand
@@ -40,4 +41,4 @@ pollination:
 health:
   d5_end_to_end_tested: true
   detectors_connected: false
-  notes: "v2 七层引擎 + Challenger Gate 已验证。搜索路径存档机制已建立。Challenger Gate 实测发现 6 项父 Agent 错误，100% 采纳"
+  notes: "v2 七层引擎 + Challenger Gate。07-12 DS调研完成(21主张,4/10修正)。队列追踪改为巡田直起Agent(不再依赖YAML queue字段)。写书管线07-10消费~600k但走独立管道非队列"
