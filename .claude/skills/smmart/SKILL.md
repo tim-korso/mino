@@ -175,6 +175,22 @@ Cookie 存储: `~/.download-anything/cookies/<平台>/cookies.txt`
 
 **关键原则**：Agent 不参与机械搜索。`smmart-search.py` 搜完返回 JSON，Agent 只做判断——挑哪个、降级到哪个渠道。
 
+## 错误恢复层
+
+下载失败不要一律报错丢弃。按失败信号分类处理：
+
+| 信号 | 含义 | 动作 |
+|------|------|------|
+| `ERROR: Video unavailable` / `HTTP 404` / `分享已取消` | 源已删除 | **skip** — 换下一个源或重新搜索 |
+| `ERROR: Geo-restricted` / `地区限制` | 锁区 | **retry_with_proxy** — 换代理重试，不行则跳过 |
+| `ERROR: Login required` / `需要登录` / `premium` | 需要认证 | **mark_needs_cookie** — 需要 cookie，标记后人工介入 |
+| `HTTP 429` / `请求过于频繁` | 被限流 | **backoff** — 等待 30s 后重试 |
+| `HTTP 410` / `分享已过期` / `ShareLink.Expired` | 链接过期 | **rescan** — 触发重新搜索，不浪费重试 |
+| `timeout` / `connection refused` / `DNS` | 网络问题 | **retry_once** — 重试 1 次，仍失败跳过 |
+| `Content-Length < 预期` / `bytes/page < 15000` | 下载内容异常 | **skip** — HTML/占位页伪装，换源 |
+
+**核心逻辑**：区分"这个源暂时不行"和"这个源这次不行"——前者换源，后者重试。不要混在一起无限循环。
+
 **每次 smmart 会话第一件事：源保鲜**
 
 ```bash

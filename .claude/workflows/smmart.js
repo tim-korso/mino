@@ -221,4 +221,13 @@ return {
     ? '夸克链接 → 已自动验证有效性 → 复制活链接 → 夸克APP → 粘贴 → 保存。提取码见链接标注。'
     : '论文: bash dl-paper.sh [DOI/arXiv ID]。电子书: bash dl-ebook.sh [书名]。',
   validation: results.slow?.validationSummary || null,
+  errorRecovery: {
+    unavailable: { signal: 'ERROR: Video unavailable | 404 | 分享已取消', action: 'skip', note: '源已删除，换下一个源或重新搜索' },
+    geoBlocked: { signal: 'ERROR: Geo-restricted | 地区限制', action: 'retry_with_proxy', note: '换代理节点重试，或跳过' },
+    loginRequired: { signal: 'ERROR: Login required | 需要登录 | premium', action: 'mark_needs_cookie', note: '需要浏览器 cookie，标记后人工介入' },
+    rateLimited: { signal: 'HTTP 429 | 请求过于频繁', action: 'backoff', note: '等待 30s 后重试' },
+    expired: { signal: 'HTTP 410 | 分享已过期 | ShareLink.Expired', action: 'rescan', note: '触发重新搜索，不浪费重试' },
+    networkError: { signal: 'timeout | connection refused | DNS', action: 'retry_once', note: '重试 1 次，仍失败则跳过' },
+    sizeMismatch: { signal: 'Content-Length < 预期 | bytes/page < 15000', action: 'skip', note: '下载内容异常（HTML/占位页），换源' },
+  },
 }
