@@ -1,0 +1,290 @@
+{
+  "terminology": [
+    {
+      "term": "分层模型 (Layered Model)",
+      "definition": "按功能问题将网络通信切分为五层的工程分解方法——应用层(进程任务)、传输层(进程间交付)、网络层(跨网络路由)、链路层(相邻节点帧传递)、物理层(原始比特传输)。每层通过封装与抽象向上一层隐藏实现细节。框架本身不受协议演进影响，但「严格隔离」「安全属于某一层」「TCP+UDP二元」三个具体描述面临修订。",
+      "use_in_chapters": "Bone 1(核心定义), Bone 2(作为问题定位前提), Bone 3(物理层工程展开), Bone 4(链路层设备实现), Bone 5(各层协议实证)",
+      "do_not_confuse_with": "不要混淆为OSI七层模型(学术参考模型，会话层/表示层在实践中被吸收进应用层)；不要混淆为TCP/IP四层模型(实现视角的简化，丢失了物理层的独立工程地位)"
+    },
+    {
+      "term": "Soft Layering (软分层)",
+      "definition": "AI驱动的跨层优化范式——保留分层模块化API边界，但允许跨层可观测性与选择性信息穿透。不取代分层，补充分层。当AI工作负载改变了每一层的假设(延迟敏感度、流量模式、故障模型)时，严格隔离变成性能障碍而非工程美德。",
+      "use_in_chapters": "Bone 1(§1.7核心论述), Bone 4(跨层可编程性), Bone 6(跨层优化策略), Bone 7(意图网络中跨层可见性)",
+      "do_not_confuse_with": "不要混淆为「不分层」(放弃模块化意味着放弃可维护性)；不要混淆为cross-layer optimization的简单版(绕过而非穿透——绕过分层失去API契约，穿透保留契约但允许观测)"
+    },
+    {
+      "term": "问题空间 (Problem Space)",
+      "definition": "Perlman方法论的核心概念——先定义网络互联需要解决的六个维度的功能问题(编址/路由/环路避免/组播/桥vs路由/传输)，再横向比较每个维度有哪些不同解法。不是协议手册的纵向罗列，而是「元素周期表」式的比较解剖学。框架本身具有极强的持久性——问题是问题，解法会变。",
+      "use_in_chapters": "Bone 2(核心方法论), Bone 4(交换机功能解决的问题空间), Bone 7(运维场景的问题空间分叉)",
+      "do_not_confuse_with": "不要混淆为「协议对比表」(按协议纵向排列，不揭示为什么不同协议在不同维度做了不同取舍)；不要混淆为solution space(解法空间——解法是协议实例，问题空间是功能需求)"
+    },
+    {
+      "term": "比较解剖学 (Comparative Anatomy)",
+      "definition": "Perlman分析网络协议的元方法——像比较生物学中不同物种的骨骼结构一样，比较不同协议在同一功能维度(如环路避免)上的不同工程方案及其取舍。揭示的是「为什么不同」而非「有哪些不同」。",
+      "use_in_chapters": "Bone 2(核心方法), Bone 4(不同ASIC架构的比较解剖), Bone 6(不同性能优化策略的比较解剖)",
+      "do_not_confuse_with": "不要混淆为protocol survey(协议综述只列功能特性，不揭示设计取舍的因果链)"
+    },
+    {
+      "term": "SRv6 (Segment Routing over IPv6)",
+      "definition": "利用IPv6路由扩展头将路径编码为段列表(SID list)的源路由范式。uSID压缩将多个SID打包进单个128-bit地址。SRv6将路由决策从「逐跳协商」变为「源节点编码路径」，并可通过End.IL等扩展将段编程延伸到光传输层。SR-MPLS是其MPLS数据面变体，两者趋于收敛。",
+      "use_in_chapters": "Bone 1(§1.4网络层扩展), Bone 2(§2.3路由维度+§2.2编址维度), Bone 4(§4.4 MPLS构件替代), Bone 7(§7.6标签分发范式迁移)",
+      "do_not_confuse_with": "不要混淆为MPLS-TE(基于RSVP-TE的逐跳信令预留——SRv6不需要逐跳信令，路径由源节点一次编码)；不要混淆为单纯的IPv6路由(IPv6只解决地址空间，SRv6解决路径编程)"
+    },
+    {
+      "term": "BIER (Bit Indexed Explicit Replication)",
+      "definition": "组播的新范式——用bitstring编码接收方集合(每一位代表一个接收边缘节点)，中间路由器根据bitstring独立转发，无需维护每流组播状态。打破了「组播=树构建协议」的基本假设。Juniper/Nokia/Cisco/Huawei已进入生产部署。",
+      "use_in_chapters": "Bone 2(§2.5组播维度核心突破)",
+      "do_not_confuse_with": "不要混淆为PIM-SM/PIM-SSM(传统组播树构建协议——每流需维护(*,G)或(S,G)状态，BIER无每流状态)；不要混淆为broadcast(广播是无选择的全网泛洪，BIER精确指定接收方集合)"
+    },
+    {
+      "term": "VXLAN (Virtual Extensible LAN)",
+      "definition": "使用24位VNI提供1600万+虚拟网络的overlay封装协议——在L3 underlay上实现L2延伸。MAC-in-UDP封装使二层帧能在三层网络上传输，解决了VLAN 12位/4096个网络的限制和生成树的范围问题。与EVPN结合后实现控制面学习替代数据面泛洪。",
+      "use_in_chapters": "Bone 1(§1.8扩展层), Bone 2(§2.4环路避免中生成树替代), Bone 4(隧道终结在ASIC管线中的位置), Bone 7(数据中心overlay设计)",
+      "do_not_confuse_with": "不要混淆为VLAN(12位/4096个、纯L2域隔离，无overlay概念)；不要混淆为NVGRE(同是overlay但用GRE封装而非UDP，生态远小于VXLAN)；不要混淆为Geneve(更灵活的overlay封装但部署量远小于VXLAN)"
+    },
+    {
+      "term": "ASIC数据面管线 (ASIC Data Plane Pipeline)",
+      "definition": "交换机芯片内部处理每个数据包的六段式固定流水线：MAC接收→解析(Parser)→L2查找(MAC表)→L3查找(FIB/LPM)→ACL/策略→缓冲区与调度→重写(Edit)→MAC发送。每个功能(IEEE标准)必须映射到管线中某一段的硬件表项操作。这是理解所有交换机功能的统一骨架。",
+      "use_in_chapters": "Bone 4(核心骨架定义§4.1，贯穿全章), Bone 6(管线各段的瓶颈分析), Bone 7(管线功能与运维配置的对应)",
+      "do_not_confuse_with": "不要混淆为x86 CPU流水线(通用计算取指-译码-执行-访存-写回，ASIC管线是针对网络包处理的专用stage)；不要混淆为协议栈分层(分层是功能问题分解，管线是硬件执行步骤)"
+    },
+    {
+      "term": "TCAM (Ternary Content Addressable Memory)",
+      "definition": "三态内容寻址存储器——可在单个时钟周期内对所有条目并行查找，支持0/1/don't-care三态匹配。在交换机ASIC中用于需要通配符匹配的ACL、QoS分类和部分L3路由。代价是功耗极高、面积大、条目数受限。SRAM用于精确匹配(MAC表)和LPM(FIB/算法查找)。",
+      "use_in_chapters": "Bone 4(§4.3 ASIC核心构件), Bone 6(§6.5硬件层瓶颈——TCAM功耗)",
+      "do_not_confuse_with": "不要混淆为普通SRAM(需逐条比对，无法并行通配符匹配)；不要混淆为LPM/算法查找(Longest Prefix Match用SRAM+树/哈希算法实现，不需要三态)"
+    },
+    {
+      "term": "CPO (Co-Packaged Optics)",
+      "definition": "共封装光学——将光引擎(硅光收发器)集成进ASIC封装基板，消灭前面板可插拔光模块。信号路径从PCB走线14-16英寸缩短至封装内0.5英寸以下，每端口功耗从30W降至9W，带宽密度从0.4 Tbit/s/mm提升至约10 Tbit/s/mm。对运维模型的冲击：从前「换光模块」变为「换整台交换机」。中间方案LPO(去DSP降功耗)/NPO(近封装降风险)延长可插拔生态寿命。",
+      "use_in_chapters": "Bone 3(§3.8物理传输边界内缩), Bone 4(§4.9光引擎吸进硅封装+§4.7多die架构), Bone 6(§6.5硬件瓶颈突破+§6.10功耗终极瓶颈)",
+      "do_not_confuse_with": "不要混淆为可插拔光模块(SFP/QSFP/QSFP-DD/OSFP——前面板可更换，CPO不可更换)；不要混淆为on-board optics(光引擎焊在PCB上但不在封装内——中间态，信号路径仍长于CPO)"
+    },
+    {
+      "term": "P4可编程管道 (P4 Programmable Pipeline)",
+      "definition": "一种数据平面编程语言和架构，允许运行时重定义ASIC的match-action表行为——MAC分桶策略、LPM算法选择、QoS调度器、ECN标记策略等不再烧死在RTL中。Cisco G300、NVIDIA BlueField-4、AMD Salina均已支持。打破了「数据平面是固定功能硅」的前提——协议不再由芯片厂商预先定义。",
+      "use_in_chapters": "Bone 2(§2.8数据平面可编程性重写游戏规则), Bone 4(§4.8运行时重写一切), Bone 6(§6.7 P4→eBPF后端)",
+      "do_not_confuse_with": "不要混淆为SDN控制面可编程(SDN可编程控制面路由决策，P4可编程数据面转发行为——一个是「往哪走」，一个是「怎么走」)；不要混淆为FPGA编程(FPGA用HDL描述电路，P4是领域特定语言描述包处理流水线)"
+    },
+    {
+      "term": "UEC (Ultra Ethernet Consortium)",
+      "definition": "超以太网联盟——以AI工作负载为第一性原理重新设计传输协议和网络架构。核心突破：(1)UET——第一个专为AI设计的传输协议，完全取代TCP；(2)逐包喷射(packet spraying)——不再「选一条路径」而是所有包同时走所有可用路径；(3)in-network collectives——交换机参与ML聚合计算。endpoint-scheduled fabric vs switch-scheduled fabric是根本性的架构选择。",
+      "use_in_chapters": "Bone 2(§2.7传输协议扩展空间), Bone 3(§3.11 AI后端物理层), Bone 4(§4.10转发范式重构), Bone 5(与BBR/TCP拥塞控制的对比背景)",
+      "do_not_confuse_with": "不要混淆为RoCEv2(RDMA over Converged Ethernet——仍然基于ECMP单路径选择，UEC是逐包多路径)；不要混淆为InfiniBand(IB是独立网络体系，UEC在以太网上实现IB级性能)"
+    },
+    {
+      "term": "BBR (Bottleneck Bandwidth and Round-trip)",
+      "definition": "Google开发的模型驱动拥塞控制算法——不依赖丢包信号(像CUBIC那样)，而是持续测量瓶颈带宽和最小RTT来建模路径。v1极端激进(抢占buffer)，v2加入公平性约束，v3在激进性与公平性间逐渐平衡。实证表现高度场景依赖——HP-WAN 80Gb/s表现优异，Starlink全球6城市表现良好，但在深缓冲多流场景流体模型失效。",
+      "use_in_chapters": "Bone 5(§5.3核心对照——CUBIC vs BBR), Bone 1(§1.3传输层拥塞控制)",
+      "do_not_confuse_with": "不要混淆为CUBIC(丢包驱动的经典算法，基于AIMD窗口调整——丢包是信号而非要解决的问题)；不要混淆为TCP Vegas(也是模型驱动但基于RTT变化而非直接测量带宽)"
+    },
+    {
+      "term": "tcpdump仲裁者方法论 (tcpdump-as-Arbiter Methodology)",
+      "definition": "Stevens的协议实证核心方法——任何关于协议行为的主张必须能在线路上观测到。三步：(1)强制制造边界条件，(2)用tcpdump/Wireshark观测真实响应，(3)反向推导实现缺陷。RFC描述的是「应该怎样」，tcpdump显示的是「实际怎样」——两者之间的系统性差异是网络可靠性的核心威胁。方法论本身不受工具演进影响。",
+      "use_in_chapters": "Bone 5(核心方法论§5.1，贯穿全章), Bone 7(运维验证手段)",
+      "do_not_confuse_with": "不要混淆为协议一致性测试(测试是否遵守RFC，仲裁者方法论证伪RFC描述的完备性)；不要混淆为网络监控(监控关注量(带宽/丢包率)，仲裁者方法论关注质(协议行为是否符合声称))"
+    },
+    {
+      "term": "中间件骨化 (Middlebox Ossification)",
+      "definition": "路径上存在大量非端点设备(NAT/防火墙/负载均衡器/DPI)修改或丢弃特定TCP选项/扩展头，使得新协议部署受阻的现象。测量数据：2.52亿IPv6路径中IPv6中间件三年翻三倍，87%路径损伤与MPTCP选项剥离有关。骨化是加速度问题而非二值问题——不是「有或没有」，是「恶化有多快」。",
+      "use_in_chapters": "Bone 5(§5.4精细测量), Bone 1(§1.8协议僵化催生横向安全层/扩展层), Bone 7(运维中绕过中间件的策略)",
+      "do_not_confuse_with": "不要混淆为Internet ossification的一般概念(泛指互联网架构僵化——中间件骨化是其中最可测量的一个维度)；不要混淆为协议版本碎片化(同一协议不同版本不兼容——中间件骨化是外部设备破坏协议，不是协议自身演进问题)"
+    },
+    {
+      "term": "eBPF (extended Berkeley Packet Filter)",
+      "definition": "在操作系统内核中安全运行沙箱化程序的通用执行引擎。在网络领域的三个关键角色：(1)高性能包处理(Cloudflare单核10Mpps)——作为DPDK的OS集成替代方案；(2)跨领域网络函数执行平台——在主机/智能网卡/交换机不同位置执行定制逻辑；(3)P4后端——P4程序编译为eBPF在内核执行。核心意义：碎片化了「网络功能在哪执行」这个问题的答案。",
+      "use_in_chapters": "Bone 6(§6.7跨领域网络函数执行平台+§6.4 OS层瓶颈突破), Bone 4(§4.11 SmartNIC/DPU中eBPF执行位置)",
+      "do_not_confuse_with": "不要混淆为DPDK(Data Plane Development Kit——专用CPU核+轮询模式+用户态驱动，显式旁路OS；eBPF在OS内核中安全执行，是透明旁路)。不要混淆为cBPF(Berkeley Packet Filter经典版——只有包过滤，eBPF是通用虚拟机)"
+    },
+    {
+      "term": "约束演化链 (Constraint Evolution Chain)",
+      "definition": "Varghese的核心教学法——用历史推理链训练推导能力而非背诵答案：约束X→方案A出现→约束随时间演变为Y→A不再最优→方案B出现。贯穿案例：从「电气极限SerDes是瓶颈」到「功耗/热耗散成为终极瓶颈」，解释CPO取代可插拔光模块的根本驱动力。这训练的是在新约束下自行推导方案的能力。",
+      "use_in_chapters": "Bone 6(§6.2核心教学法，贯穿全章), Bone 3(物理层约束演化), Bone 4(ASIC架构约束演化), Bone 8(制度约束演化)",
+      "do_not_confuse_with": "不要混淆为技术发展史(编年史按时间轴罗列事件，约束演化链揭示「为什么方案A在时代t最优而在t+n不是」的因果机制)；不要混淆为Moore's Law推论(Moore's Law描述晶体管密度增长趋势，约束演化链解释工程方案选择的因果)"
+    },
+    {
+      "term": "In-Network Computing (网内计算)",
+      "definition": "网络设备(交换机/智能网卡/DPU)不再仅是转发盒子，而是参与分布式计算——P4交换机+FPGA SmartNIC做ML梯度聚合，服务器数量降低60%。这不是简单的「交换机变快了」，是功能角色的根本变化：通信基础设施变成计算平台。",
+      "use_in_chapters": "Bone 4(§4.10 UEC+§4.11 SmartNIC/DPU边界模糊化), Bone 6(§6.8分布式计算平台新维度)",
+      "do_not_confuse_with": "不要混淆为edge computing(边缘计算把计算从云搬到近用户处——位置迁移。网内计算把计算注入通信路径本身——功能融合)。不要混淆为active networking(1990s的主动网络——在路由器中运行任意代码。网内计算限于ML聚合等受控操作，安全边界不同)"
+    },
+    {
+      "term": "IBN (Intent-Based Networking)",
+      "definition": "意图驱动网络——操作员声明意图(「这个应用需要低延迟路径」)而非编写配置，平台自主计算具体配置并持续验证意图是否被满足。IaC(基础设施即代码)渗透网络：Git commit→自动校验→灰度发布→回滚。99%企业报告使用自动化但仅约40%实际被自动化——差距在成熟度。Perlman在Ch17-18中批判的精神提供了审视IBN的透镜：IBN是范式转移还是SDN的重新包装？",
+      "use_in_chapters": "Bone 7(§7.7核心论述), Bone 2(§2.10元批判——IBN作为术语批判的当代例证)",
+      "do_not_confuse_with": "不要混淆为SDN(软件定义网络——控制面与数据面分离的架构；IBN是在此之上的意图抽象层，关注意图→配置的自动转化与持续验证)；不要混淆为network automation(自动化仍由人编写逻辑，IBN由系统从意图推导逻辑)"
+    },
+    {
+      "term": "配置-验证-排错闭环 (Config-Verify-Troubleshoot Loop)",
+      "definition": "网络运维的三段式核心方法论：配置变更→验证配置是否符合意图→发现偏差后排错与修正。经典层中三段均由人执行(SSH进设备→show命令→人脑分析→改配置)。2024-2026年前沿转变：验证和排错的执行主体从人变成AI Agent(+37pp F1, Meta生产2年, 90%+自主解决率)。三段论框架本身不过时——但人的角色从「操作者」变为「意图定义者+结论审阅者」。",
+      "use_in_chapters": "Bone 7(核心框架§7.2，贯穿全章), Bone 7(§7.9-7.10 Agent替代人工运维)",
+      "do_not_confuse_with": "不要混淆为CI/CD pipeline(持续集成/部署管道是软件开发实践——配置-验证-排错是网络特有的闭环，因为网络状态的「预期行为」远比代码的「预期输出」更难定义和验证)"
+    },
+    {
+      "term": "制度孵化器 (Institutional Incubator)",
+      "definition": "Hafner-Lyon提出的制度分析框架——技术形式由诞生它的制度环境决定。ARPA(国防部内高风险容忍+反官僚+开放治理)孵化出分组交换和RFC开放协作治理模式。核心命题：如果分组交换诞生在AT&T而非ARPA，互联网的形态会完全不同——不是技术最优决定了技术胜出，是制度环境选择了技术形态。",
+      "use_in_chapters": "Bone 8(§8.1框架定义+§8.2 ARPANET案例分析), Bone 4(华为盛科的制度环境对ASIC设计的影响), Bone 7(不同企业制度环境下的运维策略差异)",
+      "do_not_confuse_with": "不要混淆为「技术决定论」(技术内在属性决定其胜出——制度孵化器论证的是制度环境筛选技术)；不要混淆为innovation ecosystem(创新生态是市场+资本+人才的一般描述，制度孵化器是具体制度结构的因果分析)"
+    },
+    {
+      "term": "发明-执行鸿沟 (Invention-Execution Gap)",
+      "definition": "Hiltzik通过Xerox PARC案例揭示的结构性规律——四个失败维度：(1)认知锁定(母公司用旧业务定义自己)、(2)物理与文化隔离(3000英里)、 (3)技术转移机制缺位、(4)Christensen式创新者困境。核心洞见：这不是管理层的愚蠢，是制度激励结构的必然结果。在AI时代复现——97%高管认为GenAI将改变公司，仅11%进生产，4%创价值。",
+      "use_in_chapters": "Bone 8(§8.3 PARC解剖+§8.8 AI时代复现), Bone 4(ASIC创新从实验室到商用芯片的鸿沟), Bone 7(AI Agent运维从POC到生产部署的鸿沟)",
+      "do_not_confuse_with": "不要混淆为「技术成熟度曲线」(Gartner Hype Cycle描述期望与时间的波动——发明-执行鸿沟描述的是制度障碍如何阻止技术跨越从实验室到规模化的断层，与期望无关)"
+    },
+    {
+      "term": "PARC综合征 (PARC Syndrome)",
+      "definition": "发明-执行鸿沟在AI时代的系统化复现——91%技术领导者承认现有交付模式不足以将AI实验转化为生产价值，Gartner预测40% Agentic项目2027前失败。根因相同：在不重新设计流程的情况下自动化破碎流程。这不是AI特有的问题，是Hiltzik描写的同一制度病症的新宿主。",
+      "use_in_chapters": "Bone 8(§8.8核心论述), Bone 7(运维Agent部署的PARCC风险)",
+      "do_not_confuse_with": "不要混淆为「AI winters」(AI寒冬是技术路线达不到期望导致的投资退潮，PARC综合征是制度转移机制失效——即使技术成熟也无法规模化。两者可并存但根因不同)"
+    },
+    {
+      "term": "SPE (Single Pair Ethernet)",
+      "definition": "单对以太网——用一对双绞线同时传输数据和供电，打破「铜缆100米天花板」的普遍性：100Mbps@500m、10Mbps@1000m。PAM-3调制，IEC 63171连接器。与办公以太网(BASE-T需两对或四对线)构成平行矩阵——工业/汽车/楼宇自动化的独立物理传输体系。",
+      "use_in_chapters": "Bone 3(§3.9平行矩阵核心论述), Bone 1(物理层新类别)",
+      "do_not_confuse_with": "不要混淆为PoE over standard BASE-T(PoE在标准BASE-T上供电，距离仍受100m限制；SPE本身即可达500-1000m同时供电——距离和线对的根本突破)。不要混淆为CAN bus/RS-485(工业现场总线，SPE是标准以太网协议栈在单对线上的延伸)"
+    },
+    {
+      "term": "空芯光纤 (HCF / Hollow Core Fiber)",
+      "definition": "用空气芯替代实芯玻璃的光纤——光在空气中传播而非二氧化硅中，延迟比实芯低30-47%。微软收购Lumenisity后部署于Azure AI互联。NTT实现0.174dB/km损耗。为Spurgeon七维矩阵增加了新维度——折射率剖面变成设计维度，延迟不再与距离严格成正比。",
+      "use_in_chapters": "Bone 3(§3.10延迟物理极限突破), Bone 4(光模块物理边界延伸), Bone 6(硬件瓶颈新维度)",
+      "do_not_confuse_with": "不要混淆为单模光纤(SMF——实芯玻璃，延迟由二氧化硅折射率(~1.47)决定；HCF折射率接近1.0(空气)，延迟优势来自物理常数差异，不是制造工艺差异)"
+    },
+    {
+      "term": "全栈PQC (Post-Quantum Cryptography)",
+      "definition": "后量子密码学在网络全栈的同时升级——从安全启动(root of trust)到MACsec(链路层加密)到IPsec(网络层加密)同时替换为量子安全算法。安全不再属于某一层，而是独立横向切面贯穿所有层。",
+      "use_in_chapters": "Bone 1(§1.8安全层核心论述), Bone 5(§5.9后量子TLS性能代价), Bone 7(路由安全防御中的PQC维度)",
+      "do_not_confuse_with": "不要混淆为量子密钥分发(QKD——利用量子物理特性分发密钥，需要专用硬件；PQC是经典密码学算法的升级，可在现有硬件上运行)。不要混淆为TLS 1.3(只解决传输层加密，PQC是全栈从启动到应用层的算法替换)"
+    }
+  ],
+  "style_rules": [
+    "论证驱动，不是叙事驱动——每节有一个可证伪的工程论断作为核心，围绕它组织证据和分析。不是「介绍VXLAN是什么」，是「VXLAN解决了VLAN的4096网络限制，代价是引入了overlay的MTU和故障可见性问题——这里是在什么条件下代价大于收益」。",
+    "禁止使用「本章将介绍」「值得注意的是」「总而言之」「众所周知」「根据XXX(YYYY)」——引用经典时写「Perlman在《Interconnections》中论证」而非「根据Perlman(1999)」。提及年份只在首次引入时限概念时使用(如「2024-2026年间」)，不做学术括号堆砌。",
+    "每章2-6个小节，最多不超过12节(仅Bone 3和Bone 4因技术矩阵密度允许12节)。每节标题是论断而非主题——不是「§1.3 TCP协议」，是「§1.3 传输层解决的是进程间可靠交付问题，不是数据包丢失问题」。每节可独立阅读——前节不构成理解后节的硬前提。",
+    "技术细节用类比但不牺牲精确性——类比揭示结构同构性(如「比较解剖学」类比协议设计、「元素周期表」类比问题空间)，而非简化技术细节。不能用「就像」「好比」掩盖你对机制的不理解。类比的终点是帮助读者建立直觉，不是逃避定量和因果。",
+    "每根骨头标注「经典来源」+「前沿注入点」——在章首用边栏或说明块标注：本骨头的经典方法论来自哪本教材、提取了什么核心维度、前沿数据来自哪些2024-2026年的论文/部署/产品。读者应能追溯你的每一条知识来源。",
+    "区分「永恒框架」与「时效性内容」——在涉及具体数字(市场份额/性能排名/部署覆盖率)时，明确标注这是快照(如「截至2025Q4」)而非永恒真理。框架性洞见(如「RFC与实现之间存在系统性差异」)不需要这种标注。使用🟢🟡🔴时效性标签体系。",
+    "写作者立场：同行分享洞察，非教师传授知识——假设读者有入门水平(知道TCP/IP五层是什么、配过VLAN、用过Wireshark)，但缺乏系统性框架把碎片知识组织成可迁移的判断力。不要解释「什么是IP地址」，但要解释「为什么地址结构决定路由可扩展性」。不要居高临下。不要低估读者的学习能力。"
+  ],
+  "cross_chapter_deps": [
+    {
+      "from": "B1 (协议栈服务架构)",
+      "to": "B2 (互联方案设计空间)",
+      "relationship": "前置知识依赖——B2的问题空间分析以分层模型为共同语言。没有协议栈概念，无法讨论「某个问题发生在哪一层」「该层的功能约束是什么」。",
+      "must_reference": true
+    },
+    {
+      "from": "B2 (互联方案设计空间)",
+      "to": "B4 (设备功能解剖)",
+      "relationship": "设计意图到功能实现——B2解释L2问题空间(编址/环路避免/桥vs路由)后，B4回答「交换机在硬件层面如何实现这些解决方案」。弱传导(跳过B2仍可读B4，但丢失设计意图的深层理解)。",
+      "must_reference": false
+    },
+    {
+      "from": "B4 (设备功能解剖)",
+      "to": "B6 (实现性能工程)",
+      "relationship": "功能解剖到性能优化——不知道设备内部数据路径(MAC接收→解析→查表→ACL→缓冲→重写)就无法定位性能瓶颈所在段。硬前提。B6必须显式引用B4的六段式管线作为分析骨架。",
+      "must_reference": true
+    },
+    {
+      "from": "B4 (设备功能解剖)",
+      "to": "B7 (场景化运维设计)",
+      "relationship": "功能知识到运维应用——不知道设备功能全集无法做设计/配置/排错。B7配置的每一条命令都对应B4管线中的某一段硬件操作。硬前提。B7必须显式引用B4的设备功能映射。",
+      "must_reference": true
+    },
+    {
+      "from": "B1 (协议栈服务架构)",
+      "to": "B3 (物理传输工程)",
+      "relationship": "概念定位到工程展开——B1§1.6给出物理层在协议栈中的位置和接口约定，B3展开完整的物理传输工程矩阵。弱引用(可不显式引用——B3可独立阅读)。",
+      "must_reference": false
+    },
+    {
+      "from": "B1 (协议栈服务架构)",
+      "to": "B5 (协议实证行为)",
+      "relationship": "设计声称到实证检验——B1描述各层协议「应该怎样工作」(RFC声称)，B5用tcpdump验证「实际怎样工作」。B5应标注「B1描述了TCP应该怎样，本章验证TCP实际怎样」。建议引用但不强制。",
+      "must_reference": false
+    },
+    {
+      "from": "B5 (协议实证行为)",
+      "to": "B7 (场景化运维设计)",
+      "relationship": "实证数据到运维决策——B5提供的协议实际行为数据使B7的运维决策更精准(知道协议在边界条件下真实行为，而非依赖RFC描述)。B7建议引用B5作为实证支撑。弱依赖(跳过B5仍可运维，但决策精度下降)。",
+      "must_reference": false
+    },
+    {
+      "from": "B8 (制度创生史)",
+      "to": "B1-B7 (全部技术章节)",
+      "relationship": "全局平行维度——制度叙事与技术知识正交。三条路径互不阻塞：(A)B1→2→4→7纯技术链 (B)B8→1→2→4→7先史后技 (C)B8独立阅读。B8不要求技术章节作为前置，技术章节不要求B8作为前置。",
+      "must_reference": false
+    },
+    {
+      "from": "B6 (实现性能工程)",
+      "to": "B7 (场景化运维设计)",
+      "relationship": "平行应用域，存在双向反馈——性能优化策略(B6)为运维意图设计(B7)提供性能约束数据；运维实践(B7)暴露新的性能瓶颈反哺B6。互不为前提(跳过任一本仍可读另一本)，但存在反馈回路。建议互相标注「另见B6/B7」但不强制。",
+      "must_reference": false
+    },
+    {
+      "from": "B3 (物理传输工程)",
+      "to": "B4 (设备功能解剖)",
+      "relationship": "平行独立——物理层工程(B3)与交换机功能(B4)互不为前提。但B4§4.9(CPO)中对光模块的讨论可在物理层面引用B3§3.8的概念定义。弱引用。",
+      "must_reference": false
+    },
+    {
+      "from": "B2 (互联方案设计空间)",
+      "to": "B7 (场景化运维设计)",
+      "relationship": "设计方案空间到运维策略选择——B7中SRv6 vs SR-MPLS的选择、生成树vs IP fabric的决策、BGP安全策略等运维决策，直接对应B2中同一维度不同方案的比较分析。B7写作时应标注「关于方案选择的深层分析见B2§XX」。",
+      "must_reference": false
+    }
+  ],
+  "claim_id_ranges": [
+    {
+      "chapter": "Bone 1 · 协议栈服务架构",
+      "id_range": "E001-E025"
+    },
+    {
+      "chapter": "Bone 2 · 互联方案设计空间",
+      "id_range": "E026-E055"
+    },
+    {
+      "chapter": "Bone 3 · 物理传输工程",
+      "id_range": "E056-E085"
+    },
+    {
+      "chapter": "Bone 4 · 设备功能解剖",
+      "id_range": "E086-E120"
+    },
+    {
+      "chapter": "Bone 5 · 协议实证行为",
+      "id_range": "E121-E150"
+    },
+    {
+      "chapter": "Bone 6 · 实现性能工程",
+      "id_range": "E151-E180"
+    },
+    {
+      "chapter": "Bone 7 · 场景化运维设计",
+      "id_range": "E181-E210"
+    },
+    {
+      "chapter": "Bone 8 · 制度创生史",
+      "id_range": "E211-E235"
+    }
+  ],
+  "tone_guidelines": "读者是技术从业者(网络工程师/架构师/技术管理者)，不是学生。假设读者有入门水平——知道TCP/IP五层是什么、配过VLAN、用过Wireshark抓过包——但缺乏系统性框架把碎片知识组织成可迁移的判断力。写作定位是「同行分享洞察」——不是老师教你知识，而是一个在这个领域花了大量时间的人告诉你他发现了什么规律、哪些地方最容易踩坑、为什么某些看起来很合理的做法实际上是错的。不解释基础概念(什么是IP地址、什么是MAC地址)，但解释这些基础概念之间的结构关系(为什么地址结构决定路由可扩展性)。不居高临下，不低估读者的学习能力。技术判断要尖锐——敢于说「这个做法是错的」并提供可验证的理由。不确定性要量化——不写「可能」「也许」，写「三个独立实验中有两个支持该结论，第三个因测试环境差异未复现」或「该结论基于2025Q4的快照数据，2026年下半年可能有重大变化」。",
+  "forbidden_phrases": [
+    "值得注意的是",
+    "总而言之",
+    "综上所述",
+    "根据XXX(YYYY)",
+    "本章将介绍",
+    "本节将讨论",
+    "众所周知",
+    "不言而喻",
+    "显而易见",
+    "毋庸置疑",
+    "毫无疑问",
+    "接下来我们来看",
+    "在本文中",
+    "需要指出的是",
+    "需要强调的是",
+    "正如前面提到的"
+  ]
+}
