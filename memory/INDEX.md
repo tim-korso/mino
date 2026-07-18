@@ -33,6 +33,7 @@
 | 18 | **smmart** | `memory/topics/smmart.md` | 07-18 | download, multi-source, aria2c, yt-dlp, libgen, sci-hub, cloud-drive, link-validation |
 | 19 | **white-mafia** | `memory/topics/white-mafia.md` | 07-07 | china, corruption, finance, power, regulation, deep-research |
 | 20 | **deep-research-paths** | `memory/topics/deep-research-paths.md` | 07-12 | search, research-engine, query-archive, strategy-reuse |
+| 21 | **macos-automation** | `memory/topics/macos-automation.md` | 07-18 | macOS, CLI, AppleScript, ceiling-matrix, pipeline, brew, proxy, diagnostics |
 
 ## Recent Sessions
 

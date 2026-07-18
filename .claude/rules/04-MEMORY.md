@@ -31,6 +31,7 @@
 | **生活 Change Notes 系统** ★NEW | `memory/topics/life-change-notes.md` | 2026-06-30 创建。工作变更管理模式→生活迁移。三层架构(基线→变更流→提炼)+三种问责模型(物理/对话/决策)。核心洞见：工作靠问责链，生活零问责——不能照搬event-based |
 | **希望麦田 — Agent Farm 管理系统** ★NEW | `memory/topics/agent-farm.md` | 2026-07-06 创建。Goal Loop 之上的农场管理元层——5块田的声明式定义+生命周期+跨田授粉+周巡田节奏 |
 | **写书工具 — Canon Mapper** ★NEW | `memory/topics/book-writing-tool.md` | 2026-07-10 MVP。主张驱动写书管线：经典映射→deep-research→claims.db→章节引用追踪。19条经验证主张已植入金融书 |
+| **macOS Automation Skill** ★NEW | `memory/topics/macos-automation.md` | 2026-07-18 v5。130工具·10阶段·App天花板矩阵·AppleScript安全陷阱·7管线脚本。全部实测全通 |
 | **book-figure — AI 配图** ★NEW | `memory/topics/book-figure.md` | 2026-07-15。通义万相生成线稿 + Qwen-VL 视觉定位 + SVG DPT-CP1 标注。**核心突破**：扩散模型做生成、VLM 做定位——分而治之，不逼一个模型做两件事 |
 | **smmart — 资源下载** ★ | `memory/topics/smmart.md` | 2026-07-18。三层管线(快速/中等/慢速) + 11 平台云盘链接验证(dl-validate) + 错误恢复层(7类信号→7种动作)。核心洞见：云盘链接验证可自动化——匿名 API 无需登录 |
 
@@ -59,7 +60,12 @@
 - **工作模式不能直接迁移到生活——搬表面机制不搬底层结构必然失败 (2026-06-30)**：change notes 的表面是"记录变化"，底层是"被问责"（监管推送→岗位职责→同事互审→领导检查→合规证据）。生活抽走了整条问责链。行为迁移必须先识别底层结构再设计替代方案，不能只复制表面操作。三种替代问责源：物理问责（容量=触发器）、对话问责（bot/人主动问）、决策问责（预测vs实际到期对比）。详见 `memory/topics/life-change-notes.md`
 - **扩散模型生成≠VLM定位——能力边界不可跨 (2026-07-15)**：扩散模型从噪声中一次性生成整张图，不存在"在 X 位置画一个 Y"的操作——AI 画的字母和轮廓线碎片对 CV 检测来说没区别。VLM 的训练目标就是看图→定位语义区域。两个模型能力边界互补，不是竞争关系。三条实验证据：字母锚点（16 候选→4 可用，大多是轮廓碎片）、圆点锚点（HoughCircles 抓 62 个"圆"全是弧段）、VLM 定位（4/4 部位一次成功）。**正确管线**：扩散模型做生成（不要求标注任何东西）+ VLM 做定位（给坐标）→ SVG 叠加。类比已有教训：LLM=Scout≠Judge、构建者不能验证自己输出——都是"匹配模型类型到任务"这条元规则的实例。详见 `memory/topics/book-figure.md`
 - **匿名 API 发现方法论 (2026-07-18)**：中文网盘普遍有"分享页预览"功能，背后就是不需登录的 token/info API。阿里云盘官方文档有 `getShareLinkByAnonymous`，夸克/115/UC 同理。**发现 API 的方法是找已有开源实现（share-sniffer/PanCheck/GreasyFork 脚本），不是猜端点。** 逆向工程 API 慢 10 倍。另一面：JS 渲染 SPA（迅雷 Nuxt/移动/蓝奏/城通）SSR 盲区——有效和失效返回完全相同的 HTML 壳，静态分析不可达，属于机制边界问题。
-- **下载失败分类恢复 (2026-07-18)**：不要对所有下载失败一视同仁。区分"源死了"（换源/重搜）vs "源暂时不可用"（重试/等待）vs "源需要认证"（标记 cookie）vs "被限流"（backoff）。7 类失败信号 → 7 种恢复动作。核心：不混在一起无限循环。
+- **VLM 不能像素定位 GUI (2026-07-18)**：VLM 的"定位"是语义区域级别("左下角")，不是像素坐标级别(x=342,y=218)。SwiftUI 控件需要的精度是后者。VLM 训练目标不是像素回归——此能力边界不可跨。当 VLM 给出坐标时，它在做语义描述转估算，误差几百像素。详见 `memory/topics/macos-automation.md`
+- **macOS 26 SwiftUI AX 黑箱 (2026-07-18)**：System Settings 和 Mail 设置窗口的 SwiftUI 内容区对 System Events Accessibility 完全不透光——只暴露 toolbar 按钮，内部控件是 AXGroup 黑箱。GUI 脚本化在此类窗口上不可靠。键盘 Tab 导航不稳定且无反馈。
+- **iCloud CloudKit 秒级覆盖 (2026-07-18)**：bird 守护进程以 CloudKit 为权威源——本地 plist 修改 <3s 被覆盖。绕过: 写到 Unsynced 等价文件(如 UnsyncedRules.plist)。注意: Unsynced 文件的条件字段生效，动作字段被过滤(安全限制)。这个模型适用于所有 iCloud-synced App (Notes/Calendar/Reminders/Safari/Contacts)。
+- **BSD 工具链 Unicode 盲区 (2026-07-18)**：macOS BSD grep 无 `-P` (Perl regex)——Unicode 类 `\x{hhhh}` 不可用。`stat -f` vs `stat -c`、`sed -i ''` vs `sed -i`、`find` 无 `-printf`——都是 Mac/Linux 自动化脚本的经典互坑点。统一用 Python 做 Unicode 处理，或用 Homebrew 的 `rg`/`pcregrep`。
+- **ClashMeta TUN stack 2000 倍 CPU 差距 (2026-07-18)**：FlClash 的 `mixed` stack = 194% CPU (28线程忙轮询——macOS kqueue 限制)，`gvisor` stack = 0.1% CPU。重装 FlClash + 清偏好后自动切到 gvisor。不是所有代理都有这问题——ClashMeta 内核特有问题。
+- **代理 App 配置不可程序化修改 (2026-07-18)**：FlClash 的 `flutter.config` 通过 `defaults import` 修改后破坏 GUI↔Core 状态同步。Surge 破解仓库被 DMCA。VLESS 协议 Surge 不支持。代理 App 是自动化天花板矩阵的新条目——三层(API×GUI×存储)全封死。
 - **cognitive-license 自检设计决策有效 (2026-07-18)**："构建者不能验证自己输出"的元规则再次验证——对 smmart 设计讨论跑 cognitive-license，发现 C018（"链接验证必须亲自试"）被实测推翻、C022（"提取码→链接维护"）因果倒置被 REJECT。自己设计自己审 = 盲区，第三方冷启动评估发现真问题。
 - **规则净效应 > 单条规则 (2026-06-12)**：多条"好规则"叠加可能产生系统性保守偏向——不是检查每条规则好不好，是检查所有规则加在一起把 Agent 推向了什么方向。保守压力需要主动在源头文件中中和，不是靠加更多规则解决
 - **Workflow Agent Stall = SDK 硬编码 180s (2026-07-19)**：Claude Agent SDK Bun runtime 内置 180s liveness check——Agent 无文本输出超时即判 stalled，重试 6 次后放弃。MyAgents 无配置暴露。规避：长 Agent（写章/研究型）拆成独立后台 Agent 而非 Workflow pipeline 内一步。Pipeline 有容错优势——A 断了 B/C 继续，Resume 时 34/36 Agent 秒出缓存。
