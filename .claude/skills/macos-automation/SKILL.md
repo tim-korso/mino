@@ -317,13 +317,109 @@ sudo htop
 | Stage 1-6: 原生 CLI | 78 | /usr/bin /usr/sbin /bin /sbin |
 | Stage 7: AppleScript | 12 | 系统应用 + System Events |
 | Stage 8: Homebrew | 10 | brew install |
-| **合计** | **100** | |
+| **合计** | **116** | |
+
+## Stage 9: Xcode 诊断 + 系统深度控制
+
+Xcode 命令行工具自带的性能诊断套件 + 隐藏的系统级工具。
+
+### 内存诊断
+
+```bash
+# Heap: 查看进程堆内存
+heap -s Safari
+
+# Leaks: 内存泄漏检测
+leaks --list Safari
+
+# VMMap: 虚拟内存全景
+vmmap --summary Safari
+
+# Malloc History: 内存分配追溯
+malloc_history Safari -callTree
+```
+
+### 系统诊断
+
+```bash
+# sysdiagnose: 一键系统快照(日志/配置/性能数据)
+sysdiagnose -f ~/Desktop/
+
+# log: 系统日志查询
+log show --last 10m --predicate 'eventMessage contains "error"'
+log stream --predicate 'subsystem == "com.apple.network"'
+
+# nettop: 实时网络流量 (类似 tcpdump 但更直观)
+nettop -n -d -t wifi -P
+
+# purge: 强制释放非活跃内存
+sudo purge
+```
+
+### 应用与数据库控制
+
+```bash
+# lsregister: Launch Services 数据库 —— 控制文件→应用关联
+LSREG=/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister
+$LSREG -dump    # 导出全量数据库
+$LSREG -kill -seed    # 重建数据库
+
+# duti: 设置默认应用 (brew install duti)
+duti -s com.apple.Safari public.html
+
+# safaridriver: Safari WebDriver (自动化测试)
+safaridriver --enable  # 先启用
+safaridriver -p 4444   # 启动 WebDriver
+```
+
+### Swift 脚本
+
+```bash
+# Swift 可直接作为脚本解释器 (.swift 文件)
+echo '#!/usr/bin/swift
+import Foundation
+let task = Process()
+task.launchPath = "/usr/bin/say"
+task.arguments = ["Swift automation running"]
+task.launch()' > /tmp/test.swift
+chmod +x /tmp/test.swift
+/tmp/test.swift
+```
+
+### 高级系统配置
+
+```bash
+# plutil: 格式互转 (plist↔JSON↔XML)
+plutil -convert json file.plist -o file.json
+
+# scutil: 系统配置数据库
+scutil --get ComputerName
+scutil --dns
+
+# pmset: 电源事件调度
+pmset -g sched         # 查看定时唤醒/睡眠
+sudo pmset schedule wake "07/20/2026 08:00:00"
+
+# networksetup: 网络位置管理
+networksetup -listlocations
+networksetup -switchlocation "Office"
+```
+
+## 完整工具库统计
+
+| 类别 | 工具数 | 来源 |
+|------|--------|------|
+| Stage 1-6: 原生 CLI | 78 | /usr/bin /usr/sbin /bin /sbin |
+| Stage 7: AppleScript | 12 | 系统应用 + System Events |
+| Stage 8: Homebrew | 10 | brew install |
+| Stage 9: 诊断/深度系统 | 16 | Xcode CLI + Frameworks + 隐藏工具 |
+| **合计** | **116** | |
 
 ## 实测环境
 
 - macOS 26.3.1 (Sequoia) · MacBook Air (Mac15,12) · Apple Silicon · 16GB RAM
-- SIP: enabled · Gatekeeper: enabled · Xcode: installed
+- SIP: enabled · Gatekeeper: enabled · Xcode: installed (Swift 6.3.2)
 - TCC: Accessibility + Full Disk Access + Automation 已授权
 - sudo: 5 个非破坏性命令 NOPASSWD
-- 402 apps installed · 100 automation tools available
+- 402 apps installed · 116 automation tools available
 - Test date: 2026-07-18
