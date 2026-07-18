@@ -227,7 +227,8 @@ done
 | `mdfind` | 不搜索隐藏目录（`.myagents/`等）。`kMDItemTextContent` 对 markdown 文件覆盖不完整 |
 | `srm` | 新版 macOS 已被移除（用 `rm -P` 替代） |
 | `brightness` | 非系统自带——需 `brew install brightness` 或用 `osascript` |
-| `dtrace` / `fs_usage` / `powermetrics` | 需 `sudo` |
+| `dtrace` / `fs_usage` / `powermetrics` | 需 `sudo`。NOPASSWD 可配但 MyAgents 沙箱封 sudo 调用——需直接在终端执行 |
+| `sample` / `heap` (详细) / `leaks` / `vmmap` (完整) | 需 `sudo` + Xcode 安装。非 Apple 进程全权限（NOPASSWD 已配），Apple 系统进程被 SIP 硬拦截。`vmmap --summary` 和 `heap -s` 无需 sudo |
 | `shortcuts run` | 快捷指令名含特殊字符时加引号：`shortcuts run '打开"备忘录"'` |
 | `tmutil` | 非 Time Machine 用户无目标 |
 | `textutil` | Markdown→HTML 保留简单格式，复杂表格/公式可能丢失 |
