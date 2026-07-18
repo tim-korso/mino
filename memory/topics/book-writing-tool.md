@@ -80,6 +80,17 @@ python3 $DB affected DR001           # 看影响范围
 - [x] 04-信用与债务周期.md: 3 claims (DR013/DR014/DR015)
 - [x] 05-联动运用.md: 4 claims (DR003/DR018/DR019)
 
+### 企业交换机书 (2026-07-17→19) ★NEW
+
+完整 write 管线——新建书全流程：知识图谱→骨架搭建→写章→连贯性修复→充实→PDF。
+
+- **知识图谱 Workflow** (12 Agent): 市场×技术×趋势×经典四维扫描→8 根骨头 DAG + 13 本经典
+- **skeleton-builder Workflow** (24 Agent): 五步算法 + 三轮对抗验证—PASSED→`00-骨架.md`
+- **write-continue Workflow** (34 Agent): pipeline 写 8 章→2 次 stall→resume 后从 journal 提取落盘
+- **连贯性检查 Agent**: 14 处问题→5 处传导注直接修复
+- **充实 Agent** (2 并行): Ch1 191→279 行, Ch7 204→498 行
+- 8 章 2294 行 62 条主张 | Book Bible (31KB) | 9 本 DPT-CP1 PDF 渲染
+
 ## Pending (P2+)
 
 - [ ] batch 映射剩余 9 本经典
@@ -173,4 +184,4 @@ feedback_loop_collapse / threshold_effect / adaptive_response_failure / concentr
 | 2026-07-10 | Phase 2 深化模板库: 五个通用模板(A/B/C/D/E)写入 /write SKILL.md——从健康书具体内容抽成通用模板 |
 | 2026-07-10 | Phase 2 第二批模板(F/G/H/I): 误区爆破/发现故事/自评工具/反对声音——九模板全部通用化 |
 | 2026-07-10 | 第二层生产工具: render.py(HTML/EPUB/PDF) + db.py cite(引用清单) + db.py index(术语索引)——三工具全部实现并测试通过 |
-| 2026-07-10 | 第三层跨书能力: cross_book_patterns + claim_reuse 两张新表 + 4个新命令(patterns/pattern-save/reuse/reused)——五类系统动力学模式 + 主张复用机制 |
+| 2026-07-17→19 | 企业交换机书全管线: 知识图谱(12A)→骨架(24A)→写章(34A)→连贯修复→充实→PDF 渲染 |

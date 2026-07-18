@@ -62,6 +62,10 @@
 - **下载失败分类恢复 (2026-07-18)**：不要对所有下载失败一视同仁。区分"源死了"（换源/重搜）vs "源暂时不可用"（重试/等待）vs "源需要认证"（标记 cookie）vs "被限流"（backoff）。7 类失败信号 → 7 种恢复动作。核心：不混在一起无限循环。
 - **cognitive-license 自检设计决策有效 (2026-07-18)**："构建者不能验证自己输出"的元规则再次验证——对 smmart 设计讨论跑 cognitive-license，发现 C018（"链接验证必须亲自试"）被实测推翻、C022（"提取码→链接维护"）因果倒置被 REJECT。自己设计自己审 = 盲区，第三方冷启动评估发现真问题。
 - **规则净效应 > 单条规则 (2026-06-12)**：多条"好规则"叠加可能产生系统性保守偏向——不是检查每条规则好不好，是检查所有规则加在一起把 Agent 推向了什么方向。保守压力需要主动在源头文件中中和，不是靠加更多规则解决
+- **Workflow Agent Stall = SDK 硬编码 180s (2026-07-19)**：Claude Agent SDK Bun runtime 内置 180s liveness check——Agent 无文本输出超时即判 stalled，重试 6 次后放弃。MyAgents 无配置暴露。规避：长 Agent（写章/研究型）拆成独立后台 Agent 而非 Workflow pipeline 内一步。Pipeline 有容错优势——A 断了 B/C 继续，Resume 时 34/36 Agent 秒出缓存。
+- **API Connection Closed > Agent Stall 致命度 (2026-07-19)**：DeepSeek API 流式连接中断是真正的"丢轮"——首次无可用缓存，重试从头烧 token。Stall 至少可借已完成 Agent 的缓存 resume。602 个 Agent 中仅 3 个 journal 级错误(0.5%)，但 Workflow 级中断 6 次——主要在对抗充实阶段。
+- **journal 提取模式 > 反复 resume (2026-07-19)**：API 不稳定时，Workflow 产出了全部 Agent 结果但脚本断在后处理——从 journal.jsonl 直接提取已完成 Agent 的 completion 比反复 resume Workflow 更可靠。8 章内容全部在 journal 里，直接提出来写盘。
+- **技能脚本跨书可移植性 (2026-07-19)**：write-continue-ai-gaps 扫描了错误的目录（混入其他书的章节），暴露了技能 Workflow 脚本的领域耦合——`workspace/\${book_id}/` 路径约定需要显式 enforce，不能靠 Agent 自行判断。
 - **WeChat Bridge 主动推送 (2026-06-11)**：cron→bot heartbeat 链路过长且不稳定。替代方案：主 session 产出内容 → `myagents session send <botSessionId>` 直接投递到微信 bot 的活跃 session。bot 收到 prompt 后自动回复到微信。关键是先找到活跃 bot session（grep 日志或 sessions.json 中 agentDir 含 mino 且 lastActiveAt 最近的）
 - **三层认知空白分析 (2026-06-21)**：识别被C端低估的科技公司。五误判模式——甜点判主厨(用非核心产品判断公司)、时间错位(用旧体验判断快迭代公司)、大厂对比偏见(用大厂C端标准判断创业公司)、模态忽视、制裁信号钝感(被BIS制裁=最强第三方技术背书)。核心洞见：C端App体验最易获取→最易被过度加权。真正有价值的信号(自研架构/API增速/被制裁/投资方质量)不在App里。详见 `memory/topics/cognitive-gap-analysis.md`，Skill: `cognitive-gap-analysis`
 
