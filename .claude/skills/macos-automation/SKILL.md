@@ -1,11 +1,11 @@
 ---
 name: macos-automation
-description: "macOS自动化工具管线——118个工具按10个阶段编目：文件系统→文本处理→系统控制→影音GUI→网络安全→调度管线→AppleScript→Homebrew→Xcode诊断→复合管线模板。78原生CLI零安装。含App自动化天花板矩阵（实测Mail/Calendar/Safari等8个App的三层自动化上限）。Triggers on: 'mac自动化', 'macOS automation', '批量处理', '转换格式', '系统控制', 'mac工具', '原生工具', '不用装', 'macOS native', 'automator', 'osascript', 'mdfind', 'textutil', 'sips'."
+description: "macOS自动化工具管线——130个工具按10个阶段编目：文件系统→文本处理→系统控制→影音GUI→网络安全→调度管线→AppleScript→Homebrew→Xcode诊断→复合管线模板。78原生CLI零安装。含App自动化天花板矩阵（实测Mail/Calendar/Safari等8个App的三层自动化上限）。Triggers on: 'mac自动化', 'macOS automation', '批量处理', '转换格式', '系统控制', 'mac工具', '原生工具', '不用装', 'macOS native', 'automator', 'osascript', 'mdfind', 'textutil', 'sips'."
 ---
 
 # macOS Automation — 原生自动化管线
 
-> 118 个工具 · 10 阶段 · 78 原生零安装。全管线覆盖——从 mdfind 到 sysdiagnose，从 AppleScript 到复合管线模板。含 App 自动化天花板矩阵。
+> 130 个工具 · 10 阶段 · 78 原生零安装。全管线覆盖——从 mdfind 到 sysdiagnose，从 AppleScript 到复合管线模板。含 App 自动化天花板矩阵。
 
 ## 十阶段管线
 
@@ -365,7 +365,7 @@ echo "💻 $(system_profiler SPHardwareDataType | grep 'Model Name' | cut -d: -f
 ### 已安装验证
 
 ```bash
-# 核心必备
+# 核心必备 (v1)
 fd          # 现代 find — 更快语法更友好
 ripgrep     # 现代 grep — 默认递归,自动过滤.git
 fzf         # 模糊搜索 — 交互式筛选
@@ -376,6 +376,20 @@ htop        # 现代 top
 imagemagick # 图片处理 (比 sips 强 100 倍)
 ffmpeg      # 音视频处理
 wget        # 下载工具
+
+# 2026-07-18 新增 (v2) — 12 个管线增强工具
+cliclick    # GUI 坐标点击 — 精确到像素的鼠标模拟
+pcre2grep   # Unicode 正则 — CJK/\x{hhhh} 支持 (需 --utf)
+watchexec   # 文件监听+自动触发 — 修改即执行
+entr        # 文件变化执行 — 轻量 watchexec 替代
+jc          # CLI→JSON — ifconfig/ps/ls 等命令输出结构化
+dasel       # 多格式处理器 — JSON/YAML/TOML/XML/CSV 统一查询 (v3 语法: dasel -i json 'name')
+yq          # YAML 处理器 — 类 jq 的 YAML 管道操作
+lnav        # 日志浏览器 — 交互式日志分析+时间线+语法高亮
+fastgron    # JSON 可 grep — 扁平化 JSON 为 key=value 行
+delta       # 增强 diff — 语法高亮+行内差异+并排模式
+dust        # 增强 du — 树状磁盘使用可视化
+btm         # 增强 top — GPU/磁盘/网络 + 交互式仪表盘 (命令名 bottom → btm)
 ```
 
 ### 快速命令
@@ -398,7 +412,49 @@ pandoc file.md -o file.pdf --pdf-engine=xelatex
 
 # htop: 交互式进程管理
 sudo htop
-```
+
+# ── 2026-07-18 新增 ──
+
+# cliclick: GUI 坐标点击
+cliclick p                    # 获取当前鼠标坐标
+cliclick c:x,y                # 点击坐标
+cliclick t:"text"             # 输入文本
+
+# pcre2grep: Unicode CJK 匹配
+echo "你好世界" | pcre2grep --utf -o '[\x{4e00}-\x{9fff}]'
+
+# watchexec: 文件修改时自动跑命令
+watchexec -w ./src "make test"
+
+# entr: 管道式文件监听
+fd .md | entr -c pandoc /_ -o out.pdf
+
+# jc: 系统命令输出转 JSON (管道到 jq/dasel)
+ifconfig en0 | jc --ifconfig | jq '.[0].ipv4_addr'
+ps aux | jc --ps
+
+# dasel: 多格式查询 (v3: -i <fmt> 'selector')
+dasel -i json 'name' < data.json
+dasel -i yaml 'servers.0.host' < config.yaml
+
+# yq: YAML 管道 (类 jq)
+yq '.metadata.name' file.yaml
+yq -i '.version = "2.0"' file.yaml  # 原地修改
+
+# lnav: 交互式日志分析
+lnav /var/log/system.log
+
+# fastgron: JSON 扁平化可 grep
+curl -s api.example.com/data | fastgron | grep "error"
+
+# delta: 增强 diff
+diff file1 file2 | delta --side-by-side
+
+# dust: 磁盘使用树
+dust -d 2 ~/projects
+
+# btm: 系统仪表盘 (交互式)
+btm```
 
 ## Stage 9: Xcode 诊断 + 系统深度控制
 
@@ -646,10 +702,10 @@ GUI 层：窗口是 AppKit（AX 透光）还是 SwiftUI（AX 黑箱）？
 |------|--------|------|
 | Stage 1-6: 原生 CLI | 78 | /usr/bin /usr/sbin /bin /sbin |
 | Stage 7: AppleScript | 12 | 系统应用 + System Events |
-| Stage 8: Homebrew | 10 | brew install |
+| Stage 8: Homebrew | 22 | brew install |
 | Stage 9: 诊断/深度系统 | 16 | Xcode CLI + Frameworks + 隐藏工具 |
-| Stage 10: 复合管线 | 2 模板 (25+ 工具串联) | 跨阶段脚本 |
-| **合计** | **118** | |
+| Stage 10: 复合管线 | 6 模板 (25+ 工具串联) | 跨阶段脚本 |
+| **合计** | **130** | |
 
 ## 实测环境
 
