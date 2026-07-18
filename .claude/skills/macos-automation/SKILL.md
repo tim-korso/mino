@@ -490,7 +490,7 @@ GUI 层：窗口是 AppKit（AX 透光）还是 SwiftUI（AX 黑箱）？
 
 | App | API 层 | GUI 层 | 存储层 | 最高自动化 | 盲区 |
 |-----|--------|--------|--------|----------|------|
-| **Calendar** | ✅ 全功能 | AppKit | iCloud (日历) | <10min 管线 | 无 |
+| **Calendar** | ✅ 基本操作 | AppKit | iCloud (日历) | <10min 管线 | `whose` 复杂查询（如 `start date ≥ current date`）可能报错，改用逐一遍历 |
 | **Reminders** | ✅ 全功能 | AppKit | iCloud | <10min 管线 | 无 |
 | **Notes** | ✅ 读写 | AppKit | iCloud | <10min 管线 | 富文本格式 |
 | **Finder** | ✅ 全功能 | AppKit | 本地 | **100%** | 无 |
