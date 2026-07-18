@@ -1,13 +1,13 @@
 ---
 name: macos-automation
-description: "macOS原生自动化工具管线——78个内置CLI工具按6个阶段编目：文件系统→文本处理→系统控制→影音GUI→网络安全→综合管线。不用安装任何东西。Triggers on: 'mac自动化', 'macOS automation', '批量处理', '转换格式', '系统控制', 'mac工具', '原生工具', '不用装', 'macOS native', 'automator', 'osascript', 'mdfind', 'textutil', 'sips'."
+description: "macOS自动化工具管线——117个工具按10个阶段编目：文件系统→文本处理→系统控制→影音GUI→网络安全→调度管线→AppleScript→Homebrew→Xcode诊断→复合管线模板。78原生CLI零安装。Triggers on: 'mac自动化', 'macOS automation', '批量处理', '转换格式', '系统控制', 'mac工具', '原生工具', '不用装', 'macOS native', 'automator', 'osascript', 'mdfind', 'textutil', 'sips'."
 ---
 
 # macOS Automation — 原生自动化管线
 
-> 78 个内置 CLI 工具。零安装。全管线覆盖。
+> 117 个工具 · 10 阶段 · 78 原生零安装。全管线覆盖——从 mdfind 到 sysdiagnose，从 AppleScript 到复合管线模板。
 
-## 六阶段管线
+## 十阶段管线
 
 ```
 Stage 1: 文件系统 (Find → Inspect → Process)
@@ -27,6 +27,18 @@ Stage 5: 网络/安全 (Check → Connect → Verify)
 
 Stage 6: 调度/管道 (Schedule → Combine → Deploy)
     crontab → at → launchctl → defaults write → shortcuts run → automator
+
+Stage 7: AppleScript GUI 自动化 (macOS 内置脚本桥接)
+    12 个配方 — Calendar/Reminders/Mail/Notes/Safari/System Events/Finder/音量/锁屏
+
+Stage 8: Homebrew 增强 (现代 CLI — fd/rg/fzf/bat/jq/pandoc/htop/imagemagick/ffmpeg/wget)
+    10 个工具 — 文件搜索/数据处理/媒体转换/进程管理
+
+Stage 9: Xcode 诊断 + 深度系统 (Xcode CLI + Frameworks + 隐藏工具)
+    16 个工具 — heap/leaks/vmmap/malloc_history/sysdiagnose/log/nettop/lsregister/safaridriver
+
+Stage 10: 复合管线模板 (跨阶段串联脚本)
+    1 模板 (25 工具串联) — Mac 数字孪生一键体检报告
 ```
 
 ## 每个阶段的快速命令
@@ -310,15 +322,6 @@ pandoc file.md -o file.pdf --pdf-engine=xelatex
 sudo htop
 ```
 
-## 完整工具库统计
-
-| 类别 | 工具数 | 来源 |
-|------|--------|------|
-| Stage 1-6: 原生 CLI | 78 | /usr/bin /usr/sbin /bin /sbin |
-| Stage 7: AppleScript | 12 | 系统应用 + System Events |
-| Stage 8: Homebrew | 10 | brew install |
-| **合计** | **116** | |
-
 ## Stage 9: Xcode 诊断 + 系统深度控制
 
 Xcode 命令行工具自带的性能诊断套件 + 隐藏的系统级工具。
@@ -405,6 +408,50 @@ networksetup -listlocations
 networksetup -switchlocation "Office"
 ```
 
+## Stage 10: 复合管线模板
+
+> 跨阶段串联——单次执行打通 5-7 个阶段，生成完整交付物。
+
+### 模板 1: Mac 数字孪生 (25 工具 · 7 阶段)
+
+一键生成系统健康体检报告——硬件→文件系统→网络→安全→应用→个人状态→日志→组装→通知。
+
+```bash
+bash scripts/mac-twin-snapshot.sh
+```
+
+**管线覆盖:**
+
+```
+Phase 1 硬件: system_profiler → sysctl → memory_pressure → top → pmset → powermetrics
+Phase 2 磁盘: diskutil → df → mdfind → fd → du
+Phase 3 网络: networksetup → scutil → nettop
+Phase 4 安全: spctl → codesign → xattr
+Phase 5 应用: lsregister → osascript(System Events) → system_profiler(SPApplications)
+Phase 6 个人: osascript(Calendar/Reminders/Mail/Notes) ×4
+Phase 7 日志: log show → DiagnosticReports
+Phase 8 组装: cat 合并 7 个片段 → markdown 报告
+Phase 9 输出: bat 预览 → open → osascript 通知 → say 播报
+```
+
+**输出:** `/tmp/mac-twin-<timestamp>/health-report.md` — 233 行结构化 Markdown，含 7 个维度的完整快照。
+
+**实测:** 2026-07-18 一次通过，22/25 工具 (88%) 满输出，3 工具部分输出（fd 参数调优、nettop 采样模式、Calendar 空事件——均非阻断性）。TCC 授权跨 Calendar/Reminders/Mail/Notes 四 App 全绿。
+
+### 如何创建新管线模板
+
+每个模板一个独立 bash 脚本 → `scripts/` 目录。遵循相同的分段结构：
+
+```bash
+# Phase N: 描述 → 工具链 → cat >> report
+# Phase N+1: ...
+# 最后: 组装 → 预览 → 通知
+```
+
+命名规则: `mac-<用途>-<kebab-case>.sh`
+
+---
+
 ## 完整工具库统计
 
 | 类别 | 工具数 | 来源 |
@@ -413,7 +460,8 @@ networksetup -switchlocation "Office"
 | Stage 7: AppleScript | 12 | 系统应用 + System Events |
 | Stage 8: Homebrew | 10 | brew install |
 | Stage 9: 诊断/深度系统 | 16 | Xcode CLI + Frameworks + 隐藏工具 |
-| **合计** | **116** | |
+| Stage 10: 复合管线 | 1 模板 (25 工具串联) | 跨阶段脚本 |
+| **合计** | **117** | |
 
 ## 实测环境
 
