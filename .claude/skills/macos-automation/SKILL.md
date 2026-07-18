@@ -222,9 +222,108 @@ done
 | `sips` | 不支持 WebP；仅处理光栅图片 |
 | `afplay` | 仅本地文件——不流式播放 |
 
+## Stage 7: AppleScript GUI 自动化
+
+macOS 内置的脚本桥接——从 CLI 控制任意 GUI 应用。通过 TCC 授权后可无人值守运行。
+
+### 系统应用配方
+
+```bash
+# Calendar: 读今天日程
+osascript -e 'tell app "Calendar" to get summary of events whose start date ≥ (current date)'
+
+# Reminders: 未完成提醒
+osascript -e 'tell app "Reminders" to get name of reminders whose completed is false'
+
+# Mail: 未读邮件数
+osascript -e 'tell app "Mail" to get unread count of inbox'
+
+# Notes: 最近笔记 (iCloud)
+osascript -e 'tell app "Notes" to get name of notes of folder "Notes" of account "iCloud"'
+
+# Safari: 当前标签页 URL
+osascript -e 'tell app "Safari" to get URL of current tab of front window'
+
+# System Events: 运行中的 App
+osascript -e 'tell app "System Events" to get name of processes whose background only is false'
+
+# Finder: 当前目录
+osascript -e 'tell app "Finder" to get POSIX path of (target of front window as alias)'
+
+# 音量控制
+osascript -e 'set volume output volume 50'
+osascript -e 'output volume of (get volume settings)'  # 读取
+
+# 锁屏
+osascript -e 'tell app "System Events" to sleep'
+```
+
+### 组合管线：系统状态面板
+
+```bash
+echo "📅 $(date '+%m/%d %H:%M')"
+echo "📧 $(osascript -e 'tell app "Mail" to get unread count of inbox' 2>/dev/null) unread"
+echo "📝 $(osascript -e 'tell app "Reminders" to count (reminders whose completed is false)' 2>/dev/null) reminders"
+echo "🔊 Vol: $(osascript -e 'output volume of (get volume settings)' 2>/dev/null)"
+echo "💻 $(system_profiler SPHardwareDataType | grep 'Model Name' | cut -d: -f2 | xargs)"
+```
+
+## Stage 8: Homebrew 增强工具
+
+安装后扩展管线覆盖——文件搜索、数据处理、媒体转换。
+
+### 已安装验证
+
+```bash
+# 核心必备
+fd          # 现代 find — 更快语法更友好
+ripgrep     # 现代 grep — 默认递归,自动过滤.git
+fzf         # 模糊搜索 — 交互式筛选
+bat         # 语法高亮 cat
+jq          # JSON 处理
+pandoc      # 通用文档转换 (比 textutil 强 10 倍)
+htop        # 现代 top
+imagemagick # 图片处理 (比 sips 强 100 倍)
+ffmpeg      # 音视频处理
+wget        # 下载工具
+```
+
+### 快速命令
+
+```bash
+# fd: 找24h内修改的md文件
+fd -t f -e md --changed-within 24h
+
+# rg: 搜索+计数
+rg -c "关键词" --type md
+
+# jq: JSON管道处理
+curl -s api.example.com | jq '.data[].name'
+
+# bat: 带行号/语法高亮预览
+bat --style=plain file.md
+
+# pandoc: 全格式转换 (比 textutil 强——支持数学公式/交叉引用)
+pandoc file.md -o file.pdf --pdf-engine=xelatex
+
+# htop: 交互式进程管理
+sudo htop
+```
+
+## 完整工具库统计
+
+| 类别 | 工具数 | 来源 |
+|------|--------|------|
+| Stage 1-6: 原生 CLI | 78 | /usr/bin /usr/sbin /bin /sbin |
+| Stage 7: AppleScript | 12 | 系统应用 + System Events |
+| Stage 8: Homebrew | 10 | brew install |
+| **合计** | **100** | |
+
 ## 实测环境
 
 - macOS 26.3.1 (Sequoia) · MacBook Air (Mac15,12) · Apple Silicon · 16GB RAM
 - SIP: enabled · Gatekeeper: enabled · Xcode: installed
-- 402 apps installed · 78 native CLI tools available
+- TCC: Accessibility + Full Disk Access + Automation 已授权
+- sudo: 5 个非破坏性命令 NOPASSWD
+- 402 apps installed · 100 automation tools available
 - Test date: 2026-07-18
