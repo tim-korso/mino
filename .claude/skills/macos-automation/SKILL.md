@@ -231,7 +231,7 @@ done
 | `shortcuts run` | 快捷指令名含特殊字符时加引号：`shortcuts run '打开"备忘录"'` |
 | `tmutil` | 非 Time Machine 用户无目标 |
 | `textutil` | Markdown→HTML 保留简单格式，复杂表格/公式可能丢失 |
-| `sips` | 不支持 WebP；仅处理光栅图片 |
+| `sips` | WebP 部分支持——能处理但返回非零 exit code（需用 `|| true` 吞掉）。仅处理光栅图片 |
 | `afplay` | 仅本地文件——不流式播放 |
 | iCloud 同步数据 | `SyncedRules.plist` 等 iCloud-synced plist/sqlite **不可直接写入**——bird 守护进程以 CloudKit 为权威源，本地修改秒级被 CloudKit 覆盖。**唯一绕过路径：写到同目录下的 `Unsynced` 等价文件**（如 `UnsyncedRules.plist`）——iCloud 不同步，支持完整读写。注意：Mail 会加载 Unsynced 文件的条件字段但**忽略动作字段**（Deletes/ShouldMoveMessage 等，属于安全限制） |
 | Mail AppleScript API | 规则创建 ✅、条件设置 ✅、**动作读/写 ❌**——`delete message`/`should move message` 属性不可读（boolean→text 转换错误 -1700）也不可持久化（set 不报错但不写入 plist）。Mail 脚本字典的设计缺陷——macOS 26 未修复 |
