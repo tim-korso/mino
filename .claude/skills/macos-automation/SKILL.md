@@ -1,11 +1,11 @@
 ---
 name: macos-automation
-description: "macOS自动化工具管线——117个工具按10个阶段编目：文件系统→文本处理→系统控制→影音GUI→网络安全→调度管线→AppleScript→Homebrew→Xcode诊断→复合管线模板。78原生CLI零安装。Triggers on: 'mac自动化', 'macOS automation', '批量处理', '转换格式', '系统控制', 'mac工具', '原生工具', '不用装', 'macOS native', 'automator', 'osascript', 'mdfind', 'textutil', 'sips'."
+description: "macOS自动化工具管线——118个工具按10个阶段编目：文件系统→文本处理→系统控制→影音GUI→网络安全→调度管线→AppleScript→Homebrew→Xcode诊断→复合管线模板。78原生CLI零安装。含App自动化天花板矩阵（实测Mail/Calendar/Safari等8个App的三层自动化上限）。Triggers on: 'mac自动化', 'macOS automation', '批量处理', '转换格式', '系统控制', 'mac工具', '原生工具', '不用装', 'macOS native', 'automator', 'osascript', 'mdfind', 'textutil', 'sips'."
 ---
 
 # macOS Automation — 原生自动化管线
 
-> 117 个工具 · 10 阶段 · 78 原生零安装。全管线覆盖——从 mdfind 到 sysdiagnose，从 AppleScript 到复合管线模板。
+> 118 个工具 · 10 阶段 · 78 原生零安装。全管线覆盖——从 mdfind 到 sysdiagnose，从 AppleScript 到复合管线模板。含 App 自动化天花板矩阵。
 
 ## 十阶段管线
 
@@ -233,6 +233,9 @@ done
 | `textutil` | Markdown→HTML 保留简单格式，复杂表格/公式可能丢失 |
 | `sips` | 不支持 WebP；仅处理光栅图片 |
 | `afplay` | 仅本地文件——不流式播放 |
+| iCloud 同步数据 | `SyncedRules.plist` 等 iCloud-synced plist/sqlite **不可直接写入**——bird 守护进程以 CloudKit 为权威源，本地修改秒级被 CloudKit 覆盖。**唯一绕过路径：写到同目录下的 `Unsynced` 等价文件**（如 `UnsyncedRules.plist`）——iCloud 不同步，支持完整读写。注意：Mail 会加载 Unsynced 文件的条件字段但**忽略动作字段**（Deletes/ShouldMoveMessage 等，属于安全限制） |
+| Mail AppleScript API | 规则创建 ✅、条件设置 ✅、**动作读/写 ❌**——`delete message`/`should move message` 属性不可读（boolean→text 转换错误 -1700）也不可持久化（set 不报错但不写入 plist）。Mail 脚本字典的设计缺陷——macOS 26 未修复 |
+| SwiftUI 设置窗口 | macOS 26 的 Settings（Mail/System Settings 等）使用 SwiftUI，System Events 的 Accessibility 树只暴露 toolbar 按钮和 AXGroup 黑箱——**内部规则列表/复选框/表单不可见**。键盘 Tab 导航不稳定且无反馈（盲操作），GUI 脚本化不可靠 |
 
 ## Stage 7: AppleScript GUI 自动化
 
@@ -438,6 +441,23 @@ Phase 9 输出: bat 预览 → open → osascript 通知 → say 播报
 
 **实测:** 2026-07-18 一次通过，22/25 工具 (88%) 满输出，3 工具部分输出（fd 参数调优、nettop 采样模式、Calendar 空事件——均非阻断性）。TCC 授权跨 Calendar/Reminders/Mail/Notes 四 App 全绿。
 
+### 模板 2: 收件箱自动清理 (Mail AppleScript + launchd)
+
+当 Mail 规则 API 不可用时（见已知限制），用定时脚本代替规则引擎——每小时扫收件箱，匹配高频 sender 的未读邮件直接移入废纸篓。
+
+```bash
+bash scripts/mail-auto-clean.sh           # 执行清理
+bash scripts/mail-auto-clean.sh --dry-run  # 预览待清理
+```
+
+**适用场景：** Mail 规则 API 缺陷 + iCloud SyncedRules 不可写时，这是唯一全自动的邮件归档方案。组合 `launchd` 可实现无感定时运行。
+
+```bash
+# 安装为每小时自动任务
+cp scripts/com.user.mail-clean.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.user.mail-clean.plist
+```
+
 ### 如何创建新管线模板
 
 每个模板一个独立 bash 脚本 → `scripts/` 目录。遵循相同的分段结构：
@@ -452,6 +472,61 @@ Phase 9 输出: bat 预览 → open → osascript 通知 → say 播报
 
 ---
 
+## App 自动化天花板
+
+> 不是每个 App 都一样可自动化。天花板 = 脚本字典质量 + 窗口框架 + 数据存储三层叠加。
+
+### 三层模型
+
+```
+自动化可行度 = API 层 ∩ GUI 层 ∩ 存储层
+
+API 层：AppleScript 字典是否完整？动作属性可读写？
+GUI 层：窗口是 AppKit（AX 透光）还是 SwiftUI（AX 黑箱）？
+存储层：数据是本地（可直写）还是 iCloud 同步（CloudKit 覆盖）？
+```
+
+### 实测天花板矩阵
+
+| App | API 层 | GUI 层 | 存储层 | 最高自动化 | 盲区 |
+|-----|--------|--------|--------|----------|------|
+| **Calendar** | ✅ 全功能 | AppKit | iCloud (日历) | <10min 管线 | 无 |
+| **Reminders** | ✅ 全功能 | AppKit | iCloud | <10min 管线 | 无 |
+| **Notes** | ✅ 读写 | AppKit | iCloud | <10min 管线 | 富文本格式 |
+| **Finder** | ✅ 全功能 | AppKit | 本地 | **100%** | 无 |
+| **Safari** | ✅ URL/标签 | AppKit | iCloud (书签) | 读完全，写需过 iCloud | 书签写入 |
+| **Mail** | ⚠️ 残缺 | AppKit (主窗口) / **SwiftUI** (设置) | **iCloud (规则)** | **读邮件/移动邮件** | **规则创建/修改/动作** |
+| **System Settings** | ❌ 无字典 | **SwiftUI** | iCloud/本地混合 | **0%** | **全部** |
+| **Terminal** | ❌ 无字典 | AppKit | 本地 | 100% (shell 直接执行) | 无 |
+
+### Mail 实录 (2026-07-18)
+
+今天在 Mail 规则自动化上打了四个小时。最终结论：
+
+| 路径 | 能建规则 | 能设删除 | 失败原因 |
+|------|---------|---------|---------|
+| AppleScript API | ✅ | ❌ | `delete message` 不可读写——字典缺陷 |
+| SyncedRules.plist | ✅ | ❌ | bird + CloudKit 秒级回滚 |
+| UnsyncedRules.plist | ✅ | ❌ | Mail 忽略不同步来源的动作字段（安全限制） |
+| GUI 键盘导航 | ❌ | ❌ | SwiftUI 设置窗口 AX 不透光 + 焦点逃逸 |
+
+**唯一可行路径：人手动。** 四条自动化路全封死——不是能力问题，是 Apple 在这个版本恰好把 Mail 规则的每一条自动化路径都堵上了。
+
+**教训：** 遇到三层中任一层封死的 App，不要继续打——直接降级到替代方案：
+- Mail 规则不可自动化 → `mail-auto-clean.sh`（定时 osascript 移邮件）
+- System Settings 不可自动化 → `defaults write`（如果键存在）或人工
+- iCloud 同步的 plist 不可写 → 找 Unsynced 等价文件
+
+### 通用绕过模式
+
+| 封死层 | 绕过策略 |
+|--------|---------|
+| API 层残缺 | 绕过 App 的脚本接口，直接操作 App 的数据对象（如 osascript 移动邮件而不是设置规则） |
+| GUI 层 SwiftUI | 放弃 GUI 操控，走 API 层。API 也封死→人工 |
+| 存储层 iCloud | `Unsynced` 等价文件 > 杀 bird 临时写 > 接受人工是唯一路径 |
+
+---
+
 ## 完整工具库统计
 
 | 类别 | 工具数 | 来源 |
@@ -460,8 +535,8 @@ Phase 9 输出: bat 预览 → open → osascript 通知 → say 播报
 | Stage 7: AppleScript | 12 | 系统应用 + System Events |
 | Stage 8: Homebrew | 10 | brew install |
 | Stage 9: 诊断/深度系统 | 16 | Xcode CLI + Frameworks + 隐藏工具 |
-| Stage 10: 复合管线 | 1 模板 (25 工具串联) | 跨阶段脚本 |
-| **合计** | **117** | |
+| Stage 10: 复合管线 | 2 模板 (25+ 工具串联) | 跨阶段脚本 |
+| **合计** | **118** | |
 
 ## 实测环境
 
@@ -470,4 +545,4 @@ Phase 9 输出: bat 预览 → open → osascript 通知 → say 播报
 - TCC: Accessibility + Full Disk Access + Automation 已授权
 - sudo: 5 个非破坏性命令 NOPASSWD
 - 402 apps installed · 116 automation tools available
-- Test date: 2026-07-18
+- Test date: 2026-07-18 (v4: 118 工具, 10 阶段, App 天花板矩阵, Mail 规则实录)
