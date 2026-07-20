@@ -313,8 +313,12 @@ log(`前沿扫描完成: ${validFrontiers.length}/${skeleton.bones.length} 根`)
 // ═══ Step 2.5: 对抗验证 + 生成骨架MD ═══
 phase('Step4 对抗验证')
 
-// 三个独立 Challenger——各从不同角度攻击骨架，互不知道对方
-// 参考: agent-orchestration Pattern 3 (Adversarial Verify) + Pattern 5 (Perspective-diverse Verify)
+// ═══ 三方分离骨架验证（cognitive-license 模式） ═══
+// 关键改进：Challenger 只看到骨架输出（骨头列表+DAG），看不到原始维度矩阵和合成推理。
+// 这防止了"被生成者的推理说服"——盲评比明评硬。
+// 参考: cognitive-license skill — 生成者≠分级者≠终裁者
+phase('Step4 三方分离验证')
+
 const VERDICT_SCHEMA = {
   type: 'object',
   properties: {
@@ -327,51 +331,51 @@ const VERDICT_SCHEMA = {
   required: ['lens', 'passed', 'severity', 'findings']
 }
 
+// 盲评数据：只给骨头列表+DAG+前沿标签——不给原始维度矩阵，不给合成Agent的推理
+const blindData = JSON.stringify({
+  bones: skeleton.bones.map(b => ({ title: b.title, core_question: b.core_question, classic_basis: b.classic_basis })),
+  conduction_dag: skeleton.conduction_dag,
+  frontiers: validFrontiers.map(f => ({ bone_title: f.bone_title, temporal_stability: f.temporal_stability })),
+  dropped_dimensions: skeleton.dropped_dimensions
+})
+
 const challenges = await parallel([
-  // Challenger 1: 维度完整性——有没有漏掉的经典维度？
   () => agent(
-    `你是骨架攻击者。你的任务：从"维度遗漏"角度攻击这个骨架。
+    `你是骨架盲评者。你的任务：从"维度遗漏"角度攻击这个骨架。你只看到骨架输出——不知道合成Agent的推理过程。从零判断。
 
-## 骨架
-${JSON.stringify({ bones: skeleton.bones, conduction: skeleton.conduction_dag, dropped: skeleton.dropped_dimensions }, null, 2)}
-
-## 原始经典维度矩阵
-${JSON.stringify(validDimensions, null, 2)}
+## 骨架输出
+${blindData}
 
 ## 攻击规则
-1. 找一本经典——它的分类方式有没有出现在骨架中？如果没有→为什么？是合理的冗余还是我们漏了一个维度？
-2. 被丢弃的维度中——有没有不该丢的？
-3. 有没有两根骨头实际上在回答同一个问题？（互斥性失败）
-4. 如果这个骨架少了一根骨头——读者会漏掉什么？
+1. 这些骨头之间有没有两根在回答同一个问题？（互斥性失败）
+2. 删掉其中一根——读者会漏掉什么不能从其他骨头得到的东西？如果答案是"没什么"→标记为冗余
+3. 有没有整个维度被遗漏了？（一个经典的理论视角完全没有对应的骨头）
+4. 被丢弃的维度中——有没有不该丢的？
 
 如果你认为骨架通过——给出理由。如果你找到问题——标注 severity 并给出修正建议。`,
-    { label: '维度完整性攻击', schema: VERDICT_SCHEMA, effort: 'high' }
+    { label: '维度盲评', schema: VERDICT_SCHEMA, effort: 'high' }
   ),
-
-  // Challenger 2: 传导链——DAG 有没有断裂？
   () => agent(
-    `你是骨架攻击者。你的任务：从"传导链断裂"角度攻击这个骨架。
+    `你是骨架盲评者。你的任务：从"传导链断裂"角度攻击这个骨架。你只看到骨架输出——不知道合成Agent的推理。
 
-## 骨架
-${JSON.stringify({ bones: skeleton.bones, conduction: skeleton.conduction_dag }, null, 2)}
+## 骨架输出
+${blindData}
 
 ## 攻击规则
-1. 读者能否跳过 Ch3 直接读 Ch6？如果能→不是传导链，是主题列表
+1. 读者能否跳过某章直接读后面？能→不是传导链，是主题列表
 2. 有没有两根骨头标记为"平行"但实际有依赖关系？（漏了边）
 3. 有没有边是假的——A→B 在逻辑上不成立？
 4. 传导链至少有一个起点和一个终点吗？
-5. 有没有骨头孤立——既不被任何骨头依赖，也不依赖任何骨头？如果是→它需要存在吗？
+5. 有没有骨头孤立——既不被任何骨头依赖，也不依赖任何骨头？
 
 如果你认为骨架通过——给出理由。如果你找到断裂——标注 severity 并给出修正建议。`,
-    { label: '传导链攻击', schema: VERDICT_SCHEMA, effort: 'high' }
+    { label: '传导链盲评', schema: VERDICT_SCHEMA, effort: 'high' }
   ),
-
-  // Challenger 3: 前沿盲区——时效性判断对不对？
   () => agent(
-    `你是骨架攻击者。你的任务：从"前沿盲区"角度攻击这个骨架。
+    `你是骨架盲评者。你的任务：从"前沿盲区"角度攻击这个骨架。你只看到骨架输出——不知道合成Agent的前沿判断。
 
-## 骨架（含前沿标签）
-${JSON.stringify({ bones: skeleton.bones, frontiers: validFrontiers }, null, 2)}
+## 骨架输出（含前沿标签）
+${blindData}
 
 ## 攻击规则
 1. 有没有标记为 🟢stable 但实际在快速变化的维度？
@@ -379,8 +383,10 @@ ${JSON.stringify({ bones: skeleton.bones, frontiers: validFrontiers }, null, 2)}
 3. 前沿层有没有重大遗漏——≤2年的关键发展、争议、或范式转换没有被覆盖？
 4. 五年后——哪根骨头最可能被嘲笑？
 
+搜索验证你的判断——不要只凭感觉判断时效性。
+
 如果你认为骨架通过——给出理由。如果你找到盲区——标注 severity 并给出修正建议。`,
-    { label: '前沿盲区攻击', schema: VERDICT_SCHEMA, effort: 'high' }
+    { label: '前沿盲评', schema: VERDICT_SCHEMA, effort: 'high' }
   ),
 ])
 
@@ -388,19 +394,56 @@ const validChallenges = challenges.filter(Boolean)
 const failedChallenges = validChallenges.filter(c => !c.passed)
 const fatalChallenges = validChallenges.filter(c => c.severity === 'fatal')
 
-log(`对抗验证: ${validChallenges.filter(c => c.passed).length}/${validChallenges.length} 通过${failedChallenges.length > 0 ? '，' + failedChallenges.length + ' 个有问题' : ''}`)
+log(`三方分离验证: ${validChallenges.filter(c => c.passed).length}/${validChallenges.length} 通过${failedChallenges.length > 0 ? '，' + failedChallenges.length + ' 个有问题' : ''}`)
 
-// 如果有 fatal → 骨架需要大修 → 报告问题，不生成MD
-if (fatalChallenges.length > 0) {
-  const fatalReport = `## 骨架对抗验证失败 ❌\n\n${fatalChallenges.map(c => `### ${c.lens}\n${c.findings.join('\n')}\n\n**建议**: ${c.recommendation}`).join('\n\n')}`
-  return { skeleton_md: fatalReport, bone_count: skeleton.bone_count, status: 'FAILED_ADVERSARIAL_VERIFY' }
+// ═══ 终裁——独立Agent只看Challenger结论，不看原始骨架 ═══
+// 这才是真正的三方分离：生成者(合成Agent) → 分级者(三个盲评Challenger) → 终裁者(这个Agent)
+phase('Step4 终裁')
+
+const FINAL_JUDGE_SCHEMA = {
+  type: 'object',
+  properties: {
+    verdict: { type: 'string', enum: ['PASS', 'REVISE', 'REJECT'] },
+    reason: { type: 'string' },
+    required_fixes: { type: 'array', items: { type: 'string' } },
+  },
+  required: ['verdict', 'reason']
 }
 
-// ═══ 通过验证 → 生成骨架MD（综合所有Challenger反馈） ═══
+const judge = await agent(
+  `你是骨架终裁者。你只看到三个盲评Challenger的裁决——你看不到原始骨架。基于Challenger的一致性和严重度做最终判定。
+
+## Challenger裁决
+${JSON.stringify(validChallenges, null, 2)}
+
+## 裁决规则
+- 三个全PASS → PASS
+- ≥2个fatal → REJECT（骨架需要大修，不回退到合成Agent直接重新设计）
+- 1个fatal + 其他major → REVISE（针对fatal维度重新聚类，不重跑全部）
+- 只有minor → PASS（minor在生成MD时由合成Agent处理即可）
+
+## 输出
+返回结构化JSON。给出明确裁决和理由。`,
+  { label: '终裁', schema: FINAL_JUDGE_SCHEMA, effort: 'medium' }
+)
+
+if (!judge) throw new Error('终裁失败')
+
+if (judge.verdict === 'REJECT') {
+  return { status: 'REJECTED_BY_JUDGE', reason: judge.reason, required_fixes: judge.required_fixes, bone_count: skeleton.bone_count }
+}
+
+if (judge.verdict === 'REVISE') {
+  log(`终裁: REVISE — ${judge.reason}`)
+  // 标记需要重跑——调用方检测到 REVISE 后应调整骨架参数重新聚类
+  return { status: 'REVISE_NEEDED', reason: judge.reason, required_fixes: judge.required_fixes, bone_count: skeleton.bone_count }
+}
+
+// ═══ PASS → 生成骨架MD（综合所有Challenger反馈） ═══
 phase('Step4 生成输出')
 
 const finalSkeleton = await agent(
-  `你是骨架最终合成Agent。骨架已通过三轮对抗验证。现在生成完整的 00-骨架.md。
+  `你是骨架最终合成Agent。骨架已通过三方分离验证和终裁。现在生成完整的 00-骨架.md。
 
 ## 骨架数据
 ${JSON.stringify({ bones: skeleton.bones, conduction: skeleton.conduction_dag }, null, 2)}
@@ -408,8 +451,11 @@ ${JSON.stringify({ bones: skeleton.bones, conduction: skeleton.conduction_dag },
 ## 前沿数据
 ${JSON.stringify(validFrontiers, null, 2)}
 
-## Challenger 反馈（全部已通过，但有以下建议）
+## Challenger 反馈（全部已通过，但有以下建议——可选吸收）
 ${JSON.stringify(validChallenges.filter(c => c.findings.length > 0), null, 2)}
+
+## 终裁意见
+${judge.reason}
 
 ## 任务
 综合骨架数据、前沿数据和Challenger建议，生成完整的 00-骨架.md：
@@ -486,14 +532,54 @@ Workflow({
 
 > **铁律**：`pipeline()` 用于 Step 2.1（每本经典独立走，不需要等其他经典）——不是 `parallel()`。`parallel()` 用于 Step 2.4（前沿扫描之间无依赖，但合成需要全部前沿结果——所以前沿扫描用 `parallel()` 做 barrier）和 Step 2.5（三个Challenger独立攻击——互不知道对方的角度）。Step 2.2-2.3 是一个Agent做交叉比较——这是整个流程中唯一不能并行化的步骤，也是最有价值的步骤。**Step 2.5 的 adversarial verify 是硬门禁——不出于"构建者不能验证自己"的偏好，出于是结构必然。见 agent-orchestration Pattern 3+5。**
 
-### 经典提取: 4-pass 深层刨
+### 经典提取: 4-pass 递归深度（deep-research 模式）
 
-经典提取不是"搜一下目录"——是四轮下钻。刨不动的代价不是在表层少了一些细节——是在沙滩上盖楼。
+经典提取不是"搜一下目录"——是缺口驱动的递归下钻。每轮不是"把四件事都做了"——是"做完一件事 → 发现新缺口 → spawn 子 Agent 填空 → 子 Agent 发现新缺口 → 继续 spawn"。
 
-**Pass 1: 表层结构** (1轮搜索, ~5min): "{书名} TOC" + Wikipedia → 组织原则/模块/关键主张/方法论
-**Pass 2: 深层结构** (2-3轮, ~15min): "{书名} critique/limitations/blind spots" → 方法论盲区/隐含假设/回避的话题
-**Pass 3: 时间检验** (2-3轮, ~15min): "{书名} replication/overturned" → 什么站住了/什么塌了/作者后来承认了什么
-**Pass 4: 跨经典定位** (2-3轮, ~15min): "{A} vs {B}" → 后来的反驳是针对原书还是简化版？哪些"反驳"其实是同一件事？
+**与传统 4-pass 的区别**：
+
+| | 传统（一个 Agent 一次跑完） | 递归（缺口驱动 spawn） |
+|---|---|---|
+| Pass 1 | 搜索目录+维基 | 同——但输出结构化"盲区列表" |
+| Pass 2 | 同一 Agent 搜批判 | **spawn 子 Agent**——每个盲区一个，并行深搜 |
+| Pass 3 | 同一 Agent 搜时间检验 | **基于 Pass 2 的发现决定搜什么**——不是预定义 |
+| Pass 4 | 同一 Agent 做跨经典定位 | **spawn 对比 Agent**——两两经典对照 |
+| 深度 | Agent 在长 prompt 中跳跃 | 每层有专属 Agent，不稀释注意力 |
+
+**递归执行流程**：
+
+```
+Pass 1: 表层提取 (1 Agent/经典)
+  → 输出: 组织原则 + 核心主张 + 方法论 + 盲区列表
+  → 盲区列表 = 这本书回避了什么？假设了什么？什么论证最薄弱？
+
+Pass 2: 缺口深搜 (每个盲区 spawn 1 Agent, parallel)
+  → 对 Pass 1 输出的每个盲区："穷尽搜索关于<盲区>的批评文献"
+  → 每个子 Agent 返回: 3-5 篇关键批评 + 批评的核心论点
+  → 如果子 Agent 发现新的盲区 → 继续 spawn（最多 2 层递归）
+
+Pass 3: 时间检验 (基于 Pass 2 的发现动态规划)
+  → 对 Pass 2 中的每个争议: "这个批评有多少证据？被反驳了吗？"
+  → Agent 判断: 什么站住了？什么塌了？什么是仍在争议的？
+
+Pass 4: 跨经典定位 (pipeline: 每对经典 spawn 1 Agent)
+  → "《A》vs《B》——框架互补还是竞争？后来的反驳针对原书还是简化版？"
+  → 输出: 互补/竞争/层级 三维分类
+```
+
+**递归深度 vs 一次性 prompt 的 Agent 成本**：
+
+| 经典数 | 传统 | 递归 |
+|--------|------|------|
+| 5 本 | 5 Agent (1/本) | ~20 Agent (5 Pass1 + 10-15 Pass2 + Pass3+4) |
+| 10 本 | 10 Agent | ~40 Agent |
+| 时间 | ~5min | ~15min |
+| 每本深度 | 浅——Agent 注意力在 4 个任务间跳跃 | 深——每个盲区有专属 Agent |
+
+**何时用递归**：
+- 新领域第一本书 → 递归（经典理解深度直接影响骨架质量）
+- 同领域第二本书 → 传统够用（经典已经在前一本书中提取过）
+- 预算紧张 → 传统 + 重点经典手动递归（选 2-3 本最重要的做递归，其余传统）
 
 完整 JSON schema 和入库命令见下方"生产工具"章节的 `db.py extract --deep`。
 
@@ -879,8 +965,10 @@ ${sync ? JSON.stringify(sync.alignment_issues, null, 1) : '（无同步合成数
       log(`发展编辑: ${devEdit.structural_issues_count || 0}个结构问题 | ${devEdit.fixes_applied || 0}处修复`)
     }
 
-    // ═══ Phase 1.6: 对抗充实（每章一个Challenger攻击→Agent补强） ═══
-    // 不是"检查有没有标记"（那是形式完整性）——是"攻击论证本身"（这是论证强度）
+    // ═══ Phase 1.6: 对抗充实（每章一个Challenger攻击→补强→复检） ═══
+    // 关键改进：Phase Gate 硬阻断。Challenger 发现 fatal → 章节被 REJECT → 必须通过复检才能进入下一阶段。
+    // 不再是"建议性补强"——是"结构性门禁"。
+    // 参考: shopping-claim-verify skill — Phase Gate 模式
     if (devEdit) {
       phase('对抗充实')
 
@@ -896,8 +984,9 @@ ${sync ? JSON.stringify(sync.alignment_issues, null, 1) : '（无同步合成数
             suggested_fix: { type: 'string', description: '怎么加强——更多证据？限定词？补充反面论证？' },
           } } },
           overall_grade: { type: 'string', enum: ['strong', 'adequate', 'weak'] },
+          fatal_count: { type: 'number', description: 'fatal级别攻击的数量' },
         },
-        required: ['chapter', 'attacks', 'overall_grade']
+        required: ['chapter', 'attacks', 'overall_grade', 'fatal_count']
       }
 
       const enrichmentResults = await parallel(
@@ -916,47 +1005,88 @@ ${sync ? JSON.stringify(sync.alignment_issues, null, 1) : '（无同步合成数
 4. **过度声称**: 主张的范围是否超出了证据能支持的范围？
 5. **前沿陈旧**: 如果主张依赖≤2年的数据——数据还准吗？
 
-### 攻击输出
-对每个发现的问题：标注被攻击的主张ID、攻击类型、严重度、具体攻击文字、修正建议
+### 严重度标准
+- **fatal**: 主张的核心证据是错的/不存在的，或者逻辑前提不成立。不修复整章的论证会塌。
+- **major**: 论证薄弱但可以补强——缺证据可以补、逻辑跳跃可以填。
+- **minor**: 措辞过度/限定词缺失/小范围的数据过时。
 
 ### 重要
-- 不要礼貌——你有且只有一次机会找到问题
-- 如果一个主张确实没有问题——不要编造攻击
-- 区分"我不同意这个结论"和"这个论证有漏洞"——只报告后者
+- 不要礼貌
+- 区分"我不同意"和"论证有漏洞"——只报告后者
+- 如实标注 fatal_count——这个数字是 Phase Gate 的关键输入
 
 返回结构化JSON。`,
-            { label: `攻击Ch${chNum}`, schema: ADVERSARIAL_SCHEMA, effort: 'high' }
+            { label: '攻击Ch' + chNum, schema: ADVERSARIAL_SCHEMA, effort: 'high' }
           )
         })
       )
 
-      // 将Challenger攻击报告交给各章Agent补强
       const validAttacks = enrichmentResults.filter(Boolean)
-      const majorAttacks = validAttacks.filter(a => a.overall_grade !== 'strong')
-      log(`对抗充实: ${validAttacks.length}章受攻击 | ${majorAttacks.length}章需补强`)
 
-      for (const attack of validAttacks) {
-        if (attack.overall_grade === 'strong') continue
+      // ═══ Phase Gate: 硬阻断 ═══
+      // 每章单独判定——有fatal的章被REJECT，只补强这些章，strong/adequate的直接通过
+      const rejectedChapters = validAttacks.filter(a => (a.fatal_count || 0) > 0)
+      const passedChapters = validAttacks.filter(a => (a.fatal_count || 0) === 0)
 
+      log('Phase Gate: ' + passedChapters.length + '章通过 | ' + rejectedChapters.length + '章REJECTED')
+
+      // 对每章 REJECTED → 补强 → 复检（最多2轮）
+      for (const attack of rejectedChapters) {
+        let round = 0
+        let currentAttacks = attack
+        const MAX_ROUNDS = 2
+
+        while ((currentAttacks.fatal_count || 0) > 0 && round < MAX_ROUNDS) {
+          round++
+          log('  补强Ch' + currentAttacks.chapter + ' 第' + round + '轮 (' + currentAttacks.fatal_count + ' fatal)')
+
+          const fix = await agent(
+            '你是章节补强Agent。你的章被Challenger找到以下fatal级弱点。\n\n' +
+            '## Fatal攻击（必须修复——不修复整章不能通过）\n' +
+            JSON.stringify(currentAttacks.attacks.filter(function(a) { return a.severity === 'fatal' }), null, 1) + '\n\n' +
+            '## Major攻击（建议修复）\n' +
+            JSON.stringify(currentAttacks.attacks.filter(function(a) { return a.severity === 'major' }), null, 1) + '\n\n' +
+            '## 补强任务\n' +
+            '针对fatal级问题，搜索验证后重写相关段落——不是加限定词，是补上缺失的证据或修正错误的前提。\n' +
+            '输出: { chapter: ' + JSON.stringify(currentAttacks.chapter) + ', fixes: [{ attack_id, fix_text, where_to_insert }] }',
+            { label: '补强Ch' + currentAttacks.chapter + ' R' + round, effort: 'high' }
+          )
+
+          if (!fix) break
+
+          // 复检——重新攻击修复后的章节
+          currentAttacks = await agent(
+            '你是复检Challenger。这章刚被修复了一轮。重新攻击——只关注上一轮的fatal是否已被修复。\n\n' +
+            '## 上一轮的fatal\n' +
+            JSON.stringify(currentAttacks.attacks.filter(function(a) { return a.severity === 'fatal' }), null, 1) + '\n\n' +
+            '## 修复内容\n' +
+            JSON.stringify(fix, null, 1) + '\n\n' +
+            '重新读 workspace/' + book_id + '/ 下第' + currentAttacks.chapter + '章。只回答：原来的fatal修复了吗？有没有新的fatal出现？\n' +
+            '返回相同schema。',
+            { label: '复检Ch' + currentAttacks.chapter + ' R' + round, schema: ADVERSARIAL_SCHEMA, effort: 'high' }
+          )
+        }
+
+        if ((currentAttacks && currentAttacks.fatal_count || 0) > 0) {
+          log('  ⚠️ Ch' + currentAttacks.chapter + ' ' + MAX_ROUNDS + '轮后仍有' + currentAttacks.fatal_count + ' fatal——标记为需人工审核')
+        } else {
+          log('  ✅ Ch' + currentAttacks.chapter + ' Phase Gate通过')
+        }
+      }
+
+      // Major攻击也处理（passedChapters中可能有major）
+      const chaptersWithMajor = validAttacks.filter(function(a) {
+        return (a.fatal_count || 0) === 0 && a.overall_grade !== 'strong'
+      })
+      for (const attack of chaptersWithMajor) {
         const fix = await agent(
-          `你是章节补强Agent。你的章（第${attack.chapter}章）被Challenger找到了以下弱点：
-
-${JSON.stringify(attack.attacks, null, 1)}
-
-## 补强任务
-对每个攻击，不要删除主张——而是加强它：
-- evidence_gap → 添加证据来源（搜索验证）
-- logic_leap → 补中间推理步骤
-- missing_counterargument → 加"反对者会说X，但证据指向Y"
-- overclaim → 加限定词（"在X条件下""现有证据支持但不排除Y"）
-- stale_frontier → 搜索更新数据
-
-输出：can_insert_directly的markdown片段 + where_to_insert
-
-返回: { chapter, fixes: [{ attack_id, fix_text, where_to_insert }] }`,
-          { label: `补强Ch${attack.chapter}`, effort: 'medium' }
+          '你是章节补强Agent。你的章（第' + attack.chapter + '章）被Challenger找到以下弱点：\n\n' +
+          JSON.stringify(attack.attacks, null, 1) + '\n\n' +
+          '## 补强任务\n' +
+          '对每个攻击，不要删除主张——加强它。输出: { chapter, fixes: [{ attack_id, fix_text, where_to_insert }] }',
+          { label: '补强Ch' + attack.chapter, effort: 'medium' }
         )
-        if (fix) log(`  补强Ch${attack.chapter}: ${fix.fixes?.length || 0}处`)
+        if (fix) log('  补强Ch' + attack.chapter + ': OK')
       }
     }
   }
@@ -2008,6 +2138,16 @@ db.py reused <book_id>                                    # 复用关系查询
 ## 实战优化（v3 → v4，2026-07-20）
 
 基于 5 个 Workflow · ~133 Agent · 7.5M token 的「螺丝在中国」全管线实战，以下改进直接落地：
+
+### v4.1 跨技能模式迁移（2026-07-20 已落地）
+
+从其他 skill 偷了三个核心模式：
+
+| 偷自 | 改进 | 状态 |
+|------|------|------|
+| **cognitive-license** | 三方分离骨架验证——Challenger只看到骨头列表（盲评），终裁Agent只看到Challenger裁决（看不到原始骨架） | ✅ 已落地 |
+| **deep-research** | 经典提取递归深度——缺口驱动spawn子Agent，而非一个Agent一次跑完4-pass | ✅ 已落地 |
+| **shopping-claim-verify** | Phase Gate硬阻断——fatal_count > 0 → REJECT → 补强 → 复检（最多2轮）。不再是建议性补强 | ✅ 已落地 |
 
 ### 1. Schema 铁律（CRITICAL——9 Agent 白死）
 
