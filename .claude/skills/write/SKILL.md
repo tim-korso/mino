@@ -2268,3 +2268,139 @@ with open('journal.jsonl') as f:
 - `Date.now()` / `Math.random()` / 无参 `new Date()` 被禁止（会破坏 resume 缓存）
 - `pipeline()` 默认优先于 `parallel()`——各章独立写章用 pipeline，需要全部结果聚合才用 parallel
 - Workflow 脚本中不能有 TypeScript 语法（类型标注、interface、泛型）
+
+---
+
+## Agent 失败模式目录（macos-automation 安全陷阱模式）
+
+> 每个陷阱 = 根因 + 表现 + 对策。不是"常见错误列表"——是**可操作的、带根因的**。知道根因 = 知道修复该打在哪个层。
+
+### 陷阱1: Schema 数组 (SDK层)
+
+**根因**: Workflow SDK 的 `StructuredOutput` 要求 JSON Schema 顶层 `type: "object"`。传 `type: "array"` 直接返回 400，Agent 不重试。
+
+**表现**: Agent 瞬间失败（几秒内），错误信息 `Invalid schema for function 'StructuredOutput': schema must be a JSON Schema of 'type: "object"'`。静默——不会重试、不会降级、不会报更友好的错误。
+
+**发生记录**: 螺丝在中国知识图谱 Workflow，9/10 Agent 因为这个同时死亡。螺丝普查 Workflow 修复后零错误。
+
+**对策**:
+```javascript
+// ❌ 会死
+{ type: 'array', items: { type: 'object', properties: {...} } }
+
+// ✅ 永不出错
+{ type: 'object', properties: { items: { type: 'array', items: {...} } } }
+```
+**修复层**: Prompt 层（写 schema 时的检查习惯）。SDK 层不可改。
+
+---
+
+### 陷阱2: Agent Stall (SDK层)
+
+**根因**: Claude Agent SDK Bun runtime 内置 180s liveness check——Agent 无文本输出超时即判 stalled，重试 6 次后放弃。MyAgents 无配置暴露此参数。
+
+**表现**: Agent 运行 3-5 分钟后静默死亡。Workflow 日志显示 `Agent stalled on all 6 attempts`。多发生在长 Agent——写章（250-400 行输出）、对抗充实的研究阶段、递归深度搜索。
+
+**发生记录**: 企业交换机 write-continue 2 次 stall；螺丝在中国 write-continue 0 次 stall（Agent 更小、输出更紧凑）。
+
+**对策**:
+1. **pipeline 优先**: 单次大型 Agent 拆成 pipeline 内多个小型 Agent。Pipeline 有容错——A 断了 B/C 继续
+2. **拆独立后台 Agent**: 超长任务（写章、deep research）不用 Workflow pipeline，用独立后台 Agent spawn
+3. **Resume 复用缓存**: Stall 后 resume 时已完成 Agent 秒出缓存——只重跑断掉的那个
+**修复层**: 架构层（Workflow 设计）。SDK 层不可改。
+
+---
+
+### 陷阱3: API Connection Closed (外部层)
+
+**根因**: DeepSeek v4-pro 流式 HTTP 连接被远端关闭。非 SDK 问题——是供应商基础设施不稳定。
+
+**表现**: 比 Stall 更致命——首次运行无可用缓存，重试从头烧 token。Workflow 日志显示 `Connection closed mid-response`。602 个 Agent 中仅 3 个 journal 级错误 (0.5%)，但 Workflow 级中断 6 次——集中在对抗充实阶段。
+
+**发生记录**: 企业交换机知识图谱合成 Agent + write-continue 对抗充实阶段，共 6 次 Workflow 级中断。
+
+**对策**:
+1. **拆分 Workflow**: 大 Workflow 拆小链——一个断不影响其他
+2. **journal 提取恢复**: 不反复 resume——从 journal.jsonl 直接提取已完成 Agent 的 completion 落盘
+3. **对抗充实放最后**: 把最可能断的阶段放管线末尾——断了前面 90% 产出已落盘
+**修复层**: 架构层 + 恢复策略。外部层不可改。
+
+---
+
+### 陷阱4: 补强是软的 (设计层)
+
+**根因**: 对抗充实没有硬阻断机制。Challenger 攻击 → 发现弱点 → Agent 补强 → **无论补没补好都继续**。提示词指令（"补强论证"）是建议性的——Agent 可能糊弄、跳过、或补了但没补到位。
+
+**表现**: Challenger 报告 fatal 级弱点 → 补强 Agent 返回了 fix → 但实际修复质量未经检查。表现隐匿——只有人通读后才能发现。
+
+**发生记录**: 螺丝在中国 write-continue——对抗充实后连贯性检查仍发现 5 术语漂移 + 3 论点冲突 + 4 传导缺口。说明补强没有解决结构性问题。
+
+**对策**: Phase Gate 硬阻断（v4.1 已修）。`fatal_count > 0 → REJECT → 补强 → 复检（最多2轮）→ 2轮后仍有fatal → 标记人工审核`。
+**修复层**: Workflow 结构层（加 `while` 循环 + 复检 Agent）。不是 prompt 层——提示词改多少遍也拦不住。
+
+---
+
+### 陷阱5: 经典提取一次跑完 (设计层)
+
+**根因**: 4-pass 深层刨被压缩为一个 Agent 的长 prompt。"Pass 1 搜目录 → Pass 2 搜批判 → Pass 3 搜时间检验 → Pass 4 跨经典定位"——四个任务塞进一个 Agent 的注意力窗口。
+
+**表现**: 每 pass 只刮到表层。Agent 在 Pass 2 发现了一个方法论盲区，但因为没有 spawn 子 Agent 的机制，只能搜 1-2 篇、记录、然后跳到 Pass 3。深度丢失。
+
+**发生记录**: 螺丝在中国——经典提取实际没做（骨架是自定义 KG Workflow 直接出的）。但企业交换机书的经典提取就是一 Agent 跑 4-pass，结果深度不足。
+
+**对策**: 递归深度（v4.1 已修）。Pass 1 输出盲区列表 → spawn 子 Agent 填每个盲区 → Pass 3 基于 Pass 2 发现动态规划。
+**修复层**: 架构层（递归 spawn 替代线性 pipeline）。
+
+---
+
+### 陷阱6: 骨架确认偏误 (设计层)
+
+**根因**: 骨架合成 Agent 输出骨架 → 同一个 Agent（或看到合成推理的 Challenger）来验证。"构建者不能验证自己的输出"——看到合成推理的 Challenger 容易被原推理说服，攻击不够独立。
+
+**表现**: Challenger 的 `findings` 数组偏短，`severity` 偏 mild。三 Challenger 全 PASS 但后续写章时暴露出结构问题（维度遗漏、传导假边）。
+
+**发生记录**: 螺丝在中国 KG Workflow——合成 Agent 直接产出了高质量骨架，跳过了 adversarial verify。但如果是标准 write new 管线——skeleton-builder 的 Challenger 看到合成推理后会偏软。
+
+**对策**: 三方分离盲评（v4.1 已修）。Challenger 只看到骨头列表输出——不看到原始维度矩阵、不看到合成推理。终裁 Agent 只看到 Challenger 裁决——不看到原始骨架。
+**修复层**: 信息流结构层（控制每个 Agent 的可见数据）。不是 prompt 层。
+
+---
+
+### 陷阱7: 路径耦合——Workflow 脚本的领域依赖 (设计层)
+
+**根因**: Workflow 脚本中 `workspace/${book_id}/` 路径约定是隐式的。Agent 自行判断扫描范围时容易扫错目录——混入其他书的章节。
+
+**表现**: write-continue-ai-gaps 扫描了 `workspace/` 全局而非 `workspace/<book_id>/`，把交换价值书、健康书的章节混入了企业交换机书的连贯性检查。
+
+**发生记录**: 企业交换机书 coherence check——Agent 报告中出现了其他书的章节引用。
+
+**对策**: Workflow 脚本中显式传入 `bookDir` 参数——不依赖 Agent 自行发现。"扫描 workspace/<book_id>/ 下所有文件"写死在 prompt 里，不让 Agent 推断。
+**修复层**: Prompt 层（显式约束替代隐式推断）。
+
+---
+
+### 陷阱8: 编辑 Agent 只诊断不应用 (执行层)
+
+**根因**: 编辑诊断 Agent 产出了高质量的修复方案（文件名 + 行号 + 替换文字），但没有将修复写入文件。需要单独的"应用修复"阶段。
+
+**表现**: 诊断 Workflow 返回 `status: COMPLETE`，修复方案详尽，但打开文件一看——什么都没改。
+
+**发生记录**: 螺丝在中国 v3 编辑润色——诊断 4 Agent 产出了详尽方案，但 3/4 Agent 返回空结果（没有写入文件的工具调用）。需要再跑一个 apply Workflow（9 Agent）来真正 Edit。
+
+**对策**: 编辑管线 = 诊断（只读 → 输出修复方案）+ 应用（拿方案 → Edit 精确插入）。两阶段分离。不要试图让一个 Agent 同时诊断和应用——确认偏误（诊断时已经在想怎么改了）+ 上下文过长（读全7章 + 改其中1章 = token 爆炸）。
+**修复层**: Workflow 结构层（两阶段替代一阶段）。
+
+---
+
+### 陷阱严重度总览
+
+| # | 陷阱 | 层 | 致命度 | 频率 | 修复状态 |
+|---|------|----|--------|------|---------|
+| 1 | Schema 数组 | SDK | 高——Agent 直接死 | 每次忘了就触发 | ✅ 文档化 |
+| 2 | Agent Stall | SDK | 中——resume 可恢复 | 长 Agent 高概率 | ✅ 文档化 |
+| 3 | API 断连 | 外部 | 高——无缓存可复用 | 低概率高影响 | ✅ 文档化 |
+| 4 | 补强是软的 | 设计 | 中——隐匿 | 每本书 | ✅ v4.1 Phase Gate |
+| 5 | 经典提取浅 | 设计 | 中——隐匿 | 每本书 | ✅ v4.1 递归深度 |
+| 6 | 骨架确认偏误 | 设计 | 中——隐匿 | 每本书 | ✅ v4.1 三方分离 |
+| 7 | 路径耦合 | 设计 | 低——易发现 | 跨书场景 | ✅ 文档化 |
+| 8 | 编辑只诊断 | 执行 | 低——可重跑 | 编辑阶段 | ✅ 文档化 |
