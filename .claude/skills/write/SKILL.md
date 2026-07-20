@@ -497,8 +497,15 @@ ${validChallenges.map(c => `| ${c.lens} | ${c.passed ? '✅ 通过' : '⚠️ ' 
   { label: '骨架输出', effort: 'medium' }
 )
 
-return { skeleton_md: finalSkeleton, bone_count: skeleton.bone_count, adversarial_verify: 'PASSED', challenges: validChallenges }
+// ═══ 输出bones.json（结构化骨头数据——write-continue不解析markdown） ═══
+// 这是v4.2修复：state detection从markdown解析骨头不可靠→读这个JSON
+const bonesJson = JSON.stringify(skeleton.bones, null, 2)
+// bonesJson会随skeleton_md一起被调用方写入workspace/<book>/bones.json
+
+return { skeleton_md: finalSkeleton, bones_json: bonesJson, bone_count: skeleton.bone_count, adversarial_verify: 'PASSED', challenges: validChallenges }
 ```
+
+**关键**：调用 skeleton-builder 后，必须把 `bones_json` 写入 `workspace/<book>/bones.json`。`write-continue` 的 state detection 从 JSON 读骨头数据——不解析 markdown。这修复了 v4.2 陷阱7（路径耦合）和陷阱8（编辑只诊断）。
 
 ### 使用方式
 
@@ -717,7 +724,10 @@ const STATE_SCHEMA = {
   properties: {
     book_id: { type: 'string' },
     chapter_files: { type: 'array', items: { type: 'object', properties: { file: { type: 'string' }, word_count: { type: 'number' }, has_discovery: { type: 'boolean' }, has_myths: { type: 'boolean' }, has_deep_notes: { type: 'boolean' } } } },
-    chapters_missing: { type: 'array', items: { type: 'string' }, description: '骨架中有但文件不存在的章节名' },
+    chapters_missing: { type: 'array', items: { type: 'object', properties: {
+      chapter_num: { type: 'number' }, title: { type: 'string' },
+      core_question: { type: 'string' }, classic_basis: { type: 'string' }
+    }, description: '骨架中有但文件不存在的骨头——含完整字段供写章Agent使用' },
     chapters_thin: { type: 'array', items: { type: 'string' }, description: '存在但<150行或缺关键元素的章' },
     total_words: { type: 'number' },
     skeleton_bones: { type: 'number' },
@@ -731,22 +741,25 @@ const state = await agent(
 
 ## 检测项目
 
+### 0. 读骨头数据（最优先——不解析markdown骨架）
+- **先读 workspace/${book_id}/bones.json**——这是skeleton-builder输出的结构化骨头数据
+- 如果bones.json不存在——回退到读00-骨架.md提取骨头（标注"bones.json缺失"）
+- 每根骨头有: chapter_num, title, core_question, classic_basis
+- **这些字段直接传给写章Agent——不要自己编chapter_num**
+
 ### 1. 章节完整性
 - Glob *.md，排除00-骨架和附录
-- 对比00-骨架.md中的骨头数
-- 列出缺失的章节（骨架中有但文件不存在）
-- 对存在的章：统计行数/字数，检测是否有★发现故事、★误区爆破、经典深层注
+- 对比bones.json中的骨头数
+- 对已存在的章：统计行数/字数，检测是否有★发现故事、★误区爆破
+- **缺失的章节**：返回完整的骨头对象（chapter_num+title+core_question+classic_basis），不只是标题字符串
 
 ### 2. 薄弱检测
-行数<150 或 缺发现故事 或 缺误区爆破 或 缺深层注 → 标记为"thin"
+行数<150 或 缺发现故事 或 缺误区爆破 → 标记为"thin"
 
 ### 3. Phase 2标记
-扫描全书检测9类深化标记是否存在(A_history~I_opposition)
+扫描全书检测9类深化标记是否存在
 
-### 4. 骨架解析
-读00-骨架.md，提取每根骨头的: chapter_num, title, core_question, classic_basis
-
-返回结构化JSON。`,
+返回结构化JSON。chapters_missing中每项必须包含chapter_num（数字）和title（字符串）。`,
   { label: '状态检测', schema: STATE_SCHEMA, effort: 'low' }
 )
 
@@ -818,8 +831,7 @@ if (state.chapters_missing.length > 0) {
     properties: {
       chapter_num: { type: 'number' },
       title: { type: 'string' },
-      filename: { type: 'string' },
-      content: { type: 'string', description: '完整markdown正文' },
+      content: { type: 'string', description: '完整markdown正文（文件名由脚本从chapter_num显式生成——Agent不需要返回filename）' },
       claims: { type: 'array', items: { type: 'string' } },
       completeness_checklist: {
         type: 'object',
@@ -836,7 +848,7 @@ if (state.chapters_missing.length > 0) {
       },
       word_count: { type: 'number' },
     },
-    required: ['title', 'filename', 'content', 'claims', 'completeness_checklist']
+    required: ['chapter_num', 'title', 'content', 'claims']
   }
 
   const written = await pipeline(
@@ -885,12 +897,15 @@ if (state.chapters_missing.length > 0) {
     )
   )
 
-  // 写入文件
+  // 写入文件——文件名从chapter_num显式生成，不让Agent编
   const validChapters = written.filter(Boolean)
   for (const ch of validChapters) {
+    // 显式生成文件名：0{chapter_num}-{前20字标题}.md
+    const safeTitle = ch.title.replace(/[：:？?！!／/\\\*\|\"<>]/g, '-').replace(/\s+/g, '').slice(0, 20)
+    const filename = '0' + ch.chapter_num + '-' + safeTitle + '.md'
     await agent(
-      `将以下章节内容写入 workspace/${book_id}/${ch.filename}:\n\n${ch.content}`,
-      { label: `写入${ch.filename}`, effort: 'low' }
+      '将以下内容写入 ' + bookDir + '/' + filename + ':\n\n' + ch.content,
+      { label: '写盘Ch' + ch.chapter_num, effort: 'low' }
     )
   }
   log(`写章完成: ${validChapters.length}/${missingBones.length} 章`)
@@ -2402,5 +2417,5 @@ with open('journal.jsonl') as f:
 | 4 | 补强是软的 | 设计 | 中——隐匿 | 每本书 | ✅ v4.1 Phase Gate |
 | 5 | 经典提取浅 | 设计 | 中——隐匿 | 每本书 | ✅ v4.1 递归深度 |
 | 6 | 骨架确认偏误 | 设计 | 中——隐匿 | 每本书 | ✅ v4.1 三方分离 |
-| 7 | 路径耦合 | 设计 | 低——易发现 | 跨书场景 | ✅ 文档化 |
-| 8 | 编辑只诊断 | 执行 | 低——可重跑 | 编辑阶段 | ✅ 文档化 |
+| 7 | 路径耦合 | 设计 | 低——易发现 | 跨书场景 | ✅ bones.json显式传参+文件名生成 |
+| 8 | 编辑只诊断 | 执行 | 低——可重跑 | 编辑阶段 | ✅ 诊断→应用两阶段分离 |
