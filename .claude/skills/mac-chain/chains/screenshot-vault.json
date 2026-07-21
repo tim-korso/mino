@@ -1,11 +1,20 @@
 {
   "name": "截图即档案",
   "description": "截图落地→OCR→语义归档→可检索。发票截图进Finance、文号截图进Compliance、二维码转交qr-action",
-  "trigger": {"type": "hazel", "schedule": "FSEvents ~/Desktop (Screen Shot*.png / 截屏*.png)"},
+  "trigger": {
+    "type": "hazel",
+    "schedule": "FSEvents ~/Desktop (Screen Shot*.png / 截屏*.png)"
+  },
   "steps": [
-    {"tool": "mac-image-read.sh", "args": "$LAST_FILE --json", "description": "Vision OCR 提取截图文字(零配置)", "on_failure": "continue"},
-    {"tool": "bash", "args": "-c 'OCR=$(mac-image-read.sh \"$LAST_FILE\"); case \"$OCR\" in *发票*|*报销*|*税号*) mv \"$LAST_FILE\" ~/Documents/Finance/截图-发票/ ;; *〔20*号*|*银保监*|*金办发*) mv \"$LAST_FILE\" ~/Documents/Compliance/截图-监管/ ;; *) exit 0 ;; esac'", "description": "关键词路由归档(发票/监管两大类, 不中则留桌面)", "on_failure": "continue"},
-    {"tool": "mac-activity.sh", "args": "--event screenshot_archived \"file=$LAST_FILE\"", "description": "写事件总线", "on_failure": "continue"}
+    {
+      "tool": "chain-screenshot-vault.sh",
+      "args": "",
+      "description": "最新截图OCR→关键词归档(自发现)",
+      "on_failure": "continue"
+    }
   ],
-  "feedback": {"type": "log", "detail": "截图已归档 → mac-activity.db 可按全文检索"}
+  "feedback": {
+    "type": "log",
+    "detail": "截图已归档 → mac-activity.db 可按全文检索"
+  }
 }

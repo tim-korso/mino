@@ -1,11 +1,20 @@
 {
   "name": "语音速记誊写员",
   "description": "语音文件落入→离线转文字→存可检索文本+通知预览。v2: NLP提取待办→提醒事项",
-  "trigger": {"type": "hazel", "schedule": "FSEvents ~/Documents/语音速记 (*.m4a *.caf *.mp3)"},
+  "trigger": {
+    "type": "hazel",
+    "schedule": "FSEvents ~/Documents/语音速记 (*.m4a *.caf *.mp3)"
+  },
   "steps": [
-    {"tool": "mac-speech-transcribe.sh", "args": "$LAST_FILE", "description": "Speech框架离线转写(零配置, 中文)", "on_failure": "stop"},
-    {"tool": "bash", "args": "-c 'T=$(mac-speech-transcribe.sh \"$LAST_FILE\"); printf \"## %s\\n%s\\n\\n\" \"$(date +%F\\ %T) $(basename \"$LAST_FILE\")\" \"$T\" >> ~/Documents/语音速记/transcripts.md; osascript -e \"display notification \\\"${T:0:80}\\\" with title \\\"速记已誊写\\\"\"'", "description": "追加到可检索总稿+系统通知预览", "on_failure": "continue"},
-    {"tool": "mac-activity.sh", "args": "--event voice_transcribed \"file=$LAST_FILE\"", "description": "写事件总线", "on_failure": "continue"}
+    {
+      "tool": "chain-voice-scribe.sh",
+      "args": "",
+      "description": "最新语音→离线转写→总稿+通知(自发现)",
+      "on_failure": "continue"
+    }
   ],
-  "feedback": {"type": "notification", "detail": "誊写完成+预览"}
+  "feedback": {
+    "type": "notification",
+    "detail": "誊写完成+预览"
+  }
 }

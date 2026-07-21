@@ -1,12 +1,40 @@
 {
   "name": "夜间自治",
   "description": "23:30体检→趋势预测→安全自修→晨报并入夜间战果。醒来问题已修好",
-  "trigger": {"type": "cron", "schedule": "30 23 * * *"},
+  "trigger": {
+    "type": "cron",
+    "schedule": "30 23 * * *"
+  },
   "steps": [
-    {"tool": "mac-daily-check.sh", "args": "", "description": "每日体检仪表盘(写mac-activity.db)", "on_failure": "continue"},
-    {"tool": "mac-trend.sh", "args": "--predict --notify", "description": "趋势预测性告警", "on_failure": "continue"},
-    {"tool": "mac-doctor.sh", "args": "--fix", "description": "安全自修(仅可逆项)", "on_failure": "continue"},
-    {"tool": "mac-activity.sh", "args": "--event night_watch \"status=done\"", "description": "写事件总线供晨报引用", "on_failure": "continue"}
+    {
+      "tool": "mac-daily-check.sh",
+      "args": "",
+      "description": "每日体检仪表盘(写mac-activity.db)",
+      "on_failure": "continue",
+      "timeout": 180
+    },
+    {
+      "tool": "mac-trend.sh",
+      "args": "--predict --notify",
+      "description": "趋势预测性告警",
+      "on_failure": "continue"
+    },
+    {
+      "tool": "mac-doctor.sh",
+      "args": "--fix",
+      "description": "安全自修(仅可逆项)",
+      "on_failure": "continue",
+      "timeout": 300
+    },
+    {
+      "tool": "mac-activity.sh",
+      "args": "--event night_watch \"status=done\"",
+      "description": "写事件总线供晨报引用",
+      "on_failure": "continue"
+    }
   ],
-  "feedback": {"type": "log", "detail": "夜间战果 → 次日晨报"}
+  "feedback": {
+    "type": "log",
+    "detail": "夜间战果 → 次日晨报"
+  }
 }

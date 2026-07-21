@@ -235,7 +235,7 @@ pipeline_event "weekly_orphan_scan" "count=N, size=X"
 
 **59 个脚本，链只用了 ~20 个**——感知层（OCR/语音/二维码/NLP/读图）和诊断学习层（learn/evolve/trend/deepdiag）此前零链化。链 G-N 把它们接入总线。
 
-**8 条文档链只有 2 条真在跑**：Mac自动驾驶（rules-engine 30min cron)、晨会金融速递（20:00 cron，独立管线）。链 A/D/E/F 是纸上链——Hazel 规则需 GUI 手工配置（无法脚本化），cron 型未注册。
+**部署状态（2026-07-22 全开）**：7 条 cron 已注册（夜间自治/周报/安全哨兵/残留扫描/晨报/监管追踪/微信归档）;Hazel 型改走 Hammerspoon pathwatcher 脚本化部署（Downloads/Desktop/语音速记 3 watchers + ⌃⌥⌘C 热键，配置存 `config/hs-mac-chain.lua`)。验收：night-watch 全链 4✅、截图链/剪贴板链实测通过、runner 支持 per-step timeout（补丁已打）。
 
 ## 新链（2026-07-22, 全部落在实证脚本上）
 

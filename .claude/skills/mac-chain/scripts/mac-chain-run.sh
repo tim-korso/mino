@@ -76,7 +76,7 @@ steps = chain.get('steps', [])
 dry = '$dry' == 'true'
 has_guard = '$HAS_GUARD' == 'true'
 scripts = '$SCRIPTS_DIR'
-timeout_sec = 30
+default_timeout = 30
 retries = 1  # 失败重试 1 次
 
 ok = 0
@@ -89,6 +89,7 @@ for i, step in enumerate(steps):
     desc = step.get('description', tool)
     on_fail = step.get('on_failure', 'continue')
     verify_cmd = step.get('verify', '')
+    timeout_sec = step.get('timeout', default_timeout)
 
     cmd = f'bash {scripts}/{tool} {args}'
 

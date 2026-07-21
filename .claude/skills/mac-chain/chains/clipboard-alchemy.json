@@ -1,10 +1,20 @@
 {
   "name": "剪贴板炼金术",
   "description": "热键触发→剪贴板智能路由: URL展开取标题/监管文号→deadline追踪/其余原文返回",
-  "trigger": {"type": "hs_hotkey", "schedule": "⌃⌥⌘C"},
+  "trigger": {
+    "type": "hs_hotkey",
+    "schedule": "⌃⌥⌘C"
+  },
   "steps": [
-    {"tool": "mac-clipboard-pipe.sh", "args": "--verbose", "description": "类型检测+URL展开+取标题(自带管线)", "on_failure": "continue"},
-    {"tool": "bash", "args": "-c 'C=$(pbpaste); if echo \"$C\"|grep -qE \"〔20[0-9]{2}〕[0-9]+号\"; then bash ~/.myagents/projects/mino/.claude/skills/macos-automation/scripts/mac-regulatory-deadline.sh --add \"$C\"; osascript -e \"display notification \\\"文号已入监管追踪\\\" with title \\\"炼金\\\"\"; fi'", "description": "监管文号→deadline追踪器", "on_failure": "continue"}
+    {
+      "tool": "chain-clipboard-alchemy.sh",
+      "args": "",
+      "description": "剪贴板路由: 文号→追踪/URL→管线",
+      "on_failure": "continue"
+    }
   ],
-  "feedback": {"type": "notification", "detail": "按类型执行"}
+  "feedback": {
+    "type": "notification",
+    "detail": "按类型执行"
+  }
 }
