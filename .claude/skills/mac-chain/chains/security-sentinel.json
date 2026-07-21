@@ -1,0 +1,10 @@
+{
+  "name": "安全哨兵",
+  "description": "每周日9点→安全审计快照→与上周diff→新TCC授权/登录项/监听端口告警。新软件要权限无处遁形",
+  "trigger": {"type": "cron", "schedule": "0 9 * * 0"},
+  "steps": [
+    {"tool": "bash", "args": "-c 'D=~/.myagents/projects/mino/workspace/security-snapshots; mkdir -p $D; bash ~/.myagents/projects/mino/.claude/skills/macos-automation/scripts/mac-security-audit.sh > $D/$(date +%F).audit; L=$(ls -t $D/*.audit|sed -n 2p); [ -n \"$L\" ] && diff $L $D/$(date +%F).audit | grep -E \"^>.*(TCC|授权|登录项|LaunchAgent|监听)\" | head -20'", "description": "审计+与上周快照diff提取新增风险项", "on_failure": "continue"},
+    {"tool": "mac-activity.sh", "args": "--event security_audit \"week=$(date +%V)\"", "description": "写事件总线", "on_failure": "continue"}
+  ],
+  "feedback": {"type": "notification", "detail": "有新增风险项时告警, 无则静默"}
+}

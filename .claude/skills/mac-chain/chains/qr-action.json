@@ -1,0 +1,10 @@
+{
+  "name": "二维码即扫即行",
+  "description": "图片里的二维码→解码→按类型行动: WiFi自动连/URL打开/文本入剪贴板",
+  "trigger": {"type": "hazel", "schedule": "FSEvents ~/Downloads (*二维码* *qrcode* *QR*)"},
+  "steps": [
+    {"tool": "mac-qr-read.sh", "args": "$LAST_FILE", "description": "CoreImage解码(零配置)", "on_failure": "stop"},
+    {"tool": "bash", "args": "-c 'Q=$(mac-qr-read.sh \"$LAST_FILE\"); case \"$Q\" in WIFI:*) SSID=$(echo \"$Q\"|sed -n \"s/.*S:\\([^;]*\\).*/\\1/p\"); PWD=$(echo \"$Q\"|sed -n \"s/.*P:\\([^;]*\\).*/\\1/p\"); networksetup -setairportnetwork en0 \"$SSID\" \"$PWD\" ;; http*) open \"$Q\" ;; *) echo \"$Q\"|pbcopy; osascript -e \"display notification \\\"内容已入剪贴板\\\" with title \\\"QR\\\"\" ;; esac'", "description": "WiFi/URL/文本三路行动", "on_failure": "continue"}
+  ],
+  "feedback": {"type": "notification", "detail": "按类型执行"}
+}

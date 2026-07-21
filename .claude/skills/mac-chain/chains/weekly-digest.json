@@ -1,0 +1,11 @@
+{
+  "name": "周报神迹",
+  "description": "周五18点→周度趋势报告→学习摘要→推微信: 这周你的Mac替你做了什么",
+  "trigger": {"type": "cron", "schedule": "0 18 * * 5"},
+  "steps": [
+    {"tool": "mac-trend.sh", "args": "--report", "description": "周度趋势分析+预测", "on_failure": "continue"},
+    {"tool": "mac-learn-report.sh", "args": "", "description": "自动化学习摘要(规则引擎学会了什么)", "on_failure": "continue"},
+    {"tool": "mac-push-wechat.sh", "args": "--message \"📊 周报已生成\"", "description": "推送到微信", "on_failure": "continue"}
+  ],
+  "feedback": {"type": "wechat", "detail": "周报→微信"}
+}

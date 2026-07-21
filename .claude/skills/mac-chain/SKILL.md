@@ -231,6 +231,48 @@ pipeline_event "weekly_orphan_scan" "count=N, size=X"
 ```
 三条链此前已创建（2026-07-19），分别处理监管报表追踪、微信文件归档、合规邮件分类。
 
+## 部署现状审计（2026-07-22）
+
+**59 个脚本，链只用了 ~20 个**——感知层（OCR/语音/二维码/NLP/读图）和诊断学习层（learn/evolve/trend/deepdiag）此前零链化。链 G-N 把它们接入总线。
+
+**8 条文档链只有 2 条真在跑**：Mac自动驾驶（rules-engine 30min cron)、晨会金融速递（20:00 cron，独立管线）。链 A/D/E/F 是纸上链——Hazel 规则需 GUI 手工配置（无法脚本化），cron 型未注册。
+
+## 新链（2026-07-22, 全部落在实证脚本上）
+
+### 链 G: 截图即档案 `screenshot-vault.json`
+截图落桌面 → mac-image-read(Vision OCR,零配置) → 关键词路由：发票→Finance/监管→Compliance → 写总线。**截图从死图片变成可检索档案。**
+
+### 链 H: 语音速记誊写员 `voice-memo-scribe.json`
+语音文件落文件夹 → mac-speech-transcribe(Speech框架离线,零配置) → 追加 transcripts.md + 通知预览。**说一句话，变成可搜索的文字。** v2: NLP 提待办→提醒事项。
+
+### 链 J: 二维码即扫即行 `qr-action.json`
+图片含二维码 → mac-qr-read(CoreImage,零配置) → WiFi自动连(networksetup) / URL直接打开 / 文本入剪贴板。**别人发 WiFi 二维码截图，Mac 自己连上。**
+
+### 链 K: 剪贴板炼金术 `clipboard-alchemy.json`
+⌃⌥⌘C → mac-clipboard-pipe(自带类型检测+短链展开+取标题) → 监管文号〔20XX〕NN号 → 自动入 deadline 追踪。**复制任何东西按一下，自动路由到正确动作。**
+
+### 链 L: 夜间自治 `night-watch.json`
+cron 23:30 → mac-daily-check → mac-trend --predict(预测性告警) → mac-doctor --fix(仅可逆项) → 写总线。**醒来发现问题已经修好了，晨报里写着夜间战果。**
+
+### 链 M: 周报神迹 `weekly-digest.json`
+cron 周五 18:00 → mac-trend --report → mac-learn-report → 推微信。**"这周你的 Mac 替你做了这些事。"**
+
+### 链 N: 安全哨兵 `security-sentinel.json`
+cron 周日 9:00 → mac-security-audit 快照 → 与上周 diff → 新 TCC 授权/登录项/监听端口告警。**任何新软件要了权限，周报里无处遁形。**
+
+## 组合配方——意想不到任务的最短执行链
+
+| 任务 | 最短链 |
+|------|--------|
+| "这页 PDF 说的什么" | mac-image-read（截图问） → 答 |
+| "研究 X 并落地" | deep-research quick → mac-research-to-action(Δ评分) → Δ<0.3 → mac-chain-run 执行 |
+| "把这个视频下了" | 复制链接 → ⌃⌥⌘C → dl-stable |
+| "我刚开了个会" | 语音速记丢文件夹 → 链 H → transcripts.md 可检索 |
+| "Mac 最近对不对劲" | mac-deepdiag 统一入口 → mac-doctor --fix |
+| "这文件该去哪" | 拖到 ~/Downloads → 链 A 分类归档 |
+
+**最短链原则**：感知用零配置原生框架（Vision/Speech/NaturalLanguage/CoreImage——不装任何东西），决策走 rules-engine/Δ评分，行动走现有 49 脚本，全程写 mac-activity.db 让链彼此感知。
+
 ## 关键原则
 
 1. **每链必须有触发源和终点** —— 不能是"工具A可以调工具B"这种概念链，必须是"X事件发生→Y动作执行→Z记录日志"
@@ -247,3 +289,10 @@ pipeline_event "weekly_orphan_scan" "count=N, size=X"
 - "卸载" / "卸载残留" / "完全卸载" / "app cleaner" / "pearcleaner" → 链 D
 - "残留扫描" / "孤儿文件" / "周度清理" → 链 E
 - "金融合规" / "监管报表" / "微信归档" → 链 F
+- "截图归档" / "截图 OCR" → 链 G
+- "语音速记" / "语音转文字" → 链 H
+- "二维码" / "扫码" → 链 J
+- "剪贴板" / "复制一下" → 链 K
+- "夜间自治" / "夜间修复" → 链 L
+- "周报" → 链 M
+- "安全哨兵" / "权限审计" → 链 N
