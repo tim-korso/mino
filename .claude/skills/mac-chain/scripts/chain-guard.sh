@@ -97,7 +97,7 @@ _guard_log() {
 
   # 同时写事件总线
   bash "$(dirname "$0")/../../macos-automation/scripts/mac-activity.sh" \
-    --event "chain_${status}" "desc=$desc,error=${detail:0:100}" 2>/dev/null || true
+    --event "chain_${st}" "desc=$desc,error=${detail:0:100}" 2>/dev/null || true
 }
 
 # ═══ TCC 预检 ═══
@@ -106,7 +106,7 @@ guard_check_tcc() {
   echo "  🔐 检查 TCC 权限..."
 
   # 检查 Accessibility (关键——osascript keystroke 需要)
-  if ! osascript -e 'tell application "System Events" to return name of first process' &>/dev/null; then
+  if ! perl -e 'alarm 5; exec @ARGV' osascript -e 'tell application "System Events" to return name of first process' &>/dev/null; then
     echo "     ⚠️ Accessibility 权限未授权——GUI 自动化不可用"
     echo "     解决: 系统设置 → 隐私与安全性 → 辅助功能 → 添加终端/launchd"
     _guard_log "TCC" "Accessibility" "" "MISSING"
@@ -116,7 +116,7 @@ guard_check_tcc() {
 
   # 检查 Automation (Calendar/Mail/Reminders)
   for app in "Calendar" "Mail" "Reminders"; do
-    if ! osascript -e "tell application \"$app\" to return name" &>/dev/null; then
+    if ! perl -e 'alarm 5; exec @ARGV' osascript -e "tell application \"$app\" to return name" &>/dev/null; then
       echo "     ⚠️ $app 自动化权限未授权"
       _guard_log "TCC" "$app" "" "MISSING"
     fi
@@ -128,7 +128,7 @@ guard_pre_authorize() {
   echo "  🔐 预跑 TCC 授权..."
   local apps=("Calendar" "Mail" "Reminders" "System Events" "Finder")
   for app in "${apps[@]}"; do
-    osascript -e "tell application \"$app\" to return name" &>/dev/null && echo "     ✅ $app" || echo "     ⚠️ $app — 需手动授权"
+    perl -e 'alarm 5; exec @ARGV' osascript -e "tell application \"$app\" to return name" &>/dev/null && echo "     ✅ $app" || echo "     ⚠️ $app — 需手动授权"
   done
   echo "  ✅ 预授权完成——后续无人值守运行不会卡 TCC 弹窗"
 }

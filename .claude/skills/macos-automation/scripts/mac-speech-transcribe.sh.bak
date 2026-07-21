@@ -6,20 +6,7 @@
 #        bash mac-speech-transcribe.sh --mic 5    # 录音 5 秒并转录
 
 AUDIO="$1"
-
-# ─── whisper.cpp 主引擎 (2026-07-22: 零TCC+真离线, 替代Speech框架) ───
-if [ "$1" != "--mic" ] && command -v whisper-cli >/dev/null 2>&1; then
-  MODEL="${WHISPER_MODEL:-$HOME/.cache/whisper/ggml-base.bin}"
-  if [ -f "$MODEL" ]; then
-    echo "🎙️ 转录(whisper): $AUDIO" >&2
-    WAV="/tmp/_whisper_$$.wav"
-    afconvert -f WAVE -d LEI16@16000 "$AUDIO" "$WAV" 2>/dev/null || { echo "afconvert失败"; exit 1; }
-    whisper-cli -m "$MODEL" -l zh -f "$WAV" 2>/dev/null | grep -E "\[00:" | sed -E 's/^\[[0-9:.]+ --> [0-9:.]+\] +//'
-    rm -f "$WAV"
-    exit 0
-  fi
-fi
-BIN="$HOME/.myagents/projects/mino/.claude/skills/macos-automation/bin/SpeechCLI.app/Contents/MacOS/SpeechCLI"
+BIN="/tmp/_speech2text"
 
 # ─── 编译 ───
 if [ ! -f "$BIN" ]; then
@@ -31,19 +18,6 @@ import Foundation
 guard CommandLine.arguments.count > 1 else { exit(1) }
 let path = CommandLine.arguments[1]
 let url = URL(fileURLWithPath: path)
-
-// TCC 授权(首次会弹系统提示, 需用户点允许)
-let semaAuth = DispatchSemaphore(value: 0)
-var authOk = false
-SFSpeechRecognizer.requestAuthorization { status in
-    authOk = (status == .authorized)
-    semaAuth.signal()
-}
-_ = semaAuth.wait(timeout: .now() + 120)
-guard authOk else {
-    print("FAIL: 语音识别未授权——系统设置>隐私与安全性>语音识别 中允许后重试")
-    exit(1)
-}
 
 let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-CN"))!
 let request = SFSpeechURLRecognitionRequest(url: url)
@@ -76,23 +50,7 @@ if !resultText.isEmpty {
     print("(无语音内容或识别超时)")
 }
 SWIFT
-  APPDIR="$HOME/.myagents/projects/mino/.claude/skills/macos-automation/bin/SpeechCLI.app"
-  mkdir -p "$APPDIR/Contents/MacOS"
-  swiftc /tmp/_speech2text.swift -o "$APPDIR/Contents/MacOS/SpeechCLI" 2>/dev/null || { echo "编译失败"; exit 1; }
-  cat > "$APPDIR/Contents/Info.plist" << 'PLIST'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>CFBundleIdentifier</key><string>com.mino.speechcli</string>
-  <key>CFBundleName</key><string>SpeechCLI</string>
-  <key>CFBundleExecutable</key><string>SpeechCLI</string>
-  <key>CFBundlePackageType</key><string>APPL</string>
-  <key>NSSpeechRecognitionUsageDescription</key><string>语音速记离线转写需要语音识别权限</string>
-</dict>
-</plist>
-PLIST
-  BIN="$APPDIR/Contents/MacOS/SpeechCLI"
+  swiftc /tmp/_speech2text.swift -o "$BIN" 2>/dev/null || { echo "编译失败"; exit 1; }
 fi
 
 # ─── 录音模式 ───

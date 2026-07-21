@@ -3,8 +3,9 @@
 set -u
 DIR="$(cd "$(dirname "$0")" && pwd)"
 VDIR=~/Documents/语音速记
-LAST=$(find "$VDIR" -maxdepth 1 \( -name "*.m4a" -o -name "*.caf" -o -name "*.mp3" \) -mmin -3 -type f 2>/dev/null | head -1)
+LAST=$(find "$VDIR" -maxdepth 1 \( -name "*.m4a" -o -name "*.caf" -o -name "*.mp3" \) -mmin -3 -type f -size +1k 2>/dev/null -print0 | xargs -0 ls -t 2>/dev/null | head -1)
 [ -z "$LAST" ] && exit 0
+grep -qF "$(basename "$LAST")" "$VDIR/transcripts.md" 2>/dev/null && exit 0  # 已誊写过,去重
 T=$(bash "$DIR/mac-speech-transcribe.sh" "$LAST" 2>/dev/null)
 [ -z "$T" ] && exit 1
 printf '## %s %s\n%s\n\n' "$(date '+%F %T')" "$(basename "$LAST")" "$T" >> "$VDIR/transcripts.md"

@@ -10,7 +10,8 @@
       "tool": "chain-voice-scribe.sh",
       "args": "",
       "description": "最新语音→离线转写→总稿+通知(自发现)",
-      "on_failure": "continue"
+      "on_failure": "continue",
+      "timeout": 120
     }
   ],
   "feedback": {
