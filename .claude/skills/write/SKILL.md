@@ -820,6 +820,22 @@ const bible = await agent(
 if (!bible) throw new Error('Book Bible生成失败')
 log(`Book Bible: ${bible.terminology.length}术语 | ${bible.cross_chapter_deps.length}跨章依赖 | ${bible.style_rules.length}风格规则`)
 
+// ═══ Phase 1: 写章——两条路径选择（2026-07-22 起） ═══
+//
+// 【路径A: llm-call.py directAPI——量产默认，试点实测通过】
+//   python3 .claude/skills/write/scripts/llm-call.py --role volume \
+//     --manifest workspace/<book>/prompts/manifest.tsv --out-dir <chapters目录> \
+//     --system-file workspace/<book>/prompts/system.txt --parallel 3 --max-tokens 8000
+//   优势: DeepSeek V4 Pro $0.87/MTok(≈k2.6的1/4)、无180s stall、无20-Agent上限、
+//         缓存白嫖(共享system→输入近免费)、可跨厂商(challenger→k2.7-code)
+//   实测(FJ第4章): $0.0032/章 59.8s [C]61%[D]28%[E]11% 禁用词干净
+//   代价: 无CHAPTER_SCHEMA结构化自检(靠prompt硬规则+产出后Read过检)、
+//         无Workflow resume缓存、Book Bible需手工编入prompt文件
+//   适用: 大批量写章(>3章)、长章(>4000字)、DeepSeek稳定时段
+// 【路径B: 下方 Workflow——结构化默认】
+//   适用: 需要schema强制自检清单、需要pipeline容错/resume、单章试写
+//   注意: 锁定会话provider(k2.6便宜档/k3旗舰档, 别名实测见subagent-model-routing)
+
 // ═══ Phase 1: 写章（pipeline——每根缺失骨头一个Agent独立写+Book Bible） ═══
 if (state.chapters_missing.length > 0) {
   phase('写章')

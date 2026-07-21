@@ -28,9 +28,22 @@ metadata:
 
 ## 机制：别名表是配置，不是硬编码
 
-别名映射由 provider 的 `providerEnvJson.modelAliases` 决定，可用 `myagents config set` 修改（示例见 `deep-research/scripts/fallback-check.sh:53`）。**会漂移**——k2-thinking-turbo 下架后 haiku 别名即成地雷。用别名前先跑探针验证。
+别名映射存于 `config.json` 顶层键 `providerModelAliases.<providerId>.<alias>`（脱敏、不含凭据），可用 `myagents config set providerModelAliases.<provider> '{...json...}'` 修改。**会漂移**——k2-thinking-turbo 下架后 haiku 别名即成地雷。用别名前先跑探针验证。
 
-**根因修复方案（待汤姆批准）**：更新 moonshot provider 的 modelAliases，如 `{"haiku":"kimi-k2.6","sonnet":"kimi-k2.7-code","opus":"kimi-k3","fable":"kimi-k2.6"}` —— 一条命令恢复全部别名语义并解锁 k2.7-code 档位。影响面=所有用该 provider 的 Agent，需确认后执行。
+**运行时会话级缓存（2026-07-21 实测）**：别名表在**会话启动时**加载并缓存——`config set` 改完后，当前会话的子 Agent 仍用旧表（两轮探针实证）；`myagents reload` 热加载后提示"会话将在下一轮重启应用变更"。**验收探针必须在新会话/重启后的轮次跑才有效。**
+
+**全量别名表快照（修复前）**：
+- moonshot: fable/sonnet/opus→kimi-k2.6, haiku→kimi-k2-thinking-turbo❌
+- openrouter: fable/opus/sonnet→gemini-3.1-pro-preview, haiku→gemini-3-flash-preview
+- siliconflow: 全部→DeepSeek-V4-Pro
+
+**根因修复（已执行，两层）**：
+1. 全局层：`myagents config set providerModelAliases.moonshot` → 修复 haiku（对无 agent 级钉住的别名生效）
+2. **agent 层（决定性）**：Mino(agents[1]) 的 `providerEnvJson.modelAliases` 原本钉死 `{fable/sonnet/opus→kimi-k2.6}` 且无 haiku——`config set agents.1.providerEnvJson` 整体重写（仅改 modelAliases，其他字段原样保留；apiKey 全程脚本内处理不进对话）→ `{fable:kimi-k2.6, haiku:kimi-k2.6, sonnet:kimi-k2.7-code, opus:kimi-k3}`
+
+**优先级规则（实测）**：agent 级 `providerEnvJson.modelAliases` > 全局 `providerModelAliases`。逐键生效——agent 级没有的别名才回落全局。
+
+**验收**：kimi-k2.7-code 经 `myagents model verify` 实证存在；配置写入经脱敏 diff 验证；运行时映射待会话重启后探针终验（预期 haiku/fable→k2.6, sonnet→k2.7-code 编程档, opus→k3 旗舰档）。备份：`config.json.bak-20260721-alias` + `config.json.bak-20260721-agentalias`。
 
 ## 探针验证法（可复用）
 
