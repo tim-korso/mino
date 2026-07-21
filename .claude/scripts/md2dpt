@@ -1,0 +1,48 @@
+#!/bin/bash
+# md2dpt — Markdown → DPT-CP1 优化 PDF (v2: 13pt/500字重/高对比度)
+# 用法: md2dpt <file.md>              单文件 → 当前目录
+#       md2dpt *.md                   批量 → ./DPT-CP1/
+#       md2dpt dir/                   目录下全部 md
+set -e
+
+CSS="/Users/1234/.myagents/projects/mino/workspace/finance-regulation/dpt-cp1.css"
+
+if [ $# -eq 0 ]; then
+  echo "用法: md2dpt <file.md|dir|*.md>"
+  exit 1
+fi
+
+convert_one() {
+  local f="$1" outdir="$2"
+  local base=$(basename "$f" .md)
+  echo "→ ${base}.pdf"
+  pandoc "$f" -o "$outdir/${base}.pdf" \
+    --pdf-engine=weasyprint --css="$CSS" \
+    2>&1 | grep -v "WARNING\|Ignored\|Invalid\|Expected\|unknown" || true
+}
+
+# 目录
+if [ -d "$1" ]; then
+  outdir="${1%/}/DPT-CP1"
+  mkdir -p "$outdir"
+  for f in "$1"/*.md; do [ -f "$f" ] && convert_one "$f" "$outdir"; done
+  echo "完成: $(ls "$outdir"/*.pdf 2>/dev/null | wc -l | tr -d ' ') 本 → $outdir/"
+  exit 0
+fi
+
+# 通配符或多文件
+if [ $# -gt 1 ] || [[ "$1" == *\* ]]; then
+  outdir="$(pwd)/DPT-CP1"
+  mkdir -p "$outdir"
+  for f in "$@"; do [ -f "$f" ] && convert_one "$f" "$outdir"; done
+  echo "完成: $(ls "$outdir"/*.pdf 2>/dev/null | wc -l | tr -d ' ') 本 → $outdir/"
+  exit 0
+fi
+
+# 单文件
+base=$(basename "$1" .md)
+out="${2:-${base}.pdf}"
+echo "→ $out"
+pandoc "$1" -o "$out" --pdf-engine=weasyprint --css="$CSS" \
+  2>&1 | grep -v "WARNING\|Ignored\|Invalid\|Expected\|unknown" || true
+echo "完成: $out"

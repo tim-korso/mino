@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 680" width="520" height="680">
+  <defs>
+    <style>
+      text { font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', sans-serif; }
+    </style>
+    <radialGradient id="aura" cx="50%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#fff"/>
+      <stop offset="60%" stop-color="#ddd"/>
+      <stop offset="100%" stop-color="#999"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff"/>
+      <stop offset="50%" stop-color="#ddd"/>
+      <stop offset="100%" stop-color="#fafafa"/>
+    </radialGradient>
+  </defs>
+  <rect width="520" height="680" fill="#fafafa"/>
+
+  <text x="260" y="35" text-anchor="middle" font-size="15" font-weight="700">图：超级赛亚人——战斗力突破性增长的形态学分析</text>
+
+  <!-- Aura glow background -->
+  <ellipse cx="260" cy="350" rx="200" ry="240" fill="url(#glow)"/>
+
+  <!-- ===== AURA SPIKES ===== -->
+  <!-- Outer aura layer -->
+  <path d="M260,130 L275,70 L285,120 L310,55 L315,115 L345,65 L345,120 L380,90 L375,130 L410,130 L400,155" fill="none" stroke="#999" stroke-width="1.5"/>
+  <path d="M260,130 L245,70 L235,120 L210,55 L205,115 L175,65 L175,120 L140,90 L145,130 L110,130 L120,155" fill="none" stroke="#999" stroke-width="1.5"/>
+  <!-- Inner aura -->
+  <path d="M260,145 L270,95 L278,140 L300,90 L300,138 L322,100 L318,140 L345,120 L338,148 L365,148" fill="none" stroke="#ddd" stroke-width="1.0"/>
+  <path d="M260,145 L250,95 L242,140 L220,90 L220,138 L198,100 L202,140 L175,120 L182,148 L155,148" fill="none" stroke="#ddd" stroke-width="1.0"/>
+
+  <!-- ===== HAIR: Super Saiyan spiky style ===== -->
+  <polygon points="260,160 240,200 260,185 220,230 255,215 230,260 260,235 250,290 260,260 275,295 275,260 300,285 285,245 320,255 290,220 325,210 295,195 320,185 280,200" fill="#fff" stroke="#000" stroke-width="2.0"/>
+
+  <!-- Individual hair spikes -->
+  <path d="M260,160 L245,130" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M270,165 L280,120" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M250,170 L225,140" stroke="#000" stroke-width="2.0" stroke-linecap="round"/>
+  <path d="M285,170 L305,135" stroke="#000" stroke-width="2.0" stroke-linecap="round"/>
+  <path d="M240,180 L210,155" stroke="#000" stroke-width="2.0" stroke-linecap="round"/>
+  <path d="M295,178 L320,155" stroke="#000" stroke-width="2.0" stroke-linecap="round"/>
+  <path d="M232,195 L200,175" stroke="#555" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M300,190 L330,170" stroke="#555" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M225,210 L195,200" stroke="#555" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M308,205 L340,195" stroke="#555" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M240,130 L230,105" stroke="#000" stroke-width="2.0" stroke-linecap="round"/>
+  <path d="M280,125 L295,100" stroke="#000" stroke-width="2.0" stroke-linecap="round"/>
+
+  <!-- ===== FACE ===== -->
+  <!-- Face outline -->
+  <ellipse cx="260" cy="280" rx="60" ry="70" fill="#fff" stroke="#000" stroke-width="2.0"/>
+
+  <!-- Jaw -->
+  <path d="M215,290 Q220,330 260,345 Q300,330 305,290" fill="none" stroke="#000" stroke-width="2.0"/>
+
+  <!-- Forehead -->
+  <path d="M225,250 L260,225 L295,250" fill="none" stroke="#555" stroke-width="1.0"/>
+
+  <!-- Eyes: intense angled brows -->
+  <line x1="225" y1="270" x2="248" y2="262" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="295" y1="270" x2="272" y2="262" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Eyes -->
+  <ellipse cx="242" cy="275" rx="10" ry="6" fill="#000"/>
+  <ellipse cx="278" cy="275" rx="10" ry="6" fill="#000"/>
+  <!-- Pupil glint -->
+  <circle cx="245" cy="274" r="2" fill="#fff"/>
+  <circle cx="281" cy="274" r="2" fill="#fff"/>
+
+  <!-- Nose -->
+  <path d="M260,280 L260,295 L255,298" fill="none" stroke="#000" stroke-width="1.0"/>
+
+  <!-- Mouth: determined smirk -->
+  <path d="M240,315 Q260,325 280,312" fill="none" stroke="#000" stroke-width="1.5"/>
+
+  <!-- ===== BODY ===== -->
+  <!-- Neck -->
+  <line x1="240" y1="345" x2="235" y2="380" stroke="#000" stroke-width="1.5"/>
+  <line x1="280" y1="345" x2="285" y2="380" stroke="#000" stroke-width="1.5"/>
+
+  <!-- Shoulders -->
+  <path d="M150,410 Q200,380 235,380" fill="#555" stroke="#000" stroke-width="1.5"/>
+  <path d="M370,410 Q320,380 285,380" fill="#555" stroke="#000" stroke-width="1.5"/>
+
+  <!-- Gi (martial arts uniform) -->
+  <path d="M235,380 L210,520 L310,520 L285,380 Z" fill="#fff" stroke="#000" stroke-width="1.5"/>
+  <!-- V-neck opening -->
+  <path d="M240,385 L260,430 L280,385" fill="#fafafa" stroke="#000" stroke-width="1.0"/>
+  <!-- Belt -->
+  <rect x="210" y="460" width="100" height="18" fill="#555" stroke="#000" stroke-width="1.0"/>
+  <rect x="248" y="462" width="24" height="14" fill="none" stroke="#000" stroke-width="1.0"/>
+
+  <!-- Ki energy lines around fists -->
+  <line x1="200" y1="450" x2="185" y2="440" stroke="#999" stroke-width="0.8"/>
+  <line x1="195" y1="460" x2="178" y2="458" stroke="#999" stroke-width="0.8"/>
+  <line x1="320" y1="450" x2="335" y2="440" stroke="#999" stroke-width="0.8"/>
+  <line x1="325" y1="460" x2="342" y2="458" stroke="#999" stroke-width="0.8"/>
+
+  <!-- ===== LARGE KI AURA BURST ===== -->
+  <path d="M260,400 L230,340 L260,370 L290,330 L260,360" fill="none" stroke="#ddd" stroke-width="1.0"/>
+  <path d="M260,420 L210,360 L260,395 L310,350 L260,385" fill="none" stroke="#ddd" stroke-width="1.0"/>
+
+  <!-- ===== POWER LEVEL CALL OUT ===== -->
+  <rect x="140" y="555" width="240" height="55" rx="6" fill="#000"/>
+  <text x="260" y="580" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">战斗力：破表 ⚡</text>
+  <text x="260" y="600" text-anchor="middle" font-size="10" fill="#ddd">Power Level: OVER 9000</text>
+
+  <!-- ===== ANALYSIS CALLOUTS ===== -->
+  <text x="260" y="655" text-anchor="middle" font-size="9" fill="#999">图：赛亚人战斗力跃升机制。本图采用 DPT-CP1 兼容的 4 级灰度和 520×680 竖构图，为展示超级赛亚人形态学特征，结构比例非严格解剖比例。</text>
+</svg>

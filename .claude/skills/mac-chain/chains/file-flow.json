@@ -1,0 +1,14 @@
+{
+  "name": "文件流转全自动",
+  "description": "下载完成→分类→归档→打标签",
+  "trigger": {"type": "hazel", "schedule": "FSEvents ~/Downloads"},
+  "steps": [
+    {
+      "tool": "mac-file-classifier.py",
+      "args": "--rules ~/.myagents/projects/mino/.claude/skills/macos-automation/config/file-classifier-rules.json --dir ~/Downloads --apply",
+      "description": "多条件分类 + 移动 + 打标签",
+      "on_failure": "continue"
+    }
+  ],
+  "feedback": {"type": "log", "detail": "分类完成 → mac-activity.db"}
+}

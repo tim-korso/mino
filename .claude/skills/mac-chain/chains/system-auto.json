@@ -1,0 +1,18 @@
+{
+  "name": "系统自治",
+  "description": "电池/WiFi/USB/锁屏事件→规则引擎→通知+日志",
+  "trigger": {"type": "hs_watcher", "schedule": "持续 (HS init.lua watchers + 每30min rules-engine兜底)"},
+  "steps": [
+    {
+      "tool": "mac-rules-engine.sh",
+      "args": "",
+      "description": "规则引擎——异常检测+自动修复"
+    },
+    {
+      "tool": "mac-activity.sh",
+      "args": "--snapshot",
+      "description": "系统快照→时间线"
+    }
+  ],
+  "feedback": {"type": "log", "detail": "规则引擎执行 → mac-activity.db + HS menubar"}
+}

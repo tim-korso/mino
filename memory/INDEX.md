@@ -3,7 +3,7 @@
 > **Gateway file.** Always read this first when waking up in a new session.
 > 04-MEMORY.md is auto-loaded core memory (critical lessons). This file is the archival index — what topics exist, where they are, when they were last touched.
 
-**Stats**: 20 topics | 22 journal days | last rebuilt 2026-07-19
+**Stats**: 22 topics | 22 journal days | last rebuilt 2026-07-20
 
 ---
 
@@ -34,6 +34,7 @@
 | 19 | **white-mafia** | `memory/topics/white-mafia.md` | 07-07 | china, corruption, finance, power, regulation, deep-research |
 | 20 | **deep-research-paths** | `memory/topics/deep-research-paths.md` | 07-12 | search, research-engine, query-archive, strategy-reuse |
 | 21 | **macos-automation** | `memory/topics/macos-automation.md` | 07-18 | macOS, CLI, AppleScript, ceiling-matrix, pipeline, brew, proxy, diagnostics |
+| 22 | **espanso-automation** | `memory/topics/espanso-automation.md` | 07-20 | espanso, text-expansion, shell-extension, forms, regex, app-config, pipeline-integration |
 
 ## Recent Sessions
 
@@ -64,6 +65,7 @@
 | `~/.myagents/kb/failure-patterns.db` | 门禁 B 失败模式沉积 |
 | `memory/fields/*.yml` | 麦田定义——5块田 + 1模板 |
 | `memory/FARM.md` | 🌾 农场仪表盘——周巡田看板 |
+| `unwritten-rules.md` | 潜规则判断引擎 — 吴思×孔飞力×黄仁宇×周雪光框架 | 2026-07-19 | 🟢 活跃 |
 | `.claude/commands/巡田.md` | 巡田 slash command |
 
 ---

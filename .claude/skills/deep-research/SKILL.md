@@ -1,29 +1,169 @@
 ---
 name: deep-research
-description: 'Seven-layer deep research engine with Challenger verification gate, two-level recursive execution, dynamic graph planning, and Canon Mapper integration. Consumes search directions from claims.db, auto-writes verified findings back. Triggers on: "deep research", "深度调研", "搜商", "消费搜索方向", "run directions", "帮我彻底研究", "全面调研", "深入研究", "穷尽搜索".'
+description: 'Deep research engine. Default (Deep) mode auto-runs multi-angle-research workflow. Quick/Exhaustive/Extract modes have prose fallback. Canon Mapper integration via claims.db. Triggers on: "deep research", "深度调研", "搜商", "消费搜索方向", "run directions", "帮我彻底研究", "全面调研", "深入研究", "穷尽搜索".'
 ---
 
-# Deep Research — 增强型深度调研引擎 v2
+# Deep Research — 深度调研引擎 v3
 
 > 搜商 = 问对问题 × 找对地方 × 过滤噪音 × 迭代收敛 × **独立验证**
-> v2 新增：Challenger Gate（独立对抗验证）+ 双层递归执行 + 动态图规划 + 深度工具层
+> v3: Deep 模式自动委托到 multi-angle-research workflow（5角度 pipeline→Challenger→合成, ~5min）
 
 ## 核心洞见
 
-**构建答案的 Agent 不能验证自己的输出。** 确认偏误不是能力问题——是结构问题。v2 将验证从"自己检查"升级为"独立攻击者检查"。
+**构建答案的 Agent 不能验证自己的输出。** 确认偏误不是能力问题——是结构问题。
 
 ---
 
-## 四种运行模式
+## 模式路由（先判定模式，再选执行引擎）
 
-| 模式 | 层数 | Challenger | 双层递归 | 时间预算 | 何时用 |
-|------|------|-----------|---------|---------|--------|
-| **Quick** 🏃 | L0-L4（单轮） | 无 | 无 | 2-5 min | 事实核查、快速了解 |
-| **Deep** 🔬 | L0-L6（2-3 轮）+ Gate | 1 个 Challenger | 复杂子问题 | 10-25 min | 复杂问题、决策支撑 |
-| **Exhaustive** 🔬🔬 | L0-L6（收敛为止）+ Gate | **2 个独立** Challenger | 所有子问题 | 30-60 min | 高风险决策、投资研究 |
-| **Extract** 📖 | 4-pass 自动化 | Pass3=验证 | 每pass独立Agent | 30-50 min | 经典骨架提取——/write管线Step 2.1 |
+| 模式 | 执行引擎 | 时间 | 何时用 |
+|------|---------|------|--------|
+| **Quick** 🏃 | AI 手动（本 SKILL 指导） | 2-3 min | 事实核查、简单问题 |
+| **Deep** 🔬 | **Workflow `multi-angle-research`** | ~5 min | 默认。复杂问题、决策支撑 |
+| **Incremental** 📈 🆕 | 读 state.json → 只搜缺口 → 合并 | 2-5 min/轮 | **长程任务**。跨 session 持续调研同一主题 |
+| **Exhaustive** 🔬🔬 | Workflow 一轮 → 空白检测 → 递归 | 20-40 min | 高风险决策、投资研究 |
+| **Extract** 📖 | Workflow `classic-deep-extract` | 15-20 min | 经典骨架提取——/write管线 |
 
-**默认模式：Deep。** 经典提取用 Extract 模式。
+**默认模式：Deep → Workflow 搜索 + 主会话合成。** 搜索和验证放 Workflow（可缓存/可恢复），合成回主会话（不受 180s stall 限制）。
+
+### Deep 模式执行规则 (v4 — 搜索合成分离)
+
+```
+用户: "深度调研 X"
+    │
+    ▼
+1. AI 先做 L0（问题分析 + 隐含假设识别）—— 1min, 不出 Workflow
+    │
+    ▼
+2. 调 Workflow({name: "multi-angle-research", args: {question: "X"}})
+   ★ Workflow 只做: 5角度搜索 + Challenger 对抗验证
+   ★ Workflow 不做: 最终合成（Synthesize 回主会话）
+    │
+    ├── Workflow 成功 → 收到结构化 findings JSON
+    │
+    └── Workflow 中断 (stall) →
+        ├── bash wf-recover.sh --last --json   ← 提取已完成 Agent 的输出
+        ├── 如果 recoverable ≥ 3/5 → 基于提取数据继续合成
+        └── 如果 recoverable < 3/5 → 手动 Quick 搜索补缺
+    │
+    ▼
+3. AI 在主会话合成最终报告（不受 180s 限制, 不会被 stall 杀死）
+4. ★ 自动跑 mac-research-to-action.sh → Δ 排序
+5. ★ Δ<0.3 → 直接落地 | Δ<0.5 → 出方案问用户 | Δ>0.5 → 列出
+6. 落地完成后 → 汇报"X 条已执行，Y 条待确认"
+```
+
+### Exhaustive 模式执行规则 (v4 — 同上分离)
+
+```
+1. AI 做 L0 + 建立 DAG
+2. 跑 Workflow 第一轮 (只搜索+验证)
+3. Completeness Critic（不搜索，只分析缺口）
+4. 有缺口 → 跑第二轮 Workflow（args 带上一轮的盲区列表）
+5. 双 Challenger: 第二轮的结果再跑一次 Challenger
+6. AI 在主会话合成（合并两轮结果 + Challenger corrections）
+7. ★ 同上 auto-run mac-research-to-action.sh → Δ → 落地
+```
+
+### Workflow 容错铁律 (v4 NEW)
+
+> 基于 105 Workflows / 1373 agents 的实证数据（99.3% 成功率）。
+> 详见 `references/workflow-resilience.md`。
+
+| 规则 | 原因 |
+|------|------|
+| **1. Synthesize 不放 Workflow** | 复杂合成 >3min 无文本输出 → 确定性 180s stall |
+| **2. 搜索 Agent 默认 effort='low'** | 减少 token 间延迟 → 降低达到超时阈值的概率 |
+| **3. 两击规则 — 同 API 2 次 stall → 切备用** | DeepSeek 不稳定时段 (亚洲白天) 切 Claude Haiku |
+| **4. Workflow 启动后立即 `wf-recover --last`** | 确认上一个 Workflow 没残留问题 |
+| **5. pipeline() > parallel() — 永远默认 pipeline** | 一个 item 死不影响其他；parallel 的 barrier 会等全部 |
+| **6. 禁止 Date.now()/Math.random()/new Date()** | 破坏 Resume 缓存确定性 → 缓存失效 |
+| **7. Agent 数 ≤ 20 per Workflow** | 控制 blast radius——一个 Workflow 断了损失可控 |
+
+### Incremental 模式 (v5 NEW) — 长程任务断点续研
+
+> 跨 session、跨天、跨周持续调研同一主题。状态持久化 → 每轮只搜缺口 → 积累不丢失。
+
+```
+首次: "增量调研 AI 芯片竞争格局"
+    │
+    ▼
+1. bash research-state.sh init ai-chip-war "AI 芯片竞争格局深度调研"
+2. 跑 Deep 模式第一轮
+3. 结果喂给 research-state.sh add ai-chip-war < findings.json
+4. research-state.sh gaps ai-chip-war → 获取下轮搜索方向
+    │
+    ▼
+后续 session: "继续增量调研 ai-chip-war"
+    │
+    ▼
+1. bash research-state.sh resume ai-chip-war  → 加载全部上下文
+2. 只搜 gap_queue 里的未覆盖维度
+3. 新一轮 findings → add → gaps（循环）
+4. gap_queue 为空 → 调研完成
+```
+
+**状态文件**: `workspace/research/<slug>/state.json` + `rounds/round-NNN.json`
+
+**关键规则**:
+- 每轮只搜缺口——不重复搜索已覆盖维度
+- 自动去重——同一 finding text 不会重复积累
+- Budget 跟踪——累计 token 消耗可见
+- Goal Mode 可选集成——`myagents goal get` 自动关联
+
+### Long-Running Task Patterns (v5 NEW)
+
+#### Pattern 1: Multi-Round Accumulation
+
+```
+Deep 模式 × N 轮, 每轮搜不同维度
+    │
+    ├── Round 1: baseline sweep (5 angles)
+    ├── Round 2: gaps from completeness critic
+    ├── Round 3: challenger-identified weaknesses
+    └── Round N: gap_queue empty → done
+```
+
+#### Pattern 2: Monitor & Update (Recurring)
+
+```
+cron 触发, 每周跑一轮 Incremental
+    │
+    ├── Load state.json
+    ├── Search only for: "what changed since last round?"
+    ├── New findings → add → notify if significant
+    └── 适合: 竞争格局监控 / 政策变化追踪 / 认知空白看板
+```
+
+#### Pattern 3: Goal-Driven Research
+
+```
+Active Goal → deep-research auto-feeds Goal
+    │
+    ├── myagents goal get → read objective
+    ├── Each round reports progress via research-state.sh add
+    ├── Goal complete → research-state.sh mark-complete
+    └── 适合: 写书、长期学习项目、大型调研
+```
+
+#### Budget Pacing (v5 NEW)
+
+```
+如果用户指定了 token budget (+500k):
+    │
+    ├── budget.total → 总预算
+    ├── budget.remaining() → 剩余
+    ├── 每轮分配: remaining / planned_rounds
+    └── 剩余 < 50K → 切换到 Quick 模式补充缺口
+```
+
+Workflow `budget` API 在脚本里可用:
+```javascript
+if (budget.total && budget.remaining() < 50000) {
+  log('Budget low — switching to Quick mode for remaining gaps')
+  // Fall back to lighter search
+}
+```
 
 ---
 
@@ -342,6 +482,18 @@ Layer 3 搜索结果返回 →
 ---
 
 ## Layer 4: Triage & Verify（分诊+验证，不变核心逻辑）
+### 引用三要素规范 ★ v3.1
+
+引用任何标注为"独立行业报告"的来源时，必须标注：
+1. **谁出资** — 赞助商/委托方/利益相关方
+2. **什么样本** — 调查规模和画像 (n=? 什么人群)
+3. **什么利益** — 调查方是否向被调查者销售产品
+
+未标注三要素的引用 → 置信度自动降一级。
+已确认的利益冲突来源（BPI/Cappitech/Orion/Advisor360/SteelEye/Forrester 六家）→ 引用时强制标注利益冲突。
+
+反例：EJCSIT —— vendor 营销被包装为"学术共识"的结构性错误。
+
 
 ### 4.1 三级分诊（不变）
 
@@ -558,6 +710,22 @@ contradiction_omitted → 必须在报告中新增矛盾条目
 
 ---
 
+
+### AI Agent 能力边界标注规范 ★ v3.1
+
+引用任何 AI Agent 功能描述时，区分两个层级：
+
+| 层级 | 含义 | 判定标准 | 标注 |
+|------|------|---------|------|
+| **功能已实现** | 代码支持该功能 | 有 API/CLI/UI 入口 | `[功能]` |
+| **能力可依赖** | 在实际场景中可靠完成 | 独立基准测试通过率 > 80% | `[可用]` |
+
+当前独立基准参照：
+- Scale AI RLI: 端到端完成率 < 5%
+- SaaS-Bench: Claude Opus 4.7 完全通过率 3.8%
+
+无独立效能验证数据 → 所有 AI Agent 功能描述降级为 `[功能·原型]`。
+
 ## Layer 6: Synthesis & Archive（合成+归档，增强）
 
 **v2 增强：合并 Challenger corrections + audit trail。**
@@ -618,6 +786,15 @@ contradiction_omitted → 必须在报告中新增矛盾条目
 | **Layer 5.5 Challenger** | `Agent(subagent_type: "claude")` | 独立对抗验证 |
 | **Layer 3 深度挖掘** | `tavily_crawl`, `tavily_map` | 站点级深度提取 |
 | **Layer 3 Fallback** | Playwright browser tools | JS渲染/登录墙内容 |
+| **长程状态管理** 🆕 | `scripts/research-state.sh` | 跨 session 调研状态持久化 |
+| **Workflow 恢复** 🆕 | `wf-recover.sh` | 中断 Workflow 数据提取 |
+| **Goal 集成** 🆕 | `myagents goal` | 长程调研关联 Goal Mode |
+
+## 脚本
+
+| 脚本 | 用途 |
+|------|------|
+| **`scripts/research-state.sh`** 🆕 | 长程调研状态管理——init/add/status/gaps/resume/list |
 
 ## ★ Canon Mapper 集成模式（v2.1·NEW）
 
@@ -698,6 +875,7 @@ python3 .claude/skills/canon-mapper/scripts/db.py query \
 | `references/convergence-rules.md` | 收敛判定 + 递归决策树 |
 | `references/synthesis-template.md` | 完成/精简报告模板 |
 | **`references/challenger-protocol.md`** ★NEW | Challenger 验证规范 — prompt 模板、信息不对称规则、否定性搜索、结构化修正、合并规则 |
+| **`references/workflow-resilience.md`** ★v4 | Workflow 容错 — 失败模式/恢复手册/设计检查清单。基于 1373 agents 实证 |
 
 ---
 

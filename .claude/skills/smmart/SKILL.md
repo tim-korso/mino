@@ -44,8 +44,14 @@ Find it. Get it. Any channel that works.
           ⚠️ 云盘链接 1-4 周失效（实测验证）。永远每次重搜，不缓存。
         脚本: bash scripts/dl-cloud-search.sh "关键词"（方法文档）
 
+    └── 🔍 嗅探管线（URL 自动发现） ★NEW v2
+        机制：转发代理(7891→FlClash:7890) → URL 模式匹配 → JSONL 实时输出
+        延迟：零——被动监听，不主动扫描
+        适用：所有资源类型——当 yt-dlp 不支持的站点、手动 DevTools 太累、需要批量提取时
+        独特: 零配置（FlClash 已在跑）、通用模式（不绑定站点）、CLI-native（JSON 可管线）
+
 Agent 只参与：中等管线（TG Bot）+ 云盘发现（WebSearch策展层搜索）
-Agent 不参与：快速管线的并发搜索——那是脚本的事
+Agent 不参与：快速管线的并发搜索 + 嗅探管线——那是脚本的事
 
 ## 云盘资源搜索（❄️ 慢速管线 — 2026-07-18 验证）
 
@@ -83,6 +89,72 @@ bash scripts/dl-validate.sh <链接1> <链接2> ...   ← ★ 自动验证（无
 
 已验证领域：经济学教材(曼昆7册替代链接找到)、机器学习课程(14链接)、考研资料(30+链接)、设计素材(215GB合集)、编程书籍(700+本合集)
 ```
+
+## 🔍 Link Sniffer — URL 自动发现层 (★v2 NEW)
+
+**问题**：搜到资源页面 → 找不到真实下载链接 → 手动开 DevTools → Network 面板 → 翻 .m3u8/.mp4 → 复制 → 下载。yt-dlp 覆盖了 1800+ 已知站点，未知站点只能手动。
+
+**解法**：转发代理 + URL 模式匹配。零配置——FlClash 已经在跑。
+
+### 架构
+
+```
+Browser/App → sniff(:7891) → FlClash(:7890) → Internet
+                    ↓
+              URL 模式匹配 (3 层)
+                    ↓
+              JSONL 实时输出 → 管线消费
+```
+
+### 三层检测
+
+| 层 | 机制 | 确信度 | 例子 |
+|----|------|--------|------|
+| **T1 扩展名** | 直接匹配 URL 中的媒体扩展名 | 90% | `.mp4`, `.m3u8`, `.mp3`, `.pdf`, `.epub`, `.zip` |
+| **T2 路径** | URL 路径暗示媒体类型 | 50% | `/video/`, `/download/`, `/stream/`, `/audio/` |
+| **T3 CDN 域名** | 已知媒体 CDN / 文件托管域名 | 40% | `cdn-video.`, `mediafire.com`, `videodelivery.net` |
+
+### 用法
+
+```bash
+# 启动嗅探 (后台)
+bash scripts/sniff.sh start
+# → 浏览器设代理 127.0.0.1:7891
+# → 正常浏览资源页
+# → URL 自动记录到 ~/.smmart-sniff.log
+
+# 查看结果
+bash scripts/sniff.sh report
+
+# 停止
+bash scripts/sniff.sh stop
+
+# 定时嗅探 (60 秒后自动停止——适合单次下载任务)
+python3 scripts/sniff.py --duration 60 --json > urls.jsonl
+
+# 一键嗅探+下载
+bash scripts/sniff.sh start
+# ... 浏览资源页 ...
+python3 scripts/sniff.py --report --json | \
+  python3 -c "import sys,json; [print(d['url']) for d in json.load(sys.stdin) if d['confidence']>=0.8]" | \
+  while read url; do aria2c -x8 "$url"; done
+```
+
+### 优势
+
+| 特性 | 浏览器扩展 | DevTools 手动 | Downie | **sniff** |
+|------|----------|-------------|--------|-----------|
+| 跨 App 嗅探 | ❌ 只在浏览器 | ❌ 只在浏览器 | ❌ | ✅ 系统代理 |
+| 零配置 | ⚠️ 需安装扩展 | ✅ | ⚠️ 需购买安装 | ✅ FlClash 已在跑 |
+| CLI 管线化 | ❌ | ❌ | ❌ GUI-only | ✅ JSON 输出 |
+| 通用站点 | ✅ | ✅ | ❌ 站点专用 | ✅ 模式匹配 |
+| 纯本地 | ⚠️ | ✅ | ✅ | ✅ |
+
+### 限制
+
+- **HTTPS 看不到完整 URL**——只能看到 CONNECT 的目标域名（所有代理的通用限制，非 MITM）
+- **HTTP 流量越来越少**——2026 年 >95% 是 HTTPS。T1 扩展名匹配主要靠 HTTP CDN 直链
+- **不替代 yt-dlp**——已知站点用 yt-dlp 更可靠（站点专用 extractor），sniff 是兜底方案
 
 ## ⚡ 实测网络环境 (2026-07-15)
 
@@ -128,6 +200,8 @@ bash scripts/install-toolkit.sh
 | **`dl-xhs.sh`** ★NEW | **小红书下载**——封装 XHS-Downloader | 小红书笔记 |
 | **`dl-wechat.sh`** ★NEW | **微信公众号下载**——封装 wechatDownload | 公众号文章 |
 | **`dl-comic.sh`** ★NEW | **漫画下载**——封装 copymanga-downloader | 拷贝漫画/哔哩漫画 |
+| **`sniff.py`** ★v2 | **链接嗅探转发代理**——URL自动发现+模式匹配 | 未知站点媒体/文档下载链接提取 |
+| **`sniff.sh`** ★v2 | **嗅探 CLI wrapper**——start/stop/report/test | 一键嗅探管线 |
 
 ## Cookie 管理层 ★NEW
 
@@ -169,8 +243,13 @@ Cookie 存储: `~/.download-anything/cookies/<平台>/cookies.txt`
     │   → smmart-search.py video-cn → B站 API + 抖音/小红书指引
     │   → 微信公众号: smmart-search.py wechat → 搜狗搜索
     │
-    └── 云盘资源？
+    ├── 云盘资源？
         → 搜索→找到链接→dl-validate.sh 验证→只输出活链接给用户
+    
+    └── 不确定 / 未知站点？
+        → bash scripts/sniff.sh start
+        → 用户浏览资源页 → sniff auto-captures URLs
+        → bash scripts/sniff.sh report → 取最高确信度 URL → aria2c
 ```
 
 **关键原则**：Agent 不参与机械搜索。`smmart-search.py` 搜完返回 JSON，Agent 只做判断——挑哪个、降级到哪个渠道。
@@ -626,4 +705,7 @@ Cloud Search:    网盘之家 wowenda.com → monitors all search engines
 | **`dl-douyin.sh`** ★NEW | 抖音无水印下载（封装 douyin-downloader） |
 | **`dl-xhs.sh`** ★NEW | 小红书下载（封装 XHS-Downloader） |
 | **`dl-wechat.sh`** ★NEW | 微信公众号文章下载（封装 wechatDownload） |
+| **`dl-comic.sh`** ★NEW | 漫画下载（封装 copymanga-downloader） |
+| **`sniff.py`** ★v2 | **链接嗅探转发代理**——URL自动发现·三层模式匹配·JSONL输出 |
+| **`sniff.sh`** ★v2 | 嗅探 CLI——start/stop/report/test/clear |
 | **`dl-comic.sh`** ★NEW | 漫画下载（封装 copymanga-downloader） |

@@ -1,0 +1,200 @@
+# Resolved Cases — 人工终裁反馈库
+#
+# 每次人工终裁产生一条记录。两个用途：
+# 1. 喂回分级 prompt 做 few-shot（改善同类漏判）
+# 2. 提炼检测启发式 → 更新 grader-prompt.md 的六类触发器标准
+#
+# 格式：
+#   id: RC-YYYYMMDD-NNN
+#   date: 终裁日期
+#   claim: 原始主张
+#   graderVerdict: 分级者的原始判断
+#   graderMissedTrigger: 分级者漏判了什么（如果没有漏判则为 none）
+#   humanVerdict: 人工终裁结果（FLAG→FOUNDATION|DIRECTION|FRAMEWORK|REJECT）
+#   humanRationale: 为什么这样判
+#   triggerAnalysis: 属于哪类触发器？具体触发了什么？
+#   detectionHeuristic: 从这次漏判中提炼出的检测启发式——下次怎么抓
+#   domainTags: [领域标签]
+#   usedInFewShot: false  # 是否已喂入分级prompt（维护时批量更新）
+
+cases:
+  # ─── 种子案例（从讨论中提炼的典型模式）───
+
+  - id: RC-20260717-001
+    date: 2026-07-17
+    claim: "2025年中国影子银行总规模约为58.3万亿元"
+    graderVerdict: DIRECTION  # 分级者可能认为"听起来像官方统计"
+    graderMissedTrigger: data_ghost
+    humanVerdict: FLAG → REJECT
+    humanRationale: >
+      影子银行有4-5个竞争性定义（窄口径/中口径/宽口径/穆迪口径/FSB口径），
+      每个口径的统计边界不同，大量通道业务数据不公开。不存在一个统一的
+      "影子银行总规模"数字。任何给出精确到小数点的总规模数字都是用了
+      某一口径的估算，但省略了口径说明——这使它看起来像"事实"而实际上是
+      "特定假设下的估算"。
+    triggerAnalysis: >
+      data_ghost的深层模式：不是"没有数据"——是"有多个不可比的'数据'，
+      选任何一个都隐含了定义选择"。主张给出了精确数字但没有说明选择了
+      哪个定义口径，让读者以为这是唯一的、公认的数字。
+    detectionHeuristic: >
+      当主张给出精确总量数字 + 涉及的概念在学界/业界有多个竞争性定义时，
+      触发 data_ghost。检查方法：搜"[概念] 定义 口径"——如果搜索结果中
+      出现了多个互不兼容的定义 → 触发。
+    domainTags: [金融, 监管, 统计]
+    usedInFewShot: false
+
+  - id: RC-20260717-002
+    date: 2026-07-17
+    claim: "这次股市回调中，外资流出贡献了约40%的跌幅"
+    graderVerdict: DIRECTION
+    graderMissedTrigger: pseudo_attribution
+    humanVerdict: FLAG → DIRECTION
+    humanRationale: >
+      20+个因素同时作用（外资、内资、政策预期、经济数据、全球risk-off、
+      技术面、杠杆爆仓……），每个因素之间有交互效应。不存在一个
+      "控制了其他变量后外资的纯效应=40%"——这个"40%"是反事实推理的产物，
+      反事实基线（"没有外资流出的世界"）本身不可观测。可以作为分析方向
+      但不能作为精确归因。
+    triggerAnalysis: >
+      pseudo_attribution的深层模式：归因百分比听起来精确→给人"科学感"→
+      掩盖了反事实基线不可观测的事实。统计方法（回归/分解）可以产生百分比，
+      但方法的输出质量 ≤ 假设的质量。假设在现实中不成立 → 百分比无意义。
+    detectionHeuristic: >
+      看到"X贡献了Y的Z%"类型的表述 + 系统中有3个以上同时作用的因素 +
+      没有随机对照或自然实验 → 触发 pseudo_attribution。
+      检查方法：问"在现实世界中，有没有发生过只有X变化而其他所有变量不变
+      的事件？"如果没有 → 触发。
+    domainTags: [金融, 归因分析, 市场]
+    usedInFewShot: false
+
+  - id: RC-20260717-003
+    date: 2026-07-17
+    claim: "为什么A银行的数字化转型比B银行更成功？核心原因有三：..."
+    graderVerdict: DIRECTION  # 被"原因分析"的结构吸引，没检查预设
+    graderMissedTrigger: embedded_presupposition
+    humanVerdict: FLAG → REJECT（拆分后部分 DIRECTION）
+    humanRationale: >
+      问题嵌入了"A银行数字化确实比B银行成功"的预设。这个预设可能不成立——
+      也许A只是投入更多（不代表更成功），也许B的业务模式不需要同样程度的
+      数字化，也许"成功"本身的衡量标准就不统一。在回答"为什么"之前需要先
+      回答"是不是"。但关于两家银行各自做了什么的部分可以作为 DIRECTION。
+    triggerAnalysis: >
+      embedded_presupposition的深层模式：回答"为什么"的篇幅远大于论证
+      "是不是"的篇幅。论证越详细、越有结构、越有说服力 → 读者越不会
+      质疑预设。好论证本身会压制对预设的检测。
+    detectionHeuristic: >
+      看主张是否包含比较级词汇（"更"、"优于"、"领先于"、"落后于"）+
+      是否提供了比较级成立的证据。如果论证"原因"的篇幅 > 论证"比较是否
+      成立"的篇幅 → 触发 embedded_presupposition。
+    domainTags: [商业分析, 比较研究, 组织]
+    usedInFewShot: false
+
+  - id: RC-20260717-004
+    date: 2026-07-17
+    claim: "如果央行下季度降准50bp，A银行的净息差将收窄约12bp"
+    graderVerdict: DIRECTION
+    graderMissedTrigger: future_disguise
+    humanVerdict: FLAG → DIRECTION
+    humanRationale: >
+      A银行至少有5种应对策略——调整存款利率、改变贷款定价、调整资产负债久期、
+      增加同业负债、改变债券配置比例。每种策略下影响完全不同。A银行会选哪种
+      取决于资产负债委员会当时的内部判断。"假设其他条件不变"在现实中不成立，
+      因为银行不会什么都不做。精确到bp的预测给人"算过"的错觉。可以作为
+      敏感性分析的一个情景，但不能作为预测。
+    triggerAnalysis: >
+      future_disguise的深层模式：精确数字（12bp而不是"约10bp"或"可能收窄"）
+      → 给人"经过了严格计算"的感觉 → 忽略"假设其他条件不变"在现实中不成立。
+      越是精确的预测数字，越需要检查隐含假设的脆弱性。
+    detectionHeuristic: >
+      看到带精确数值的未来预测 + 预测对象取决于相关方的策略选择（而非机械
+      因果） → 触发 future_disguise。检查方法：问"X会什么都不做吗？"
+      如果X有应对能力且大概率会用 → 触发。
+    domainTags: [金融, 预测, 政策分析]
+    usedInFewShot: false
+
+  - id: RC-20260717-005
+    date: 2026-07-17
+    claim: "当前的金融监管风格正从'强监管'转向'精准监管'"
+    graderVerdict: FRAMEWORK  # 正确——这是诠释不是事实
+    graderMissedTrigger: none  # 分级者判对了
+    humanVerdict: FRAMEWORK（确认分级者判断）
+    humanRationale: >
+      "强监管"和"精准监管"这两个词没有稳定的操作化定义。不同人用"强监管"
+      可能指规则数量、执法强度、处罚金额、审批速度——是完全不同的维度。
+      在这个定义未统一之前，这是一条诠释而非分类判断。可以作为理解
+      监管趋势的框架，但不能当作"从A转向B"的事实。
+    triggerAnalysis: >
+      这是 interpretation_as_fact 的典型案例。分级者正确识别了。
+      值得记录是因为：这类主张特别容易被接受为事实——因为用了看似
+      精确的二元标签（"强/精准"），且讨论者默认"大家都知道什么意思"。
+      实际上没人知道——或者每个人知道的都不一样。
+    detectionHeuristic: >
+      看到二元标签（强/弱、激进/保守、好/坏、成功/失败）被用作分类 +
+      无法找到该标签的公认操作化定义 → 触发 interpretation_as_fact。
+      检查方法：搜"[标签]的定义"——如果搜索结果中有多个不同标准 →
+      标签不可操作化 → 触发。
+    domainTags: [金融监管, 政策分析, 分类]
+    usedInFewShot: false
+
+  - id: RC-20260717-006
+    date: 2026-07-17
+    claim: "根据2025年三季度的银行不良率数据，城商行不良率已降至1.62%"
+    graderVerdict: DIRECTION
+    graderMissedTrigger: half_life_bomb
+    humanVerdict: FLAG → DIRECTION
+    humanRationale: >
+      当前是2026年7月。2025年三季度的数据已经过了近一年，期间经历了
+      2025年四季度、2026年一季度和二季度。即使数据本身真实，作为
+      当前判断的依据已经过时——特别是如果这个数字被用来论证"当前趋势"。
+      但数字本身是有记录的历史数据，可以作为历史参考点使用。
+    triggerAnalysis: >
+      half_life_bomb的隐蔽形式：数据本身就是"最近的"→ 感觉有参考价值 →
+      忽略了半衰期。金融数据的半衰期特别短——一个季度就可能发生结构性变化。
+      这种不是"数据错了"而是"数据老了但不觉得老"的情况最容易被忽视。
+    detectionHeuristic: >
+      金融/市场数据超过3个月、监管规则引用未标注发文日期、公司经营数据
+      未标注截止期 → 自动触发 half_life_bomb 检查。检查方法：从数据
+      产生日期到当前日期，期间有没有发生可能让数据失效的事件？
+      （政策变化、市场转折、财报更新、行业重组）
+    domainTags: [金融, 数据时效, 银行]
+    usedInFewShot: false
+
+  - id: RC-20260717-007
+    date: 2026-07-17
+    claim: "DeepSeek-v4-pro 在 agent 任务上的表现不如 Claude Fable 5，但在前端代码生成上接近 Gemini 3.5 Pro"
+    graderVerdict: DIRECTION
+    graderMissedTrigger: data_ghost  # 细分：基准测试的可比性问题
+    humanVerdict: FLAG → DIRECTION
+    humanRationale: >
+      模型对比主张的危险在于：不同的 benchmark 测不同的东西、同一 benchmark
+      的不同版本不可比、benchmark 分数和实际使用体验之间有 gap。"不如"和
+      "接近"的具体含义取决于你选哪个 benchmark、什么任务、什么 prompt。
+      这不是"数据不存在"——是"数据太多，选哪个已经暗含了结论"。
+    triggerAnalysis: >
+      data_ghost的变体：比较类主张的"数据"不是不存在——是通过选择比较
+      基准就已经决定了结论。三个模型各有擅长的 benchmark，选哪个都可以
+      "证明"自己的排序。
+    detectionHeuristic: >
+      涉及模型/产品/公司等的比较主张 + 没有明确说明比较标准/基准 →
+      触发 data_ghost 变体。检查方法：这个比较用的是哪个基准？
+      如果换一个基准，排序会变吗？
+    domainTags: [AI, 模型比较, benchmark]
+    usedInFewShot: false
+
+# ─── 使用说明 ───
+#
+# 新增案例流程：
+# 1. 人工终裁完成后，在此文件追加一条 case
+# 2. detectionHeuristic 要具体到"下次怎么抓"——不是描述现象，是给检查方法
+# 3. 如果同类型案例积累到 3+ 条 → 提炼通用模式 → 更新 grader-prompt.md
+#
+# 喂入分级prompt的流程：
+# 1. 选与当前分级任务领域相关的 cases（按 domainTags 匹配）
+# 2. 将 cases 的 claim + graderVerdict + humanVerdict + humanRationale
+#    压缩为 few-shot 示例，追加到分级 prompt 末尾
+# 3. 标记 usedInFewShot: true
+#
+# 定期维护：
+# - 每月检查一次：有没有新的漏判模式出现？
+# - 每季度检查一次：有没有触发器的检测启发式需要更新？
+# - cases 超过50条后考虑按领域分文件

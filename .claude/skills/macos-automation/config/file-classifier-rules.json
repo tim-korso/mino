@@ -1,0 +1,82 @@
+{
+  "rules": [
+    {
+      "name": "发票/收据 → 财务报销",
+      "enabled": true,
+      "conditions": {
+        "name_pattern": "invoice|receipt|发票|收据|报销|fapiao",
+        "extensions": ["pdf", "jpg", "jpeg", "png"],
+        "min_size_kb": 50,
+        "max_age_days": 7
+      },
+      "actions": {
+        "move_to": "~/Documents/Finance/待报销",
+        "add_tags": ["💰报销"]
+      }
+    },
+    {
+      "name": "合同/协议 → 文档归档",
+      "enabled": true,
+      "conditions": {
+        "name_pattern": "contract|agreement|合同|协议|NDA|terms",
+        "extensions": ["pdf", "docx", "doc"],
+        "min_size_kb": 50
+      },
+      "actions": {
+        "move_to": "~/Documents/Contracts",
+        "add_tags": ["📋合同"]
+      }
+    },
+    {
+      "name": "银行账单/对账单",
+      "enabled": true,
+      "conditions": {
+        "name_pattern": "statement|账单|对账单|transaction|交易记录",
+        "extensions": ["pdf", "csv", "xlsx"],
+        "min_size_kb": 10,
+        "max_age_days": 30
+      },
+      "actions": {
+        "move_to": "~/Documents/Finance/银行账单",
+        "add_tags": ["🏦银行"]
+      }
+    },
+    {
+      "name": "工资单/薪资单",
+      "enabled": true,
+      "conditions": {
+        "name_pattern": "payslip|salary|工资|薪资|payroll|pay.?stub",
+        "extensions": ["pdf"],
+        "min_size_kb": 30
+      },
+      "actions": {
+        "move_to": "~/Documents/Finance/工资单",
+        "add_tags": ["💵工资"]
+      }
+    },
+    {
+      "name": "电子书/PDF → Books",
+      "enabled": true,
+      "conditions": {
+        "extensions": ["pdf", "epub", "mobi"],
+        "min_size_kb": 100
+      },
+      "actions": {
+        "move_to": "~/Downloads/Books",
+        "add_tags": ["📚书"]
+      }
+    },
+    {
+      "name": "软件安装包 → Archives",
+      "enabled": true,
+      "conditions": {
+        "extensions": ["dmg", "pkg", "zip", "tar", "gz"],
+        "min_size_kb": 500
+      },
+      "actions": {
+        "move_to": "~/Downloads/Archives",
+        "add_tags": ["📦安装包"]
+      }
+    }
+  ]
+}

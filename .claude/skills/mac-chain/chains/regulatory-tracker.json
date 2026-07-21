@@ -1,0 +1,20 @@
+{
+  "name": "监管报表追踪",
+  "description": "扫描监管邮件→提取截止日期→创建Reminders→到期前推微信。中国银行业独有。",
+  "trigger": {"type": "cron", "schedule": "0 9 * * 1-5"},
+  "steps": [
+    {
+      "tool": "mac-regulatory-deadline.sh",
+      "args": "--scan",
+      "description": "扫描监管发文邮件, 提取1104/EAST/一表通报送截止日",
+      "on_failure": "continue"
+    },
+    {
+      "tool": "mac-push-wechat.sh",
+      "args": "--message '📊 监管报表追踪: 已扫描最新监管发文, 查看 Reminders'",
+      "description": "有新增 deadline 时推微信提醒",
+      "on_failure": "continue"
+    }
+  ],
+  "feedback": {"type": "wechat", "detail": "监管 deadline 追踪完成"}
+}

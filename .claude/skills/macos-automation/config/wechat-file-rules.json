@@ -1,0 +1,66 @@
+{
+  "rules": [
+    {
+      "name": "微信-合同/协议",
+      "enabled": true,
+      "conditions": {
+        "name_pattern": "合同|协议|contract|agreement|NDA|terms",
+        "extensions": ["pdf", "docx", "doc"],
+        "min_size_kb": 50
+      },
+      "actions": {
+        "move_to": "~/Documents/WeChat/合同协议",
+        "add_tags": ["📋合同", "💬微信"]
+      }
+    },
+    {
+      "name": "微信-报表/数据",
+      "enabled": true,
+      "conditions": {
+        "name_pattern": "报表|数据|统计|report|data|stat",
+        "extensions": ["xlsx", "csv", "pdf"],
+        "min_size_kb": 10
+      },
+      "actions": {
+        "move_to": "~/Documents/WeChat/报表数据",
+        "add_tags": ["📊报表", "💬微信"]
+      }
+    },
+    {
+      "name": "微信-图片/截图",
+      "enabled": true,
+      "conditions": {
+        "extensions": ["png", "jpg", "jpeg", "gif", "webp"],
+        "min_size_kb": 100
+      },
+      "actions": {
+        "move_to": "~/Documents/WeChat/图片",
+        "add_tags": ["🖼图片", "💬微信"]
+      }
+    },
+    {
+      "name": "微信-PDF文档",
+      "enabled": true,
+      "conditions": {
+        "extensions": ["pdf"],
+        "min_size_kb": 50
+      },
+      "actions": {
+        "move_to": "~/Documents/WeChat/PDF",
+        "add_tags": ["📄PDF", "💬微信"]
+      }
+    },
+    {
+      "name": "微信-安装包/压缩包",
+      "enabled": true,
+      "conditions": {
+        "extensions": ["zip", "dmg", "pkg", "rar", "7z"],
+        "min_size_kb": 500
+      },
+      "actions": {
+        "move_to": "~/Documents/WeChat/安装包",
+        "add_tags": ["📦安装包", "💬微信"]
+      }
+    }
+  ]
+}

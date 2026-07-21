@@ -1,0 +1,15 @@
+{
+  "name": "微信文件自动归档",
+  "description": "监听微信文件目录→自动分类归档 (合同/报表/图片/PDF/安装包)。中国生态独有。",
+  "trigger": {"type": "cron", "schedule": "0 */4 * * *"},
+  "steps": [
+    {
+      "tool": "mac-wechat-file-watch.sh",
+      "args": "--scan",
+      "description": "扫描微信文件目录 (24h内新增), 按类型分类到 ~/Documents/WeChat/",
+      "on_failure": "continue",
+      "verify": "test -d ~/Documents/WeChat/合同协议 && test -d ~/Documents/WeChat/报表数据"
+    }
+  ],
+  "feedback": {"type": "log", "detail": "微信文件归档 → mac-activity.db"}
+}

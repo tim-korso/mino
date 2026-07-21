@@ -1,3 +1,8 @@
+---
+name: session-archive
+description: "会话结束时的结构化记忆存档——把设计决策、架构讨论、新模块方案从聊天提炼到持久化 memory 文件，让下一次启动不会失忆。七步管线：读索引→扫会话→更新 topic→建 session manifest→更新索引→更新导航→Git 提交。当用户说\"存档\"\"记一下\"\"存盘\"、会话涉及设计讨论或新模块、或结束活跃项目相关会话时触发。"
+---
+
 # Session Archive Skill
 
 > **Trigger**: `/session-archive` — invoked manually at session end.

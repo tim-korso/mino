@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 420" width="560" height="420">
+  <defs>
+    <style>
+      text { font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', sans-serif; }
+    </style>
+  </defs>
+  <rect width="560" height="420" fill="#fafafa"/>
+  <text x="280" y="22" text-anchor="middle" font-size="13" font-weight="700">TITLE_HERE</text>
+
+  <!-- 2x2 Grid -->
+  <rect x="30" y="50" width="240" height="170" fill="#fff" stroke="#000" stroke-width="1.5"/>
+  <rect x="270" y="50" width="240" height="170" fill="#f5f5f5" stroke="#000" stroke-width="1.5"/>
+  <rect x="30" y="220" width="240" height="170" fill="#f5f5f5" stroke="#000" stroke-width="1.5"/>
+  <rect x="270" y="220" width="240" height="170" fill="#fff" stroke="#000" stroke-width="1.5"/>
+
+  <!-- Y-axis -->
+  <text x="15" y="140" text-anchor="middle" font-size="11" font-weight="700" transform="rotate(-90,15,140)">Y_AXIS</text>
+  <text x="15" y="100" text-anchor="middle" font-size="8" fill="#555" transform="rotate(-90,15,100)">↑ HIGH</text>
+  <text x="15" y="305" text-anchor="middle" font-size="8" fill="#555" transform="rotate(-90,15,305)">↓ LOW</text>
+
+  <!-- X-axis -->
+  <text x="280" y="408" text-anchor="middle" font-size="11" font-weight="700">X_AXIS</text>
+  <text x="140" y="398" text-anchor="middle" font-size="8" fill="#555">↑ HIGH</text>
+  <text x="400" y="398" text-anchor="middle" font-size="8" fill="#555">↓ LOW</text>
+
+  <!-- Quadrants (edit labels for each cell) -->
+  <text x="150" y="80" text-anchor="middle" font-size="10" font-weight="700">Q1: HIGH-HIGH</text>
+  <line x1="50" y1="88" x2="250" y2="88" stroke="#000" stroke-width="0.5"/>
+  <text x="150" y="108" text-anchor="middle" font-size="9">item 1</text>
+  <text x="150" y="124" text-anchor="middle" font-size="9">item 2</text>
+
+  <text x="390" y="80" text-anchor="middle" font-size="10" font-weight="700">Q2: LOW-HIGH</text>
+  <line x1="290" y1="88" x2="490" y2="88" stroke="#000" stroke-width="0.5"/>
+  <text x="390" y="108" text-anchor="middle" font-size="9">item 1</text>
+
+  <text x="150" y="250" text-anchor="middle" font-size="10" font-weight="700">Q3: HIGH-LOW</text>
+  <line x1="50" y1="258" x2="250" y2="258" stroke="#000" stroke-width="0.5"/>
+  <text x="150" y="278" text-anchor="middle" font-size="9">item 1</text>
+
+  <text x="390" y="250" text-anchor="middle" font-size="10" font-weight="700">Q4: LOW-LOW</text>
+  <line x1="290" y1="258" x2="490" y2="258" stroke="#000" stroke-width="0.5"/>
+  <text x="390" y="278" text-anchor="middle" font-size="9">item 1</text>
+</svg>

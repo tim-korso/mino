@@ -132,13 +132,16 @@ db.execute('INSERT INTO snapshots (cpu,battery,disk,frontmost,google,yabai,flcla
 ])
 db.commit()
 
-rows = list(db.execute('SELECT cpu FROM snapshots WHERE cpu IS NOT NULL ORDER BY id DESC'))
-vals = [r[0] for r in rows if r[0]]
-if len(vals) >= 10:
-    avg = statistics.mean(vals); std = statistics.stdev(vals) if len(vals) > 1 else 0
-    db.execute('''CREATE TABLE IF NOT EXISTS learned_thresholds (metric TEXT PRIMARY KEY, avg_value REAL, std_dev REAL, normal_high REAL, normal_low REAL, samples INTEGER, last_updated TEXT)''')
-    db.execute('INSERT OR REPLACE INTO learned_thresholds VALUES (?,?,?,?,?,?,datetime("now","localtime"))',
-        ('cpu', round(avg,1), round(std,1), round(avg+2*std,1), round(max(avg-2*std,0),1), len(vals)))
+db.execute('''CREATE TABLE IF NOT EXISTS learned_thresholds (metric TEXT PRIMARY KEY, avg_value REAL, std_dev REAL, normal_high REAL, normal_low REAL, samples INTEGER, last_updated TEXT)''')
+for metric in ['cpu', 'battery', 'disk']:
+    rows = list(db.execute(f'SELECT {metric} FROM snapshots WHERE {metric} IS NOT NULL ORDER BY id DESC'))
+    vals = [r[0] for r in rows if r[0]]
+    if len(vals) >= 10:
+        avg = statistics.mean(vals); std = statistics.stdev(vals) if len(vals) > 1 else 0
+        db.execute('INSERT OR REPLACE INTO learned_thresholds VALUES (?,?,?,?,?,?,datetime("now","localtime"))',
+            (metric, round(avg,1), round(std,1), round(avg+2*std,1), round(max(avg-2*std,0),1), len(vals)))
+        labels = {'cpu': 'CPU', 'battery': '电池', 'disk': '磁盘'}
+        print(f'[learn] 📊 {labels.get(metric, metric)} 基线 {avg:.0f}% +/- {std:.0f}% | 异常>{avg+2*std:.0f}% | {len(vals)}样本')
 
 # 自动采纳高置信度建议
 db.execute('''CREATE TABLE IF NOT EXISTS suggested_rules (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT DEFAULT (datetime("now","localtime")), rule_name TEXT, trigger TEXT, action TEXT, confidence REAL, reason TEXT, adopted INTEGER DEFAULT 0)''')

@@ -1,5 +1,7 @@
 #!/bin/bash
 # mac-image-read.sh — 本地读图 (macOS Vision OCR + API fallback)
+# @capability: ocr
+# @capability: image-read
 # 用法: bash mac-image-read.sh <图片路径> [--prompt "自定义指令"]
 
 IMAGE="$1"

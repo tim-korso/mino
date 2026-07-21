@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 680" width="520" height="680">
+  <defs><style>text{font-family:'PingFang SC','Hiragino Sans GB','Heiti SC',sans-serif}</style></defs>
+  <rect width="520" height="680" fill="#fafafa"/>
+  <text x="260" y="26" text-anchor="middle" font-size="15" font-weight="700">图：考拉（树袋熊）——攀爬姿态 v3</text>
+  <text x="260" y="44" text-anchor="middle" font-size="9" fill="#999">基于 Wikimedia Commons 参考图 (Cape Otway, 2004) 比例重建</text>
+
+  <!-- Tree trunk — left side, vertical -->
+  <rect x="55" y="80" width="75" height="600" fill="#fff" stroke="#000" stroke-width="2.0" rx="4"/>
+  <!-- Trunk texture -->
+  <path d="M70,100 Q80,95 85,105" fill="none" stroke="#555" stroke-width="0.8"/>
+  <path d="M65,180 Q78,175 82,185" fill="none" stroke="#555" stroke-width="0.8"/>
+  <path d="M72,300 Q82,295 88,305" fill="none" stroke="#555" stroke-width="0.8"/>
+  <path d="M68,420 Q80,415 84,425" fill="none" stroke="#555" stroke-width="0.8"/>
+  <path d="M70,530 Q82,525 86,535" fill="none" stroke="#555" stroke-width="0.8"/>
+  <!-- Branch extending right from trunk upper area -->
+  <path d="M130,200 Q200,185 280,195 Q340,205 380,210" fill="none" stroke="#000" stroke-width="3.0" stroke-linecap="round"/>
+
+  <!-- BODY — climbing up, elongated, angled slightly right -->
+  <ellipse cx="260" cy="340" rx="80" ry="120" fill="#fff" stroke="#000" stroke-width="2.5" transform="rotate(8,260,340)"/>
+  <!-- Belly -->
+  <ellipse cx="255" cy="365" rx="42" ry="70" fill="#ddd" stroke="none" transform="rotate(8,255,365)"/>
+
+  <!-- HEAD — large, round, at top of body -->
+  <ellipse cx="250" cy="200" rx="68" ry="60" fill="#fff" stroke="#000" stroke-width="2.5"/>
+
+  <!-- LEFT EAR — huge, round, characteristic -->
+  <ellipse cx="190" cy="148" rx="40" ry="44" fill="#fff" stroke="#000" stroke-width="2.5"/>
+  <ellipse cx="190" cy="148" rx="24" ry="30" fill="#ddd" stroke="none"/>
+  <!-- Ear fluff detail -->
+  <path d="M158,138 Q152,130 160,126 Q166,130 162,136" fill="none" stroke="#000" stroke-width="1.0"/>
+  <path d="M152,152 Q146,148 152,142 Q158,146 155,150" fill="none" stroke="#000" stroke-width="1.0"/>
+  <path d="M155,165 Q150,170 156,174 Q162,170 158,166" fill="none" stroke="#000" stroke-width="1.0"/>
+  <path d="M168,176 Q164,184 170,186 Q176,182 172,176" fill="none" stroke="#000" stroke-width="1.0"/>
+
+  <!-- RIGHT EAR — behind, partially visible -->
+  <ellipse cx="290" cy="142" rx="32" ry="36" fill="#fff" stroke="#000" stroke-width="2.0" stroke-dasharray="8,3"/>
+  <ellipse cx="290" cy="142" rx="18" ry="24" fill="#ddd" stroke="none"/>
+
+  <!-- FACE -->
+  <!-- EYE -->
+  <ellipse cx="225" cy="185" rx="8" ry="9" fill="#000"/>
+  <circle cx="227" cy="182" r="3" fill="#fff"/>
+  <circle cx="223" cy="189" r="1.5" fill="#fff"/>
+
+  <!-- NOSE — enormous, leathery, the defining koala feature -->
+  <ellipse cx="280" cy="212" rx="26" ry="22" fill="#555" stroke="#000" stroke-width="2.0"/>
+  <ellipse cx="273" cy="215" rx="4.5" ry="3.5" fill="#000"/>
+  <ellipse cx="287" cy="215" rx="4.5" ry="3.5" fill="#000"/>
+  <!-- Nose bridge -->
+  <path d="M258,202 Q270,206 278,210" fill="none" stroke="#555" stroke-width="0.8"/>
+
+  <!-- MOUTH -->
+  <path d="M268,235 Q278,244 290,236" fill="none" stroke="#000" stroke-width="1.2"/>
+
+  <!-- FRONT LEFT ARM — reaching up to grip branch -->
+  <path d="M200,265 Q185,240 180,218 Q175,200 178,195" fill="none" stroke="#000" stroke-width="2.8"/>
+  <!-- Paw on branch -->
+  <ellipse cx="180" cy="198" rx="16" ry="9" fill="#fff" stroke="#000" stroke-width="1.8" transform="rotate(-20,180,198)"/>
+  <line x1="170" y1="192" x2="166" y2="186" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="178" y1="190" x2="176" y2="184" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- FRONT RIGHT ARM — gripping trunk -->
+  <path d="M290,275 Q270,310 240,360 Q220,400 200,440 Q185,470 175,500 Q168,520 163,530" fill="none" stroke="#000" stroke-width="2.8"/>
+  <!-- Paw on trunk -->
+  <ellipse cx="160" cy="530" rx="15" ry="8" fill="#fff" stroke="#000" stroke-width="1.8"/>
+  <line x1="150" y1="532" x2="145" y2="538" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="158" y1="535" x2="155" y2="542" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="167" y1="535" x2="167" y2="542" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- BACK LEFT LEG — gripping trunk lower -->
+  <path d="M220,440 Q200,470 180,510 Q165,540 155,565 Q148,580 145,595" fill="none" stroke="#000" stroke-width="2.8"/>
+  <ellipse cx="142" cy="593" rx="14" ry="7" fill="#fff" stroke="#000" stroke-width="1.8"/>
+  <line x1="133" y1="595" x2="128" y2="601" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+  <line x1="142" y1="598" x2="140" y2="605" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+
+  <!-- BACK RIGHT LEG — gripping trunk, slightly higher -->
+  <path d="M310,380 Q300,410 280,450 Q260,485 240,520 Q225,545 215,565" fill="none" stroke="#000" stroke-width="2.5"/>
+  <ellipse cx="212" cy="563" rx="13" ry="7" fill="#fff" stroke="#000" stroke-width="1.5"/>
+  <line x1="205" y1="565" x2="200" y2="571" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+  <line x1="214" y1="568" x2="213" y2="575" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+
+  <!-- Fluffy texture on body -->
+  <path d="M200,300 Q195,305 198,312" fill="none" stroke="#999" stroke-width="0.6"/>
+  <path d="M320,320 Q325,325 322,332" fill="none" stroke="#999" stroke-width="0.6"/>
+  <path d="M210,390 Q205,395 208,400" fill="none" stroke="#999" stroke-width="0.6"/>
+
+  <!-- LABELS -->
+  <!-- Ear -->
+  <line x1="190" y1="105" x2="100" y2="72" stroke="#000" stroke-width="0.8"/>
+  <circle cx="190" cy="105" r="2.5" fill="#000"/>
+  <text x="95" y="65" text-anchor="end" font-size="12" font-weight="700">耳廓</text>
+  <text x="95" y="80" text-anchor="end" font-size="10" fill="#555">大而圆·绒毛密布</text>
+
+  <!-- Nose -->
+  <line x1="306" y1="212" x2="400" y2="175" stroke="#000" stroke-width="0.8"/>
+  <circle cx="306" cy="212" r="2.5" fill="#000"/>
+  <text x="405" y="170" font-size="12" font-weight="700">鼻镜</text>
+  <text x="405" y="186" font-size="10" fill="#555">大·裸露·革质·占面1/4</text>
+
+  <!-- Trunk grip -->
+  <line x1="158" y1="530" x2="50" y2="500" stroke="#000" stroke-width="0.8"/>
+  <circle cx="158" cy="530" r="2.5" fill="#000"/>
+  <text x="45" y="493" text-anchor="end" font-size="11" font-weight="700">对生指</text>
+  <text x="45" y="508" text-anchor="end" font-size="9" fill="#555">前2后3·强爪·抱握树干</text>
+
+  <!-- Pouch -->
+  <line x1="240" y1="390" x2="140" y2="410" stroke="#000" stroke-width="0.8"/>
+  <circle cx="240" cy="390" r="2" fill="#000"/>
+  <text x="135" y="403" text-anchor="end" font-size="10" font-weight="700">育儿袋</text>
+  <text x="135" y="418" text-anchor="end" font-size="9" fill="#555">有袋类·开口向下</text>
+
+  <!-- Eucalyptus branch -->
+  <line x1="250" y1="200" x2="390" y2="160" stroke="#000" stroke-width="0.8"/>
+  <circle cx="250" cy="200" r="2" fill="#000"/>
+  <text x="395" y="155" font-size="10" font-weight="700">桉树枝</text>
+  <text x="395" y="171" font-size="9" fill="#555">专食桉叶·低营养</text>
+
+  <!-- Footer -->
+  <text x="260" y="668" text-anchor="middle" font-size="9" fill="#999">图：考拉——攀爬姿态 v3 · 基于照片比例重建 · DPT-CP1 四级灰度</text>
+</svg>

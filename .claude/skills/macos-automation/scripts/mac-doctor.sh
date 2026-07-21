@@ -24,7 +24,7 @@ deduct() { HEALTH_SCORE=$((HEALTH_SCORE - $1)); ISSUES+=("$2"); }
 
 check() {
   local name="$1" pass="$2" severity="$3" fix="$4" detail="$5"
-  if $pass 2>/dev/null; then
+  if eval "$pass" 2>/dev/null; then
     $JSON_MODE || echo "  ✅ $name"
     return 0
   else
@@ -44,7 +44,8 @@ echo ""; echo "─── 安全检查 ───"
 check "SIP 开启" "csrutil status 2>/dev/null | grep -q enabled" 15 \
   "进入 Recovery Mode → csrutil enable" "系统完整性保护已关闭"
 
-check "防火墙" "/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>/dev/null | grep -q 'enabled'" 10 \
+# macOS 26: 输出 "Firewall is disabled. (State = 0)" —— grep 'enabled' 会误匹配 "disabled"
+check "防火墙" "/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>/dev/null | grep -q 'State = 1'" 10 \
   "系统设置 → 网络 → 防火墙 → 开启" "防火墙已关闭"
 
 check "FileVault" "fdesetup status 2>/dev/null | grep -q 'FileVault is On'" 10 \
@@ -54,7 +55,8 @@ check "FileVault" "fdesetup status 2>/dev/null | grep -q 'FileVault is On'" 10 \
 check "Gatekeeper" "spctl --status 2>/dev/null | grep -qi enabled" 5 \
   "sudo spctl --master-enable" "Gatekeeper 已禁用"
 
-check "SSH 远程登录" "! systemsetup -getremotelogin 2>/dev/null | grep -q On" 5 \
+# systemsetup -getremotelogin 需要 sudo —— 改查 sshd 进程
+check "SSH 远程登录" "! pgrep -q sshd" 5 \
   "系统设置 → 通用 → 共享 → 远程登录 → 关闭" "SSH 远程登录已开启"
 
 # ═══ Phase 2: 性能检查 (扣分×2——影响体验) ═══
@@ -105,6 +107,16 @@ check "FlClash 代理" "pgrep -q FlClashCo" 3 \
 check "代理连通性" "curl -s -o /dev/null -w '%{http_code}' --max-time 3 --proxy http://127.0.0.1:7890 https://www.google.com 2>/dev/null | grep -qE '200|302'" 3 \
   "检查代理订阅是否过期" "代理节点不可达"
 
+# FlClash TUN stack CPU 检测 —— mixed stack = ~200% CPU, gvisor = ~0.1%
+FLCLASH_CPU=$(ps aux 2>/dev/null | awk '/FlClashCore/ && !/awk|grep/ {print $3}' | head -1)
+if [ -n "$FLCLASH_CPU" ] && [ "$(echo "$FLCLASH_CPU > 100" | bc 2>/dev/null)" -eq 1 ]; then
+  check "FlClash TUN stack" false 4 \
+    "FlClash → 设置 → TUN stack 切到 gvisor（当前 mixed stack = ${FLCLASH_CPU}% CPU）" \
+    "TUN mixed stack CPU ${FLCLASH_CPU}%——gvisor 仅需 0.1%"
+else
+  check "FlClash TUN stack (${FLCLASH_CPU:-?}% CPU)" true 0 "" ""
+fi
+
 # ═══ Phase 4: 维护检查 ═══
 echo ""; echo "─── 维护检查 ───"
 LAST_BACKUP=$(tmutil latestbackup 2>/dev/null | xargs basename 2>/dev/null)
@@ -152,6 +164,9 @@ if $FIX_MODE; then
         ;;
       "Hammerspoon 事件")
         open -a Hammerspoon 2>/dev/null && echo "  🔧 Hammerspoon 已启动" && FIX_COUNT=$((FIX_COUNT+1))
+        ;;
+      "FlClash TUN stack")
+        echo "  ⚠️ FlClash TUN stack —— 需手动切到 gvisor（FlClash → 设置 → TUN stack）"
         ;;
       *)
         echo "  ⚠️ $name —— 修复需人工操作: $action"
@@ -225,6 +240,7 @@ cat >> "$R" << EOF
 | skhd | $(pgrep -q skhd && echo '✅' || echo '❌') |
 | Hammerspoon | $(pgrep -q Hammerspoon && echo '✅' || echo '❌') |
 | FlClashCore | $(pgrep -q FlClashCo && echo '✅' || echo '❌') |
+| FlClash CPU | ${FLCLASH_CPU:-?}% | $([ -n "$FLCLASH_CPU" ] && [ "$(echo "$FLCLASH_CPU > 100" | bc 2>/dev/null)" -eq 1 ] && echo '⚠️ mixed stack' || echo '✅') |
 | Google 代理 | $(curl -s -o /dev/null -w '%{http_code}' --max-time 3 --proxy http://127.0.0.1:7890 https://www.google.com 2>/dev/null | grep -qE '200|302' && echo '✅' || echo '❌') |
 
 ---

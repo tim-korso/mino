@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 680" width="520" height="680">
+  <defs>
+    <style>
+      text { font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', sans-serif; }
+    </style>
+  </defs>
+  <rect width="520" height="680" fill="#fafafa"/>
+
+  <text x="260" y="25" text-anchor="middle" font-size="15" font-weight="700">TITLE_HERE</text>
+
+  <!-- ===== LEFT PANEL: NORMAL ===== -->
+  <rect x="20" y="45" width="235" height="580" fill="#fff" stroke="#000" stroke-width="2.0" rx="4"/>
+  <rect x="20" y="45" width="235" height="28" rx="4" fill="#000"/>
+  <text x="137" y="64" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">NORMAL_LABEL</text>
+
+  <!-- Normal structure (simplified) -->
+  <ellipse cx="137" cy="280" rx="90" ry="100" fill="none" stroke="#000" stroke-width="1.5"/>
+  <ellipse cx="137" cy="280" rx="65" ry="75" fill="#fff" stroke="#999" stroke-width="1.0"/>
+  <ellipse cx="137" cy="280" rx="35" ry="45" fill="#ddd" stroke="#555" stroke-width="1.0"/>
+  <ellipse cx="137" cy="280" rx="15" ry="20" fill="#000"/>
+
+  <!-- Normal labels -->
+  <line x1="137" y1="180" x2="137" y2="150" stroke="#000" stroke-width="0.8"/>
+  <circle cx="137" cy="180" r="2" fill="#000"/>
+  <text x="140" y="146" font-size="10" font-weight="700">NORMAL_FEATURE_1</text>
+
+  <line x1="227" y1="280" x2="255" y2="280" stroke="#000" stroke-width="0.8"/>
+  <circle cx="227" cy="280" r="2" fill="#000"/>
+  <text x="260" y="276" font-size="10" font-weight="700">NORMAL_FEATURE_2</text>
+
+  <!-- Normal status line -->
+  <rect x="35" y="560" width="200" height="50" rx="4" fill="#fff" stroke="#000" stroke-width="1.0"/>
+  <text x="137" y="582" text-anchor="middle" font-size="10" font-weight="700">正常状态</text>
+  <text x="137" y="598" text-anchor="middle" font-size="9" fill="#555">NORMAL_STATUS_TEXT</text>
+
+  <!-- ===== RIGHT PANEL: ABNORMAL ===== -->
+  <rect x="265" y="45" width="235" height="580" fill="#fff" stroke="#000" stroke-width="2.0" rx="4"/>
+  <rect x="265" y="45" width="235" height="28" rx="4" fill="#000"/>
+  <text x="382" y="64" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">ABNORMAL_LABEL</text>
+
+  <!-- Abnormal structure (distorted) -->
+  <ellipse cx="382" cy="280" rx="90" ry="100" fill="none" stroke="#000" stroke-width="1.5" stroke-dasharray="8,3"/>
+  <ellipse cx="382" cy="280" rx="70" ry="85" fill="#fff" stroke="#555" stroke-width="1.5"/>
+  <ellipse cx="382" cy="290" rx="40" ry="55" fill="#ddd" stroke="#555" stroke-width="1.0"/>
+  <ellipse cx="382" cy="295" rx="20" ry="28" fill="#999"/>
+
+  <!-- Problem indicators -->
+  <circle cx="340" cy="230" r="18" fill="none" stroke="#000" stroke-width="1.5"/>
+  <text x="340" y="235" text-anchor="middle" font-size="9" font-weight="700">AMNORMALITY_1</text>
+  <line x1="355" y1="240" x2="360" y2="260" stroke="#000" stroke-width="0.8"/>
+
+  <rect x="350" y="400" width="30" height="20" rx="3" fill="#555"/>
+  <text x="365" y="414" text-anchor="middle" font-size="8" fill="#fff">AMNORMALITY_2</text>
+  <line x1="365" y1="400" x2="365" y2="375" stroke="#000" stroke-width="0.8"/>
+
+  <!-- Abnormal labels -->
+  <line x1="472" y1="310" x2="500" y2="310" stroke="#000" stroke-width="0.8"/>
+  <circle cx="472" cy="310" r="2" fill="#000"/>
+  <text x="505" y="305" font-size="10" font-weight="700">ABNORMAL_FEATURE_1</text>
+  <text x="505" y="320" font-size="9" fill="#555">change_description</text>
+
+  <!-- Abnormal status line -->
+  <rect x="280" y="560" width="200" height="50" rx="4" fill="#ddd"/>
+  <text x="382" y="582" text-anchor="middle" font-size="10" font-weight="700">病变状态</text>
+  <text x="382" y="598" text-anchor="middle" font-size="9" fill="#555">ABNORMAL_STATUS_TEXT</text>
+
+  <!-- ===== CENTER: KEY DIFFERENCE ===== -->
+  <line x1="260" y1="90" x2="260" y2="580" stroke="#000" stroke-width="1.0" stroke-dasharray="10,5"/>
+  <rect x="220" y="305" width="80" height="30" rx="3" fill="#fff" stroke="#000" stroke-width="1.0"/>
+  <text x="260" y="325" text-anchor="middle" font-size="10" font-weight="700">关键差异</text>
+
+  <!-- Footer -->
+  <text x="260" y="670" text-anchor="middle" font-size="9" fill="#999">图：COMPARISON_DESCRIPTION。为清晰对比，非严格解剖比例。</text>
+</svg>

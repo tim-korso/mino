@@ -1,0 +1,30 @@
+# macOS 自动化规则引擎 — 声明式规则
+# 触发条件 + 自动动作
+# 语法: trigger: <事件源>/<条件> | action: <工具>/<动作>
+
+rules:
+  - name: "开发模式自动布局"
+    trigger: "app/frontmost == Terminal || frontmost == Xcode || frontmost == Code"
+    action: "yabai/layout bsp"
+    cooldown: 30
+
+  - name: "代理异常告警"
+    trigger: "timer/every 300s"
+    action: "shell/curl -s -o /dev/null -w '%{http_code}' --max-time 3 --proxy http://127.0.0.1:7890 https://www.google.com | grep -qvE '200|302' && terminal-notifier -title 代理异常 -message 'Google不可达'"
+
+  - name: "电池低电量保护"
+    trigger: "system/battery < 20"
+    action: "shell/terminal-notifier -title 电池告警 -message '剩余20%以下' && osascript -e 'set volume output volume 30'"
+    cooldown: 600
+
+  - name: "WiFi切换自动代理"
+    trigger: "system/wifi_changed"
+    action: "shell/networksetup -setwebproxy Wi-Fi 127.0.0.1 7890 && networksetup -setsecurewebproxy Wi-Fi 127.0.0.1 7890"
+
+  - name: "CPU高温告警"
+    trigger: "timer/every 60s"
+    action: "shell/CPU=$(top -l 1 -n 0 2>/dev/null | grep 'CPU usage' | awk '{print $3}' | tr -d '%'); [ ${CPU%.*} -gt 80 ] && terminal-notifier -title 'CPU高温' -message \"${CPU}%\""
+
+  - name: "自动备份提醒"
+    trigger: "timer/every 86400s"
+    action: "shell/tmutil latestbackup 2>/dev/null | grep -q . || terminal-notifier -title '备份提醒' -message '超过24h未备份'"

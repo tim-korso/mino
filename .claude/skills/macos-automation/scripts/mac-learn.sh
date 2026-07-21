@@ -86,19 +86,19 @@ db.execute('''INSERT INTO snapshots (cpu,battery,disk,mail_unread,reminders,fron
      snap['frontmost'],snap['proxy'],snap['google'],snap['yabai'],snap['hs'],snap['flclash']))
 db.commit()
 
-# 更新自适应阈值 (需要至少 10 个样本)
-for metric in ['cpu']:
+# 更新自适应阈值 —— 全指标 (需要至少 10 个样本)
+import statistics
+for metric in ['cpu', 'battery', 'disk']:
     rows = list(db.execute(f'SELECT {metric} FROM snapshots ORDER BY id DESC LIMIT 50'))
-    if len(rows) >= 10:
-        import statistics
-        vals = [r[0] for r in rows if r[0] is not None]
-        if len(vals) >= 10:
+    vals = [r[0] for r in rows if r[0] is not None]
+    if len(vals) >= 10:
             avg = statistics.mean(vals)
             std = statistics.stdev(vals) if len(vals) > 1 else 0
             db.execute('''INSERT OR REPLACE INTO learned_thresholds VALUES (?,?,?,?,?,?,datetime('now','localtime'))''',
                 (metric, round(avg,1), round(std,1), round(avg + 2*std,1), round(max(avg - 2*std, 0),1), len(vals)))
             db.commit()
-            print(f"  📊 CPU 自适应阈值: 正常 {avg:.1f}% ± {std:.1f}% → 异常 > {avg + 2*std:.1f}% ({len(vals)} 样本)")
+            labels = {'cpu': 'CPU', 'battery': '电池', 'disk': '磁盘'}
+            print(f"  📊 {labels.get(metric, metric)} 自适应阈值: 正常 {avg:.1f}% ± {std:.1f}% → 异常 > {avg + 2*std:.1f}% ({len(vals)} 样本)")
 db.close()
 PYEOF
 
@@ -112,61 +112,154 @@ if $SUGGEST; then
   echo "─── 智能建议 ───"
 
   python3 << 'PYEOF'
-import sqlite3, json, os
+import sqlite3, json, os, statistics
 
 db = sqlite3.connect(os.environ.get("MAC_LEARN_DB", os.path.expanduser("~/.mac-learn.db")))
 suggestions = []
 
-# 1. 检查自适应阈值 vs 硬编码阈值
-lt = db.execute("SELECT * FROM learned_thresholds WHERE metric='cpu' AND samples >= 10").fetchone()
-if lt:
-    adaptive_high = lt[3]
-    if adaptive_high < 80:
+# ─── 去重: 清理旧重复 → 加唯一索引 (首次运行创建) ───
+db.execute("DELETE FROM suggested_rules WHERE id NOT IN (SELECT MIN(id) FROM suggested_rules GROUP BY rule_name, trigger)")
+db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_suggested_unique ON suggested_rules(rule_name, trigger)")
+
+# ─── 1. 全指标自适应阈值 vs 硬编码阈值 ───
+HARD_LIMITS = {
+    'cpu': {'label': 'CPU', 'limit': 80, 'unit': '%', 'interval': '60s', 'severity': 'CPU异常'},
+    'battery': {'label': '电池', 'limit': 20, 'unit': '%', 'interval': '300s', 'severity': '电池低电量'},
+    'disk': {'label': '磁盘', 'limit': 85, 'unit': '%', 'interval': '3600s', 'severity': '磁盘空间不足'},
+}
+
+for metric, cfg in HARD_LIMITS.items():
+    lt = db.execute(f"SELECT * FROM learned_thresholds WHERE metric=? AND samples >= 10", (metric,)).fetchone()
+    if not lt:
+        continue
+    _, avg_val, std_val, adaptive_high, normal_low, samples, _ = lt
+    hard_limit = cfg['limit']
+    
+    if hard_limit * 0.3 < adaptive_high < hard_limit * 0.9:  # 自适应阈值在硬编码的30%-90%之间 → 硬编码太松 (排除极端低值如磁盘9%)
         suggestions.append({
-            "rule_name": f"CPU自适应告警",
-            "trigger": f"timer/every 60s",
-            "action": f"shell/CPU=$(top -l 1 -n 0 2>/dev/null | grep 'CPU usage' | awk '{{print $3}}' | tr -d '%'); [ ${{CPU%.*}} -gt {int(adaptive_high)} ] && terminal-notifier -title 'CPU异常' -message \"${{CPU}}% (正常值 {lt[1]:.0f}%)\"",
-            "confidence": 0.85,
-            "reason": f"自适应阈值 {adaptive_high:.0f}% < 硬编码 80%——更精确的异常检测"
+            "rule_name": f"{cfg['label']}自适应告警",
+            "trigger": f"timer/every {cfg['interval']}",
+            "action": f"shell/{cfg['label']}_THRESHOLD={int(adaptive_high)}; [ $({cfg['label']}_THRESHOLD) -gt {int(adaptive_high)} ] && terminal-notifier -title '{cfg['severity']}' -message \"超过自适应阈值 {int(adaptive_high)}{cfg['unit']} (基线 {avg_val:.0f}{cfg['unit']})\"",
+            "confidence": round(min(0.90, samples / 100 + 0.5), 2),
+            "reason": f"{cfg['label']}自适应阈值 {adaptive_high:.0f}{cfg['unit']} < 硬编码 {hard_limit}{cfg['unit']}——{samples}样本基线 {avg_val:.0f}{cfg['unit']}±{std_val:.0f}{cfg['unit']}"
         })
 
-# 2. 检测高频前台App——建议模式切换规则
-apps = db.execute("SELECT frontmost, COUNT(*) c FROM snapshots GROUP BY frontmost ORDER BY c DESC LIMIT 5").fetchall()
-for app, count in apps:
-    if count >= 3 and app and app not in ('myagents', 'Finder'):
-        suggestions.append({
-            "rule_name": f"{app}自动布局",
-            "trigger": f"shell/pgrep -q '{app}'",
-            "action": "yabai/layout bsp",
-            "confidence": min(0.9, count/10),
-            "reason": f"{app} 是高频应用 ({count}次) ——建议自动切BSP布局"
-        })
+# ─── 2. 服务离线检测 —— 自动恢复建议 ───
+SERVICES = [
+    ('hs', 'Hammerspoon', 'open -a Hammerspoon', '事件层离线'),
+    ('yabai', 'yabai', 'yabai --start-service', '窗口管理离线'),
+    ('flclash', 'FlClash', 'open -a FlClash', '代理引擎离线'),
+]
 
-# 3. 检测异常事件
-recent = db.execute("SELECT cpu, google, yabai, flclash FROM snapshots ORDER BY id DESC LIMIT 20").fetchall()
-if recent:
-    google_downs = sum(1 for r in recent if r[1] == 'down')
-    yabai_downs = sum(1 for r in recent if r[2] == 'down')
-    flclash_downs = sum(1 for r in recent if r[3] == 'down')
-
+recent_all = db.execute("SELECT hs, yabai, flclash, google, frontmost FROM snapshots ORDER BY id DESC LIMIT 30").fetchall()
+if recent_all:
+    # 服务离线统计
+    for svc_col, svc_name, svc_fix, svc_desc in SERVICES:
+        downs = sum(1 for r in recent_all if r[SERVICES.index((svc_col, svc_name, svc_fix, svc_desc))] == 'down')
+        down_ratio = downs / len(recent_all)
+        
+        if downs >= 2:
+            # 检查连续离线 (最近 N 次)
+            consecutive = 0
+            for r in recent_all:
+                idx = SERVICES.index((svc_col, svc_name, svc_fix, svc_desc))
+                if r[idx] == 'down':
+                    consecutive += 1
+                else:
+                    break
+            
+            escalate = " 🔴 连续离线" if consecutive >= 3 else ""
+            suggestions.append({
+                "rule_name": f"{svc_name}自动恢复",
+                "trigger": f"timer/every 120s",
+                "action": f"shell/pgrep -q {svc_name.split()[0]} || {svc_fix}",
+                "confidence": round(min(0.95, down_ratio * 3 + 0.5), 2),
+                "reason": f"最近30次快照 {downs}/{len(recent_all)} 次离线{escalate}——建议自动拉活"
+            })
+    
+    # ─── 3. 代理连通性检测 ───
+    google_downs = sum(1 for r in recent_all if r[3] == 'down')
     if google_downs >= 2:
         suggestions.append({
-            "rule_name": "代理频繁掉线告警",
-            "trigger": "timer/every 60s",
-            "action": "shell/curl -s -o /dev/null -w '%{http_code}' --max-time 3 --proxy http://127.0.0.1:7890 https://www.google.com | grep -qE '200|302' || terminal-notifier -title '代理掉线' -message '最近20次中多次失败'",
-            "confidence": min(0.95, google_downs/5),
-            "reason": f"最近20次快照中 {google_downs} 次代理不可达"
+            "rule_name": "代理掉线自动检查",
+            "trigger": "timer/every 120s",
+            "action": "shell/curl -s -o /dev/null -w '%{http_code}' --max-time 5 --proxy http://127.0.0.1:7890 https://www.google.com | grep -qE '200|302' || terminal-notifier -title '代理掉线' -message 'Google不可达' -sound default",
+            "confidence": round(min(0.95, google_downs / 8 + 0.6), 2),
+            "reason": f"最近30次快照中 {google_downs} 次代理不可达"
         })
+    
+    # ─── 4. 相关性: 服务离线时的前台App分布 ───
+    for svc_col, svc_name, svc_fix, svc_desc in SERVICES:
+        idx = SERVICES.index((svc_col, svc_name, svc_fix, svc_desc))
+        down_apps = [r[4] for r in recent_all if r[idx] == 'down' and r[4]]
+        up_apps = [r[4] for r in recent_all if r[idx] != 'down' and r[4]]
+        
+        if len(down_apps) >= 3 and len(up_apps) >= 5:
+            from collections import Counter
+            down_dist = Counter(down_apps)
+            up_dist = Counter(up_apps)
+            
+            for app, count in down_dist.most_common(3):
+                up_count = up_dist.get(app, 0)
+                up_ratio = up_count / len(up_apps)
+                down_ratio = count / len(down_apps)
+                
+                # 该 App 在离线时段出现频率显著高于在线时段 (2x+)
+                if down_ratio > up_ratio * 2 and count >= 2:
+                    suggestions.append({
+                        "rule_name": f"{svc_name}关联检测:{app}",
+                        "trigger": f"shell/pgrep -q '{app}'",
+                        "action": f"shell/pgrep -q {svc_name.split()[0]} || {svc_fix}",
+                        "confidence": round(min(0.80, (down_ratio / max(up_ratio, 0.01)) / 5), 2),
+                        "reason": f"{svc_name} 离线时 {app} 在前台 {count}/{len(down_apps)} 次 (vs 正常时 {up_count}/{len(up_apps)})——疑似关联"
+                    })
 
-# 保存建议
+# ─── 5. 高频前台App —— 布局建议 ───
+apps = db.execute("SELECT frontmost, COUNT(*) c FROM snapshots GROUP BY frontmost ORDER BY c DESC LIMIT 6").fetchall()
+for app, count in apps:
+    if count >= 3 and app and app.lower() not in ('myagents', 'finder', 'loginwindow'):
+        # 检查是否已有此建议
+        existing = db.execute("SELECT COUNT(*) FROM suggested_rules WHERE rule_name=?", (f"{app}自动布局",)).fetchone()[0]
+        if existing == 0:
+            suggestions.append({
+                "rule_name": f"{app}自动布局",
+                "trigger": f"shell/pgrep -q '{app}'",
+                "action": "yabai/layout bsp",
+                "confidence": round(min(0.85, count / 15 + 0.5), 2),
+                "reason": f"{app} 是高频应用 ({count}次/{db.execute('SELECT COUNT(*) FROM snapshots').fetchone()[0]}快照)"
+            })
+
+# ─── 保存建议 (去重) ───
+new_count = 0
 for s in suggestions:
-    db.execute("INSERT OR IGNORE INTO suggested_rules (rule_name,trigger,action,confidence,reason) VALUES (?,?,?,?,?)",
-        (s['rule_name'], s['trigger'], s['action'], s['confidence'], s['reason']))
-    print(f"  💡 {s['rule_name']} (置信度 {s['confidence']:.0%})")
-    print(f"     {s['reason']}")
+    existing = db.execute("SELECT id, adopted, confidence FROM suggested_rules WHERE rule_name=? AND trigger=?", 
+        (s['rule_name'], s['trigger'])).fetchone()
+    if existing:
+        # 已有 → 更新置信度 (取平均), 只打印变化的
+        old_conf = existing[2]
+        new_conf = round((old_conf + s['confidence']) / 2, 2)
+        db.execute("UPDATE suggested_rules SET confidence=?, reason=?, ts=datetime('now','localtime') WHERE id=?", 
+            (new_conf, s['reason'], existing[0]))
+        if existing[1] == 0 and abs(new_conf - old_conf) > 0.05:
+            print(f"  📈 {s['rule_name']} 置信度 {old_conf:.0%}→{new_conf:.0%} ({s['reason'][:50]})")
+    else:
+        db.execute("INSERT OR REPLACE INTO suggested_rules (rule_name,trigger,action,confidence,reason) VALUES (?,?,?,?,?)",
+            (s['rule_name'], s['trigger'], s['action'], s['confidence'], s['reason']))
+        new_count += 1
+        print(f"  💡 {s['rule_name']} (置信度 {s['confidence']:.0%})")
+        print(f"     {s['reason']}")
 
-if not suggestions:
+if new_count == 0 and not suggestions:
     print("  (需要更多训练数据——至少 10 个快照)")
+elif new_count == 0:
+    print(f"  ✅ 无新建议——{len(suggestions)} 条已有建议置信度已更新")
+
+# ─── 自动采纳: 置信度 ≥ 90% 的恢复类规则 ───
+for s in suggestions:
+    if s['confidence'] >= 0.90 and '恢复' in s['rule_name']:
+        db.execute("UPDATE suggested_rules SET adopted=1 WHERE rule_name=? AND trigger=?", 
+            (s['rule_name'], s['trigger']))
+        print(f"  ✅ 自动采纳: {s['rule_name']} (置信度 {s['confidence']:.0%} ≥ 90%)")
 
 db.commit()
 db.close()
@@ -182,24 +275,42 @@ db = sqlite3.connect('$DB')
 
 snaps = db.execute("SELECT COUNT(*) FROM snapshots").fetchone()[0]
 rules = db.execute("SELECT COUNT(*) FROM suggested_rules WHERE adopted=0").fetchone()[0]
+adopted = db.execute("SELECT COUNT(*) FROM suggested_rules WHERE adopted=1").fetchone()[0]
 thresholds = db.execute("SELECT * FROM learned_thresholds").fetchall()
+
+# 服务离线统计 (最近 30 次快照)
+recent = db.execute("SELECT hs, yabai, flclash, google FROM snapshots ORDER BY id DESC LIMIT 30").fetchall()
+svc_health = {}
+if recent:
+    n = len(recent)
+    svc_health['Hammerspoon'] = f"{sum(1 for r in recent if r[0]=='down')}/{n} 离线"
+    svc_health['yabai'] = f"{sum(1 for r in recent if r[1]=='down')}/{n} 离线"
+    svc_health['FlClash'] = f"{sum(1 for r in recent if r[2]=='down')}/{n} 离线"
+    svc_health['代理(Google)'] = f"{sum(1 for r in recent if r[3]=='down')}/{n} 不可达"
 
 print(f"═══════════════════════════════════")
 print(f"  🧠 Mac 学习引擎仪表盘")
 print(f"═══════════════════════════════════")
 print(f"  训练快照: {snaps} 个")
-print(f"  待采纳建议: {rules} 条")
+print(f"  建议规则: {rules} 待采纳 · {adopted} 已采纳")
 print(f"")
+print(f"  ── 自适应阈值 ──")
 if thresholds:
-    print(f"  自适应阈值:")
+    labels = {'cpu': 'CPU', 'battery': '电池', 'disk': '磁盘'}
     for t in thresholds:
-        print(f"    {t[0]}: 正常 {t[1]:.1f}% ± {t[2]:.1f}% | 异常 > {t[3]:.1f}% | {t[5]} 样本")
+        label = labels.get(t[0], t[0])
+        print(f"  {label}: 正常 {t[1]:.1f}% ± {t[2]:.1f}% | 异常 > {t[3]:.1f}% | {t[5]} 样本")
 else:
-    print(f"  自适应阈值: 需要更多数据 (当前 {snaps} 样本, 需 ≥ 10)")
+    print(f"  (需要 ≥10 样本, 当前 {snaps})")
 print(f"")
-print(f"  建议规则:")
-for s in db.execute("SELECT rule_name, confidence, reason FROM suggested_rules WHERE adopted=0 ORDER BY confidence DESC LIMIT 5"):
-    print(f"    💡 {s[0]} ({s[1]:.0%}) — {s[2][:60]}")
+print(f"  ── 服务健康 (近30次) ──")
+for svc, status in svc_health.items():
+    print(f"  {svc}: {status}")
+print(f"")
+print(f"  ── 待采纳建议 ──")
+for s in db.execute("SELECT rule_name, confidence, reason, adopted FROM suggested_rules ORDER BY adopted ASC, confidence DESC LIMIT 8"):
+    tag = "✅" if s[3] else "💡"
+    print(f"  {tag} {s[0]} ({s[1]:.0%}) — {s[2][:55]}")
 db.close()
 PYEOF
 fi

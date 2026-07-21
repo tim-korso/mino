@@ -1,0 +1,28 @@
+{
+  "name": "应用卸载清理",
+  "description": "用 Pearcleaner 安全完全卸载应用——不留残留。替代拖垃圾桶（残留 1-3G/App）。先列出关联文件→人工确认→删除。",
+  "trigger": {"type": "manual", "usage": "bash mac-pearcleaner.sh --uninstall-all '/Applications/<App>.app'"},
+  "steps": [
+    {
+      "tool": "mac-pearcleaner.sh",
+      "args": "--list '<APP_PATH>' --json",
+      "description": "列出 App 及全部关联文件（保守灵敏度 L1，避免误匹配）",
+      "on_failure": "abort",
+      "verify": "echo '$OUTPUT' | python3 -c 'import json,sys; d=json.load(sys.stdin); print(f\"{d[\"file_count\"]} 个关联文件\")'"
+    },
+    {
+      "tool": "mac-pearcleaner.sh",
+      "args": "--uninstall-all '<APP_PATH>'",
+      "description": "展示清单→交互确认→完全卸载。不自动删——人工在终端确认。",
+      "on_failure": "continue"
+    },
+    {
+      "tool": "mac-pearcleaner.sh",
+      "args": "--stats",
+      "description": "卸载后刷新残留统计，确认无新增残留",
+      "on_failure": "continue",
+      "verify": "true"
+    }
+  ],
+  "feedback": {"type": "log", "detail": "应用卸载 → mac-activity.db"}
+}

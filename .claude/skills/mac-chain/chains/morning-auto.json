@@ -1,0 +1,18 @@
+{
+  "name": "晨会全自动",
+  "description": "工作日早7点: 采集Mail+Reminders→分诊统计→生成+推微信",
+  "trigger": {"type": "cron", "schedule": "0 7 * * 1-5"},
+  "steps": [
+    {
+      "tool": "mac-mail-triage.sh",
+      "args": "--stats",
+      "description": "规则统计 (监管/合规/报表/会议)"
+    },
+    {
+      "tool": "mac-push-wechat.sh",
+      "args": "",
+      "description": "采集+生成+推送一键完成"
+    }
+  ],
+  "feedback": {"type": "wechat", "detail": "晨报已推送"}
+}

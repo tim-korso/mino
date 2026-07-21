@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 680" width="520" height="680">
+  <defs>
+    <style>
+      text { font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', sans-serif; }
+    </style>
+    <marker id="arrowFlow" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#000"/>
+    </marker>
+    <marker id="arrowFlowLight" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7" fill="#555"/>
+    </marker>
+  </defs>
+  <rect width="520" height="680" fill="#fafafa"/>
+
+  <text x="260" y="25" text-anchor="middle" font-size="15" font-weight="700">TITLE_HERE</text>
+
+  <!-- Container structure -->
+  <ellipse cx="260" cy="340" rx="180" ry="200" fill="none" stroke="#000" stroke-width="2.5"/>
+  <text x="260" y="570" text-anchor="middle" font-size="11" font-weight="700">CONTAINER_NAME</text>
+  <text x="260" y="588" text-anchor="middle" font-size="10" fill="#555">container_description</text>
+
+  <!-- ===== FLOW PATH ===== -->
+  <!-- Production point -->
+  <rect x="180" y="100" width="160" height="40" rx="6" fill="#555"/>
+  <text x="260" y="118" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">PRODUCTION_POINT</text>
+  <text x="260" y="132" text-anchor="middle" font-size="9" fill="#ddd">生产/分泌/起点</text>
+
+  <!-- Label for production -->
+  <line x1="350" y1="120" x2="430" y2="80" stroke="#000" stroke-width="0.8"/>
+  <circle cx="350" cy="120" r="2.5" fill="#000"/>
+  <text x="435" y="75" font-size="11" font-weight="700">起点标注</text>
+  <text x="435" y="91" font-size="9" fill="#555">机制·关键参数</text>
+
+  <!-- Flow path: production → chamber 1 -->
+  <path d="M260,140 Q260,170 260,195" fill="none" stroke="#000" stroke-width="2.0" marker-end="url(#arrowFlow)"/>
+  <text x="275" y="168" font-size="10" fill="#555">FLOW_1_DESC</text>
+
+  <!-- Chamber 1 -->
+  <rect x="160" y="195" width="200" height="50" rx="5" fill="#fff" stroke="#000" stroke-width="1.5"/>
+  <text x="260" y="218" text-anchor="middle" font-size="11" font-weight="700">CHAMBER_1</text>
+  <text x="260" y="235" text-anchor="middle" font-size="9" fill="#555">空间/腔室描述</text>
+
+  <!-- Flow path: chamber 1 → chamber 2 -->
+  <path d="M260,245 Q260,275 260,300" fill="none" stroke="#000" stroke-width="2.0" marker-end="url(#arrowFlow)"/>
+  <text x="275" y="273" font-size="10" fill="#555">FLOW_2_DESC</text>
+
+  <!-- Chamber 2 -->
+  <rect x="160" y="300" width="200" height="50" rx="5" fill="#fff" stroke="#000" stroke-width="1.5"/>
+  <text x="260" y="323" text-anchor="middle" font-size="11" font-weight="700">CHAMBER_2</text>
+  <text x="260" y="340" text-anchor="middle" font-size="9" fill="#555">空间/腔室描述</text>
+
+  <!-- Flow path: chamber 2 → drain 1 (major) -->
+  <path d="M260,350 Q260,380 260,420 Q260,460 200,490" fill="none" stroke="#000" stroke-width="2.5" marker-end="url(#arrowFlow)"/>
+  <text x="230" y="430" font-size="11" fill="#555">DRAIN_1_DESC (~XX%)</text>
+
+  <!-- Drain 1 -->
+  <rect x="130" y="490" width="140" height="40" rx="5" fill="#000"/>
+  <text x="200" y="508" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">DRAIN_1</text>
+  <text x="200" y="522" text-anchor="middle" font-size="9" fill="#ddd">主要排出路径·~75%</text>
+
+  <!-- Label for drain 1 -->
+  <line x1="80" y1="510" x2="45" y2="550" stroke="#000" stroke-width="0.8"/>
+  <circle cx="80" cy="510" r="2.5" fill="#000"/>
+  <text x="40" y="545" text-anchor="end" font-size="11" font-weight="700">DRAIN_LABEL_1</text>
+  <text x="40" y="561" text-anchor="end" font-size="9" fill="#555">出口·去向</text>
+
+  <!-- Flow path: chamber 2 → drain 2 (minor) -->
+  <path d="M310,325 Q380,325 400,380 Q420,430 420,490" fill="none" stroke="#555" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrowFlowLight)"/>
+  <text x="370" y="385" font-size="10" fill="#555">DRAIN_2_DESC (~XX%)</text>
+
+  <!-- Drain 2 -->
+  <rect x="370" y="490" width="110" height="40" rx="5" fill="#ddd" stroke="#000" stroke-width="1.0"/>
+  <text x="425" y="508" text-anchor="middle" font-size="11" font-weight="700">DRAIN_2</text>
+  <text x="425" y="522" text-anchor="middle" font-size="9" fill="#555">次要排出路径·~25%</text>
+
+  <!-- Label for drain 2 -->
+  <line x1="450" y1="490" x2="490" y2="460" stroke="#000" stroke-width="0.8"/>
+  <circle cx="450" cy="490" r="2.5" fill="#000"/>
+  <text x="495" y="455" font-size="11" font-weight="700">DRAIN_LABEL_2</text>
+  <text x="495" y="471" font-size="9" fill="#555">出口·去向</text>
+
+  <!-- ===== PRESSURE/REGULATION INDICATOR ===== -->
+  <rect x="30" y="150" width="140" height="50" rx="5" fill="#fff" stroke="#000" stroke-width="1.5"/>
+  <text x="100" y="170" text-anchor="middle" font-size="10" font-weight="700">REGULATION_NOTE</text>
+  <text x="100" y="186" text-anchor="middle" font-size="9" fill="#555">调控参数·正常范围</text>
+  <line x1="160" y1="175" x2="180" y2="160" stroke="#555" stroke-width="0.8" stroke-dasharray="3,3"/>
+
+  <!-- Footer -->
+  <text x="260" y="670" text-anchor="middle" font-size="9" fill="#999">图：FLOW_PATH_DESCRIPTION。箭头方向表示流向，粗细表示相对流量。为清晰展示，非严格解剖比例。</text>
+</svg>

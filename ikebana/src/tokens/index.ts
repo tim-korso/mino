@@ -1,0 +1,37 @@
+/* 插花的艺术 — Design Token 导出（JS 使用） */
+
+export const tokens = {
+  color: {
+    paper: '#faf7f2',
+    paperLight: '#fffcf7',
+    paperDark: '#f0ece4',
+    paperDarker: '#e5e0d6',
+    ink: '#1c1612',
+    inkMedium: '#5a524a',
+    inkMuted: '#8a8278',
+    inkFaint: '#b8b0a6',
+    accent: '#d4733a',
+    accentLight: '#f09f6a',
+    accentDark: '#b05a2a',
+    accentBg: '#fef0e6',
+    calm: '#3a7d66',
+    calmLight: '#6baa91',
+    calmDark: '#2a5f4c',
+    calmBg: '#eaf5ef',
+    good: '#3a7d66',
+    warn: '#d4733a',
+    danger: '#c44a4a',
+    info: '#4a7daa',
+    gold: '#d4a03a',
+    goldLight: '#f0ca7a',
+  },
+  spacing: (n: number) => `${n * 4}px`,
+  radius: {
+    sm: '6px',
+    md: '8px',
+    lg: '12px',
+    xl: '16px',
+    '2xl': '24px',
+    full: '9999px',
+  },
+} as const

@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+
+# 本地凭证（不入库）
+credentials.py
+
+# 克隆音频样本（不入库）
+*.m4a
+*.mp3
+*.wav

@@ -1,0 +1,226 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 700" width="520" height="700">
+  <defs>
+    <style>
+      text { font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', sans-serif; }
+    </style>
+  </defs>
+  <rect width="520" height="700" fill="#fafafa"/>
+
+  <text x="260" y="28" text-anchor="middle" font-size="15" font-weight="700">图：超级赛亚人 第二阶段——突破极限后的形态再分析</text>
+
+  <!-- Outer aura glow -->
+  <ellipse cx="260" cy="330" rx="220" ry="200" fill="#fff"/>
+  <ellipse cx="260" cy="330" rx="190" ry="175" fill="#ddd"/>
+
+  <!-- ===== AURA —— dynamic lightning burst ===== -->
+  <!-- Outer jagged aura -->
+  <path d="M260,130 L285,50 L300,100 L340,40 L330,105 L380,60 L360,115 L410,85 L385,130 L430,140 L400,155"
+        fill="none" stroke="#999" stroke-width="2.0" stroke-linejoin="round"/>
+  <path d="M260,130 L235,50 L220,100 L180,40 L190,105 L140,60 L160,115 L110,85 L135,130 L90,140 L120,155"
+        fill="none" stroke="#999" stroke-width="2.0" stroke-linejoin="round"/>
+  <!-- Mid aura -->
+  <path d="M260,145 L270,60 L285,125 L315,55 L315,120 L350,70 L340,125 L375,90 L360,135 L400,145"
+        fill="none" stroke="#ddd" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M260,145 L250,60 L235,125 L205,55 L205,120 L170,70 L180,125 L145,90 L160,135 L120,145"
+        fill="none" stroke="#ddd" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- Inner ki lines -->
+  <path d="M260,155 L268,80 L275,140 L300,85 L295,138 L325,95 L315,140 L345,115 L335,145 L360,148"
+        fill="none" stroke="#999" stroke-width="1.0" stroke-linejoin="round"/>
+  <path d="M260,155 L252,80 L245,140 L220,85 L225,138 L195,95 L205,140 L175,115 L185,145 L160,148"
+        fill="none" stroke="#999" stroke-width="1.0" stroke-linejoin="round"/>
+
+  <!-- Electricity arcs (SS2 signature) -->
+  <path d="M140,140 L155,115 L150,130 L170,95 L163,125 L190,105 L180,128 L210,110 L200,135" fill="none" stroke="#000" stroke-width="1.0"/>
+  <path d="M380,140 L365,115 L370,130 L350,95 L357,125 L330,105 L340,128 L310,110 L320,135" fill="none" stroke="#000" stroke-width="1.0"/>
+  <path d="M110,200 L130,175 L122,190 L155,160 L145,185 L175,170 L162,190 L195,180 L180,200" fill="none" stroke="#000" stroke-width="0.8"/>
+  <path d="M410,200 L390,175 L398,190 L365,160 L375,185 L345,170 L358,190 L325,180 L340,200" fill="none" stroke="#000" stroke-width="0.8"/>
+
+  <!-- ===== HAIR —— fully upright, longer spikes, three-tier ===== -->
+  <!-- Back tier -->
+  <path d="M260,155 L235,110" stroke="#555" stroke-width="2.0" stroke-linecap="round"/>
+  <path d="M260,155 L285,110" stroke="#555" stroke-width="2.0" stroke-linecap="round"/>
+  <path d="M260,155 L215,120" stroke="#555" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M260,155 L305,120" stroke="#555" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Mid tier -->
+  <path d="M260,158 L250,85" stroke="#555" stroke-width="2.3" stroke-linecap="round"/>
+  <path d="M260,158 L270,88" stroke="#555" stroke-width="2.3" stroke-linecap="round"/>
+  <path d="M260,158 L228,95" stroke="#555" stroke-width="2.3" stroke-linecap="round"/>
+  <path d="M260,158 L292,95" stroke="#555" stroke-width="2.3" stroke-linecap="round"/>
+  <path d="M260,158 L208,108" stroke="#555" stroke-width="2.0" stroke-linecap="round"/>
+  <path d="M260,158 L312,108" stroke="#555" stroke-width="2.0" stroke-linecap="round"/>
+
+  <!-- Front tier —— main spikes -->
+  <path d="M260,160 L260,50" stroke="#000" stroke-width="3.0" stroke-linecap="round"/>
+  <path d="M260,160 L235,55" stroke="#000" stroke-width="3.0" stroke-linecap="round"/>
+  <path d="M260,160 L285,55" stroke="#000" stroke-width="3.0" stroke-linecap="round"/>
+  <path d="M260,160 L210,70" stroke="#000" stroke-width="2.8" stroke-linecap="round"/>
+  <path d="M260,160 L310,70" stroke="#000" stroke-width="2.8" stroke-linecap="round"/>
+  <path d="M260,160 L188,85" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M260,160 L332,85" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Side spikes -->
+  <path d="M260,165 L165,105" stroke="#000" stroke-width="2.3" stroke-linecap="round"/>
+  <path d="M260,165 L355,105" stroke="#000" stroke-width="2.3" stroke-linecap="round"/>
+  <path d="M260,170 L148,125" stroke="#555" stroke-width="2.0" stroke-linecap="round"/>
+  <path d="M260,170 L372,125" stroke="#555" stroke-width="2.0" stroke-linecap="round"/>
+
+  <!-- Single bang strand -->
+  <path d="M260,168 Q258,190 252,210 Q248,222 245,228" fill="none" stroke="#000" stroke-width="2.0" stroke-linecap="round"/>
+
+  <!-- ===== FACE —— angular, intense ===== -->
+  <!-- Face outline -->
+  <ellipse cx="260" cy="290" rx="55" ry="62" fill="#fff" stroke="#000" stroke-width="2.0"/>
+
+  <!-- Jaw: sharper -->
+  <path d="M218,300 Q222,338 260,348 Q298,338 302,300" fill="none" stroke="#000" stroke-width="2.0"/>
+
+  <!-- Cheekbone definition lines -->
+  <path d="M213,285 Q220,295 225,300" fill="none" stroke="#555" stroke-width="0.8"/>
+  <path d="M307,285 Q300,295 295,300" fill="none" stroke="#555" stroke-width="0.8"/>
+
+  <!-- Forehead: furrowed -->
+  <path d="M230,255 Q245,248 260,246 Q275,248 290,255" fill="none" stroke="#555" stroke-width="1.0"/>
+  <path d="M235,262 Q250,258 260,256 Q270,258 285,262" fill="none" stroke="#555" stroke-width="0.8"/>
+
+  <!-- Eyebrows: steep angle, pure rage -->
+  <line x1="222" y1="272" x2="248" y2="260" stroke="#000" stroke-width="3.0" stroke-linecap="round"/>
+  <line x1="298" y1="272" x2="272" y2="260" stroke="#000" stroke-width="3.0" stroke-linecap="round"/>
+
+  <!-- Eyes: narrower, more intense -->
+  <ellipse cx="242" cy="278" rx="9" ry="5" fill="#000"/>
+  <ellipse cx="278" cy="278" rx="9" ry="5" fill="#000"/>
+  <!-- Iris glint -- smaller -->
+  <circle cx="245" cy="277" r="1.5" fill="#fff"/>
+  <circle cx="281" cy="277" r="1.5" fill="#fff"/>
+
+  <!-- Eye surround shadows -->
+  <path d="M230,278 Q235,284 242,284" fill="none" stroke="#555" stroke-width="0.8"/>
+  <path d="M278,284 Q285,284 290,278" fill="none" stroke="#555" stroke-width="0.8"/>
+
+  <!-- Nose -->
+  <path d="M260,284 L258,296 L252,298" fill="none" stroke="#000" stroke-width="1.0"/>
+
+  <!-- Mouth: grim, teeth clenched -->
+  <path d="M238,318 Q260,330 282,318" fill="none" stroke="#000" stroke-width="1.8"/>
+  <!-- Teeth line -->
+  <line x1="245" y1="320" x2="275" y2="320" stroke="#000" stroke-width="0.8"/>
+  <!-- Teeth verticals -->
+  <line x1="250" y1="320" x2="250" y2="322" stroke="#000" stroke-width="0.5"/>
+  <line x1="255" y1="320" x2="255" y2="322" stroke="#000" stroke-width="0.5"/>
+  <line x1="260" y1="320" x2="260" y2="322" stroke="#000" stroke-width="0.5"/>
+  <line x1="265" y1="320" x2="265" y2="322" stroke="#000" stroke-width="0.5"/>
+  <line x1="270" y1="320" x2="270" y2="322" stroke="#000" stroke-width="0.5"/>
+
+  <!-- ===== NECK ===== -->
+  <!-- Trapezius —— massive bulge -->
+  <path d="M230,348 L218,370 Q210,378 205,385 L200,400" fill="none" stroke="#000" stroke-width="2.0"/>
+  <path d="M290,348 L302,370 Q310,378 315,385 L320,400" fill="none" stroke="#000" stroke-width="2.0"/>
+
+  <!-- Neck lines -->
+  <path d="M235,360 L225,400" fill="none" stroke="#000" stroke-width="1.5"/>
+  <path d="M285,360 L295,400" fill="none" stroke="#000" stroke-width="1.5"/>
+  <!-- Neck muscle definition -->
+  <path d="M245,365 L240,395" fill="none" stroke="#555" stroke-width="0.8"/>
+  <path d="M275,365 L280,395" fill="none" stroke="#555" stroke-width="0.8"/>
+  <path d="M260,362 L260,398" fill="none" stroke="#555" stroke-width="0.8"/>
+
+  <!-- ===== BODY: battle-damaged gi, fighting stance ===== -->
+  <!-- Shoulders -->
+  <path d="M205,400 Q185,408 155,420 Q130,432 120,445" fill="none" stroke="#000" stroke-width="2.0"/>
+  <path d="M315,400 Q335,408 365,420 Q390,432 400,445" fill="none" stroke="#000" stroke-width="2.0"/>
+
+  <!-- Deltoid definition -->
+  <path d="M200,395 Q210,410 215,418" fill="none" stroke="#555" stroke-width="1.0"/>
+  <path d="M320,395 Q310,410 305,418" fill="none" stroke="#555" stroke-width="1.0"/>
+
+  <!-- Chest -->
+  <path d="M218,400 Q240,410 260,412 Q280,410 302,400" fill="none" stroke="#000" stroke-width="1.5"/>
+  <!-- Pectoral definition -->
+  <path d="M230,405 Q240,420 255,422" fill="none" stroke="#555" stroke-width="0.8"/>
+  <path d="M290,405 Q280,420 265,422" fill="none" stroke="#555" stroke-width="0.8"/>
+  <path d="M260,412 L260,435" fill="none" stroke="#555" stroke-width="0.8"/>
+
+  <!-- Gi top —— torn edges -->
+  <path d="M120,448 L180,430 Q200,425 215,418" fill="none" stroke="#000" stroke-width="2.0"/>
+  <path d="M400,448 L340,430 Q320,425 305,418" fill="none" stroke="#000" stroke-width="2.0"/>
+
+  <!-- Torn gi edges detail -->
+  <path d="M130,450 L125,460 L135,465 L128,475" fill="none" stroke="#000" stroke-width="1.5"/>
+  <path d="M390,450 L395,460 L385,465 L392,475" fill="none" stroke="#000" stroke-width="1.5"/>
+
+  <!-- Gi pants -->
+  <path d="M200,448 L175,540 L345,540 L320,448" fill="#fff" stroke="#000" stroke-width="2.0"/>
+  <!-- Pant wrinkles -->
+  <path d="M230,470 Q240,500 235,535" fill="none" stroke="#555" stroke-width="0.8"/>
+  <path d="M290,470 Q280,500 285,535" fill="none" stroke="#555" stroke-width="0.8"/>
+  <path d="M260,465 L260,538" fill="none" stroke="#555" stroke-width="0.8"/>
+
+  <!-- Belt -->
+  <rect x="200" y="448" width="120" height="20" fill="#555" stroke="#000" stroke-width="1.5"/>
+  <rect x="245" y="450" width="30" height="16" fill="none" stroke="#000" stroke-width="1.2"/>
+  <!-- Belt knot tails -->
+  <path d="M260,468 L258,495 L262,495 Z" fill="#fff" stroke="#000" stroke-width="1.0"/>
+  <path d="M260,468 L252,498 L256,498 Z" fill="#fff" stroke="#000" stroke-width="0.8"/>
+
+  <!-- ===== ARMS: crossed, pre-power-up stance ===== -->
+  <!-- Left arm -->
+  <path d="M120,445 Q110,460 115,480 Q120,500 140,510 Q155,515 165,510" fill="none" stroke="#000" stroke-width="2.0"/>
+  <!-- Left forearm -->
+  <path d="M165,510 Q180,505 195,490 Q205,478 210,465" fill="none" stroke="#000" stroke-width="2.0"/>
+  <!-- Left fist -->
+  <circle cx="212" cy="460" r="12" fill="#fff" stroke="#000" stroke-width="2.0"/>
+  <line x1="208" y1="455" x2="206" y2="448" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="215" y1="453" x2="216" y2="445" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="220" y1="457" x2="225" y2="452" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- Right arm -->
+  <path d="M400,445 Q410,460 405,480 Q400,500 380,510 Q365,515 355,510" fill="none" stroke="#000" stroke-width="2.0"/>
+  <!-- Right forearm -->
+  <path d="M355,510 Q340,505 325,490 Q315,478 310,465" fill="none" stroke="#000" stroke-width="2.0"/>
+  <!-- Right fist -->
+  <circle cx="308" cy="460" r="12" fill="#fff" stroke="#000" stroke-width="2.0"/>
+  <line x1="312" y1="455" x2="314" y2="448" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="305" y1="453" x2="304" y2="445" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="300" y1="457" x2="295" y2="452" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- Arm muscle definition -->
+  <path d="M135,460 Q145,470 155,472" fill="none" stroke="#555" stroke-width="0.8"/>
+  <path d="M385,460 Q375,470 365,472" fill="none" stroke="#555" stroke-width="0.8"/>
+
+  <!-- ===== KI CONCENTRATION between hands ===== -->
+  <circle cx="260" cy="500" r="18" fill="#fff" stroke="#000" stroke-width="2.0"/>
+  <circle cx="260" cy="500" r="10" fill="#ddd" stroke="#555" stroke-width="1.0"/>
+  <circle cx="260" cy="500" r="4" fill="#000"/>
+
+  <!-- Ki beam rays from hands to center -->
+  <path d="M212,460 Q235,480 245,492" fill="none" stroke="#ddd" stroke-width="1.5"/>
+  <path d="M308,460 Q285,480 275,492" fill="none" stroke="#ddd" stroke-width="1.5"/>
+  <path d="M218,465 Q238,488 248,498" fill="none" stroke="#999" stroke-width="1.0"/>
+  <path d="M302,465 Q282,488 272,498" fill="none" stroke="#999" stroke-width="1.0"/>
+
+  <!-- Ki traces around fists -->
+  <path d="M200,450 Q195,440 190,445" fill="none" stroke="#999" stroke-width="0.8"/>
+  <path d="M210,442 Q208,432 204,435" fill="none" stroke="#999" stroke-width="0.8"/>
+  <path d="M320,450 Q325,440 330,445" fill="none" stroke="#999" stroke-width="0.8"/>
+  <path d="M310,442 Q312,432 316,435" fill="none" stroke="#999" stroke-width="0.8"/>
+
+  <!-- ===== GROUND SHATTER ===== -->
+  <path d="M140,545 L130,555 L145,552 L135,565 L155,558 L148,570 L165,560 L160,575 L175,565 L170,580 L185,570 L180,585 L195,572" fill="none" stroke="#555" stroke-width="1.0"/>
+  <path d="M380,545 L390,555 L375,552 L385,565 L365,558 L372,570 L355,560 L360,575 L345,565 L350,580 L335,570 L340,585 L325,572" fill="none" stroke="#555" stroke-width="1.0"/>
+  <line x1="195" y1="572" x2="325" y2="572" stroke="#555" stroke-width="0.8"/>
+
+  <!-- Floating debris -->
+  <polygon points="155,530 160,525 163,532" fill="none" stroke="#999" stroke-width="0.8"/>
+  <polygon points="350,525 355,520 358,528" fill="none" stroke="#999" stroke-width="0.8"/>
+  <rect x="175" y="535" width="6" height="4" fill="none" stroke="#999" stroke-width="0.5" transform="rotate(15,178,537)"/>
+
+  <!-- ===== POWER LEVEL CALLOUT ===== -->
+  <rect x="120" y="598" width="280" height="65" rx="6" fill="#000"/>
+  <text x="260" y="622" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">战斗力：不可测量 ⚡⚡</text>
+  <text x="260" y="642" text-anchor="middle" font-size="11" font-weight="700" fill="#ddd">POWER LEVEL: BEYOND LIMITS</text>
+  <text x="260" y="656" text-anchor="middle" font-size="9" fill="#999">阶段性突破 · 形态持续进化</text>
+
+  <!-- Footer -->
+  <text x="260" y="693" text-anchor="middle" font-size="9" fill="#999">图：赛亚人第二阶段形态——竖发、电弧、聚气、破碎地面。DPT-CP1 四级灰度 + 520×700 竖构图，形态学分析用。</text>
+</svg>

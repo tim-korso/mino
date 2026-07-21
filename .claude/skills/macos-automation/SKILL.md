@@ -1,13 +1,13 @@
 ---
 name: macos-automation
-description: "macOS自动化工具管线——130个工具按10个阶段编目：文件系统→文本处理→系统控制→影音GUI→网络安全→调度管线→AppleScript→Homebrew→Xcode诊断→复合管线模板。78原生CLI零安装。含App自动化天花板矩阵（实测Mail/Calendar/Safari等8个App的三层自动化上限）。Triggers on: 'mac自动化', 'macOS automation', '批量处理', '转换格式', '系统控制', 'mac工具', '原生工具', '不用装', 'macOS native', 'automator', 'osascript', 'mdfind', 'textutil', 'sips'."
+description: "macOS自动化工具管线 v8——165+工具·13阶段。新增职场自动化管线(晨报/邮件分诊/微信推送/调研→决策桥接)。Triggers on: 'mac自动化', 'macOS automation', '晨会', '晨报', '邮件分诊', '推微信', '日常摘要', '职场自动化', 'workplace automation'."
 ---
 
-# macOS Automation — 原生自动化管线
+# macOS Automation v8 — 原生自动化管线
 
-> 130 个工具 · 10 阶段 · 78 原生零安装。全管线覆盖——从 mdfind 到 sysdiagnose，从 AppleScript 到复合管线模板。含 App 自动化天花板矩阵。
+> 165+ 工具 · 13 阶段 · 80+ 原生零安装。新增职场自动化管线——晨报生成/邮件智能分诊/微信推送/调研→决策→执行闭环。
 
-## 十阶段管线
+## 十三阶段管线
 
 ```
 Stage 1: 文件系统 (Find → Inspect → Process)
@@ -38,7 +38,18 @@ Stage 9: Xcode 诊断 + 深度系统 (Xcode CLI + Frameworks + 隐藏工具)
     16 个工具 — heap/leaks/vmmap/malloc_history/sysdiagnose/log/nettop/lsregister/safaridriver
 
 Stage 10: 复合管线模板 (跨阶段串联脚本)
-    1 模板 (25 工具串联) — Mac 数字孪生一键体检报告
+    7 个活跃管线 (25+ 工具串联) — 代理开关/每日仪表盘/安全审计/跨App融合/剪贴板/能力画像/代理清理
+
+Stage 11: 技巧性自动化 — 被忽视的入口
+    10 种技巧 — URL Schemes / open 隐藏能力 / 全局快捷键 / 键盘映射 / 文件标签 /
+             网络位置 / Services / Hot Corners / 锁屏多路径 / hidutil
+
+★ Stage 12: 文件智能引擎 — 上下文感知整理 (v7 NEW)
+    Calendar × Mail × yabai × Reminders × 学习引擎 — 五源融合，竞品不可复制
+
+★ Stage 13: 职场自动化管线 (v8 NEW)
+    晨报生成 · 邮件分诊 · 微信推送 · 调研→决策→执行桥接 · 每日摘要
+    6 脚本 — `mac-morning-briefing` `mac-mail-triage` `mac-daily-digest` `mac-push-wechat` `mac-research-to-action` `mac-file-classifier`
 ```
 
 ## 每个阶段的快速命令
@@ -239,6 +250,9 @@ done
 | SwiftUI 设置窗口 | macOS 26 的 Settings（Mail/System Settings 等）使用 SwiftUI，System Events 的 Accessibility 树只暴露 toolbar 按钮和 AXGroup 黑箱——**内部规则列表/复选框/表单不可见**。键盘 Tab 导航不稳定且无反馈（盲操作），GUI 脚本化不可靠 |
 | AppleScript `whose` 子句 | Calendar 脚本字典在 `whose start date ≥ ...` 过滤后返回半残引用——对象计数正确但属性 getter 返回空值。用 `repeat` 手写过滤代替 `whose`（见 Stage 7 安全陷阱） |
 | AppleScript 类型拼接 | 整数 + 大字符串用 `&` 拼接可能触发 list literal 解析（输出 `{1, "..."}` 而非 `"1|..."`）。始终用 `(n as text) & "|" & str` 强制类型。布尔值更危险——Mail 的 `delete message` 连 `if ... is true` 比较都报错 |
+| **代理大文件下载** | FlClash `keep-alive-idle:0` + `max-idle-time:15000` 导致 >500MB HTTP 下载系统性不可达。HuggingFace Xet CDN 大文件块间停顿触发 15s 空闲超时。small(465MB)一次过，medium(539MB+)十次全断。**绕行**: `dl-stable.sh` 方法矩阵(HF→hf/curl)，或换网络直连 |
+| **Dictation 离线模型** | `SFSpeechRecognizer` 离线模型需 entitlement+签名+Aqua session。纯 CLI 编译的 binary 无法触发 `speechdatainstallerd` 下载。DictationIM 在线模式可用但走 Apple 服务器。离线方案用 `whisper-cpp` |
+| **FlClash 配置不可程序化** | `defaults import` 修改 `flutter.config` 破坏 GUI↔Core 状态同步。TUN keep-alive 不可调。代理 App 三层(API×GUI×存储)全封死。**唯一操作**: GUI 手动改配置 + 本地 config.yaml 导出复用 |
 
 ## Stage 7: AppleScript GUI 自动化
 
@@ -544,50 +558,30 @@ networksetup -switchlocation "Office"
 
 ## Stage 10: 复合管线模板
 
-> 跨阶段串联——单次执行打通 5-7 个阶段，生成完整交付物。
+> 跨阶段串联——7 个活跃管线，零冗余。按使用频率排列。
 
-### 模板 1: Mac 数字孪生 (25 工具 · 7 阶段)
+### 管线矩阵
 
-一键生成系统健康体检报告——硬件→文件系统→网络→安全→应用→个人状态→日志→组装→通知。
+| # | 管线 | 行数 | 阶段覆盖 | 用途 |
+|---|------|------|---------|------|
+| 1 | **proxy-toggle.sh** | 38 | S5+S11 | 代理开关 + 连通性测试 (--test) |
+| 2 | **mac-daily-check.sh** | 271 | S3+S5+S7+S2+S4+S11 | 每日仪表盘——硬件/网络/日历/提醒/邮件 |
+| 3 | **mac-security-audit.sh** | 330 | S3+S5+S7+S2+S4+S11 | SIP/防火墙/SSH/TCC/启动项一键审计 |
+| 4 | **mac-crossapp-intel.sh** | 289 | S7+S1+S3+S2+S4+S11 | 日历×提醒×邮件×文件 跨源融合 |
+| 5 | **mac-clipboard-pipe.sh** | 272 | S4+S2+S8 | 剪贴板→类型检测→智能处理 (URL/代码/文本/数字) |
+| 6 | **mac-capability-benchmark.sh** | 329 | S1-S11+BSD | 112项能力画像——语义分类引擎·零误判 |
+| 7 | **mac-proxy-clean.sh** | 203 | S5+S3 | 代理App彻底清除 (重装前用) |
 
-```bash
-bash scripts/mac-twin-snapshot.sh
-```
+**归档参考**: `mail-auto-clean.sh` (72行) — AppleScript Mail 参考实现（规则 API 残缺，未部署）
 
-**管线覆盖:**
-
-```
-Phase 1 硬件: system_profiler → sysctl → memory_pressure → top → pmset → powermetrics
-Phase 2 磁盘: diskutil → df → mdfind → fd → du
-Phase 3 网络: networksetup → scutil → nettop
-Phase 4 安全: spctl → codesign → xattr
-Phase 5 应用: lsregister → osascript(System Events) → system_profiler(SPApplications)
-Phase 6 个人: osascript(Calendar/Reminders/Mail/Notes) ×4
-Phase 7 日志: log show → DiagnosticReports
-Phase 8 组装: cat 合并 7 个片段 → markdown 报告
-Phase 9 输出: bat 预览 → open → osascript 通知 → say 播报
-```
-
-**输出:** `/tmp/mac-twin-<timestamp>/health-report.md` — 233 行结构化 Markdown，含 7 个维度的完整快照。
-
-**实测:** 2026-07-18 一次通过，22/25 工具 (88%) 满输出，3 工具部分输出（fd 参数调优、nettop 采样模式、Calendar 空事件——均非阻断性）。TCC 授权跨 Calendar/Reminders/Mail/Notes 四 App 全绿。
-
-### 模板 2: 收件箱自动清理 (Mail AppleScript + launchd)
-
-当 Mail 规则 API 不可用时（见已知限制），用定时脚本代替规则引擎——每小时扫收件箱，匹配高频 sender 的未读邮件直接移入废纸篓。
+### proxy-toggle.sh — 最频繁操作
 
 ```bash
-bash scripts/mail-auto-clean.sh           # 执行清理
-bash scripts/mail-auto-clean.sh --dry-run  # 预览待清理
+bash scripts/proxy-toggle.sh        # 切开关
+bash scripts/proxy-toggle.sh --test # 切开关 + 测连通性
 ```
 
-**适用场景：** Mail 规则 API 缺陷 + iCloud SyncedRules 不可写时，这是唯一全自动的邮件归档方案。组合 `launchd` 可实现无感定时运行。
-
-```bash
-# 安装为每小时自动任务
-cp scripts/com.user.mail-clean.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/com.user.mail-clean.plist
-```
+> ⚠️ CLI 工具不读 macOS 系统代理——`curl` 必须 `--proxy http://127.0.0.1:7890`。`--test` 已内置此知识。
 
 ### 如何创建新管线模板
 
@@ -665,8 +659,14 @@ GUI 层：窗口是 AppKit（AX 透光）还是 SwiftUI（AX 黑箱）？
 | **Finder** | ✅ 全功能 | AppKit | 本地 | **100%** | 无 |
 | **Safari** | ✅ URL/标签 | AppKit | iCloud (书签) | 读完全，写需过 iCloud | 书签写入 |
 | **Mail** | ⚠️ 残缺 | AppKit (主窗口) / **SwiftUI** (设置) | **iCloud (规则)** | **读邮件/移动邮件** | **规则创建/修改/动作** |
+| `Apple Calendar` | AppleScript `whose` 子句破损 (macOS 26) + 遍历大日历时挂死 | 用 BusyCal AppleScript API (2026.4 版已完整) 或 Swift EventKit |
+| `Apple Mail` | AppleScript `repeat with msg in (messages of inbox)` 大邮箱遍历极慢 (2K+ 未读) | 读 `unread count` 统计正常；逐封读主题用 MCP Server / MailKit |
+| **macOS 26 Tahoe 校准状态 (2026-07-21)** | Shortcuts Automation 标签页已加入 Tahoe (2025.10) — 支持时间/邮件/文件变更触发器。**待实测。** BusyCal 2026.1.3 已发布完整 AppleScript API — CRUD+search+selected items。**待集成。** | 原调研冻结在 2024 年基线——v3 deep-research 已修正此偏差 |
+
 | **System Settings** | ❌ 无字典 | **SwiftUI** | iCloud/本地混合 | **0%** | **全部** |
 | **Terminal** | ❌ 无字典 | AppKit | 本地 | 100% (shell 直接执行) | 无 |
+| **Dictation** | ❌ 无字典 | SwiftUI (设置) | **MobileAsset** | **在线模式可用** | **离线模型需 entitlement+签名**——纯 CLI 不可达 |
+| **FlClash** | ❌ 无字典 | **Flutter (非原生)** | **flutter.config** | **10%** | **defaults import 破坏状态同步**，TUN keep-alive 不可调 |
 
 ### Mail 实录 (2026-07-18)
 
@@ -696,6 +696,449 @@ GUI 层：窗口是 AppKit（AX 透光）还是 SwiftUI（AX 黑箱）？
 
 ---
 
+## Stage 11: 技巧性自动化 — 被忽视的入口
+
+> CLI 和 AppleScript 是"正规军"。但 macOS 有一整套不显眼但极高效的自动化入口——它们不是工具，是**机制**。机制比工具稳定——Apple 改 API 但不会撤掉 URL Schemes。
+
+### 11.1 URL Schemes — App 的命令行接口
+
+> macOS 每个注册了 URL Scheme 的 App 都可以从 CLI 触发特定操作。`open "scheme://..."` 等价于点击 App 的深层链接。
+
+**已验证可用的系统级 Schemes** (macOS 26.3 实测)：
+
+```bash
+# ── 系统设置（直接跳到指定面板）──
+open 'x-apple.systempreferences:com.apple.preferences'                    # 系统设置首页
+open 'prefs:root=General'                                                  # 通用
+open 'x-apple.systempreferences:com.apple.preference.security'            # 隐私与安全性
+open 'x-apple.systempreferences:com.apple.Network-Settings.extension'     # 网络设置
+open 'x-apple.systempreferences:com.apple.preference.displays'            # 显示器
+open 'x-apple.systempreferences:com.apple.preference.sound'               # 声音
+open 'x-apple.systempreferences:com.apple.preference.trackpad'            # 触控板
+open 'x-apple.systempreferences:com.apple.preference.keyboard'            # 键盘
+open 'x-apple.systempreferences:com.apple.preference.battery'             # 电池
+open 'x-apple.systempreferences:com.apple.preference.bluetooth'           # 蓝牙
+open 'x-apple.systempreferences:com.apple.preference.notifications'       # 通知
+open 'x-apple.systempreferences:com.apple.preference.focus'               # 专注模式
+open 'x-apple.systempreferences:com.apple.preference.wifi'                # Wi-Fi
+open 'x-apple.systempreferences:com.apple.preference.wallet'              # 钱包与 Apple Pay
+
+# ── 应用内操作 ──
+open 'shortcuts://'                    # 快捷指令 App
+open 'shortcuts://run-shortcut?name=名称'  # 运行指定快捷指令
+open 'codex://'                        # Codex App
+open 'music://'                        # Music App
+open 'maps://'                         # 地图
+open 'facetime://'                     # FaceTime
+open 'photos://'                       # 照片
+open 'sms://'                          # 信息
+open 'mailto://'                       # 邮件
+```
+
+**发现 App 的 URL Schemes**：
+
+```bash
+# 方法1: Launch Services 数据库
+LSREG=/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister
+$LSREG -dump | grep -A5 "claimed schemes:" | grep -o '[a-z][a-z0-9]*://' | sort -u
+
+# 方法2: App 的 Info.plist
+plutil -p /Applications/某App.app/Contents/Info.plist | grep -A3 CFBundleURLSchemes
+```
+
+**关键洞察**：URL Scheme 在自动化天花板矩阵中的位置——它既不是 API 层（AppleScript）也不是 GUI 层，是**协议层**。SwiftUI 封死的 App 走 URL Scheme 可能仍然可行——因为 Scheme 注册是 Info.plist 级别，不依赖窗口框架。
+
+### 11.2 open 命令 — 被低估的超级工具
+
+> `open` 不只是"打开文件"。8 个隐藏 flag 覆盖了 Finder 定位、后台启动、新实例、状态复位。
+
+```bash
+# ── 文件操作 ──
+open file.txt                          # 用默认 App 打开
+open -a "App Name" file.txt            # 指定 App
+open -e file.txt                       # 强制用 TextEdit
+open -t file.txt                       # 强制用默认文本编辑器
+
+# ── 高级启动控制 ──
+open -R /path/to/file                  # 在 Finder 中定位（不打开文件本身）
+open -j App.app                        # 后台启动——不激活窗口、不抢焦点
+open -n App.app                        # 新开实例——同一 App 两个独立进程
+open -F App.app                        # 全新启动——不恢复上次窗口状态
+open -g App.app                        # 后台启动（不带到前台）
+open --hide App.app                    # 启动但隐藏
+open --background App.app              # 后台运行
+
+# ── URL/协议 ──
+open 'https://google.com'              # 默认浏览器
+open -a Safari 'https://...'           # 指定浏览器
+open 'news://...'                      # RSS 阅读器
+open 'vnc://server'                    # 屏幕共享
+open 'smb://server/share'              # 文件共享
+open 'ftp://server'                    # FTP
+open 'telnet://server'                 # Telnet
+```
+
+**管线中的实际用法**：
+
+```bash
+# 脚本完成 → 在 Finder 中显示结果（比 open 文件夹更好——直接选中文件）
+open -R "$OUTPUT_FILE"
+
+# 后台启动监控工具——不抢用户焦点
+open -j /Applications/Activity\ Monitor.app
+
+# 全新启动——测试 App 的首次运行体验
+open -F /Applications/某App.app
+```
+
+### 11.3 全局快捷键 — 用 osascript keystroke 接管 App 的热键
+
+> App 注册的全局快捷键可以通过 `osascript keystroke` 触发——不需要知道 App 的内部 API。
+
+**已验证示例**：
+
+```bash
+# FlClash 代理开关 (Cmd+Shift+B)
+osascript -e 'tell application "System Events" to keystroke "b" using {command down, shift down}'
+
+# 系统截屏 (Cmd+Shift+3/4/5)
+osascript -e 'tell application "System Events" to keystroke "3" using {command down, shift down}'
+osascript -e 'tell application "System Events" to keystroke "4" using {command down, shift down}'
+
+# Spotlight (Cmd+Space)
+osascript -e 'tell application "System Events" to keystroke space using {command down}'
+
+# 锁屏 (Cmd+Ctrl+Q)
+osascript -e 'tell application "System Events" to keystroke "q" using {command down, control down}'
+
+# 强制退出 (Cmd+Option+Esc)
+osascript -e 'tell application "System Events" to keystroke (character id 27) using {command down, option down}'
+
+# Emoji 键盘 (Fn+E / Globe+E)
+osascript -e 'tell application "System Events" to keystroke "e" using {function down}'
+```
+
+**设计原则**：优先用 App 自己的快捷键而非 GUI 脚本。快捷键是 App 开发者承诺的行为契约——版本升级时变更概率远低于 GUI 元素结构。
+
+### 11.4 键盘映射 — hidutil 自定义键位
+
+> 不需要 Karabiner-Elements。macOS 内置 `hidutil` 可以从 CLI 重新映射任意键。
+
+```bash
+# 查看当前映射
+hidutil property --get "UserKeyMapping"
+
+# Caps Lock → Escape
+hidutil property --set '{"UserKeyMapping":[
+  {"HIDKeyboardModifierMappingSrc":0x700000039,"HIDKeyboardModifierMappingDst":0x700000029}
+]}'
+
+# Right Command → F19 (可以绑到自定义快捷指令)
+hidutil property --set '{"UserKeyMapping":[
+  {"HIDKeyboardModifierMappingSrc":0x7000000E7,"HIDKeyboardModifierMappingDst":0x70000006E}
+]}'
+
+# 常用键码:
+# 0x700000039 = Caps Lock    0x700000029 = Escape
+# 0x7000000E7 = Right Cmd    0x70000006E = F19
+# 0x7000000E6 = Right Opt    0x7000000E0 = Left Ctrl
+# 0x7000000E1 = Left Shift
+```
+
+**持久化**：写到 `~/Library/LaunchAgents/com.user.keymap.plist` → launchd 开机自动加载。
+
+### 11.5 文件标签系统 — Spotlight 的原生分类引擎
+
+> macOS 标签不只是 Finder 里的色块——它是 Spotlight 索引的一等字段，可以程序化读写和搜索。
+
+```bash
+# 搜索所有红色标签的文件
+mdfind "kMDItemUserTags == Red"
+
+# 搜索任意标签（不指定颜色）
+mdfind "kMDItemUserTags == '*'"
+
+# 按标签 + 文件类型组合搜索
+mdfind "kMDItemUserTags == Red && kMDItemContentType == 'net.daringfireball.markdown'"
+
+# 给文件打标签
+xattr -w com.apple.metadata:_kMDItemUserTags '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><array><string>Red</string></array></plist>' file.txt
+
+# 读标签
+mdls -name kMDItemUserTags file.txt
+```
+
+**自动化场景**：
+- 脚本处理完的文件自动打 `Green` 标签 → Finder 侧栏绿色 = "已处理"
+- `mdfind "kMDItemUserTags == Yellow"` → 找出待审核文件
+- 组合标签 `Red\n重要` → 多维度分类不冲突
+
+### 11.6 网络位置 — 一套代理/网络配置的原子切换
+
+> `networksetup` 的 location 功能可以一键切换整套网络设置——不只是代理，包括 DNS、MTU、服务顺序。
+
+```bash
+# 创建位置
+networksetup -createlocation "Office"      # 办公
+networksetup -createlocation "Home"        # 家里（开代理）
+networksetup -createlocation "VPN-Only"    # VPN
+
+# 切换位置（一键）
+networksetup -switchlocation "Home"
+
+# 查看当前
+networksetup -getcurrentlocation
+```
+
+**价值**：比 `proxy-toggle.sh` 更彻底——一个 location 包含代理 + DNS + 接口顺序。切换网络环境 = 一条命令，不依赖 FlClash GUI。
+
+### 11.7 macOS Services — 右键菜单的自动化
+
+> Services（服务）是 macOS 最古老的自动化入口之一——选中文本/文件 → 右键 → Services → 运行。CLI 只能间接触发，但**注册新 Service 是容易的**。
+
+```bash
+# 系统自带的 CLI 可触发 Service:
+# "Show Map" — 选中地址文本 → 右键 → Show Map → 打开 Maps.app
+# "Add to Music as a Spoken Track" — 选中文本 → 转成语音文件
+# "Encode Selected Audio/Video Files" — Finder 中选中媒体 → 批量转码
+# "Set Desktop Picture" — Finder 中选中图片 → 一键设桌面
+# "Chinese Text Converter" — 选中中文 → 繁简转换
+
+# 查看已安装
+ls ~/Library/Services/
+ls /System/Library/Services/
+```
+
+**管线价值**：`Show Map.workflow` 和 `Encode Selected Video Files.workflow` 是系统自带的 Automator workflow——可以打开看实现，作为自定义 workflow 的模板。
+
+### 11.8 Hot Corners — 鼠标抛到角落触发动作
+
+> `defaults write` 一行配置，不需要开系统设置。
+
+```bash
+# 四个角的可设值:
+# 1 = 无, 2 = 调度中心, 3 = 显示桌面, 4 = 仪表盘(已弃用)
+# 5 = 启动屏幕保护程序, 6 = 关闭显示器, 7 = 启动台
+# 10 = 休眠显示器, 11 = 锁定屏幕, 12 = 在调度中心中显示桌面
+
+# 左上角 → 锁屏
+defaults write com.apple.dock wvous-tl-corner -int 11
+# 右下角 → 显示桌面
+defaults write com.apple.dock wvous-br-corner -int 3
+# 右上角 → 启动屏保
+defaults write com.apple.dock wvous-tr-corner -int 5
+
+# 立即生效
+killall Dock
+```
+
+**注意**：这是**全局系统配置**——改了影响所有用户。管线中可以作为"脚本执行完 → 临时设 Hot Corner → 执行完恢复"模式，但不建议永久性修改。
+
+### 11.9 屏幕保护 / 锁屏 — 5 条路径各有不同
+
+```bash
+# 路径1: 直接锁屏（需要密码解锁）
+osascript -e 'tell application "System Events" to sleep'
+
+# 路径2: 启动屏保（如果设置了"需要密码"等同锁屏）
+open -a ScreenSaverEngine
+
+# 路径3: 仅关显示器（不锁屏——适合脚本完成提示）
+pmset displaysleepnow
+
+# 路径4: 长时间 → 系统级休眠
+pmset sleepnow
+
+# 路径5: Cmd+Ctrl+Q（等效锁屏）
+osascript -e 'tell application "System Events" to keystroke "q" using {command down, control down}'
+```
+
+**管线选择**：脚本完成 → `pmset displaysleepnow`（信号："处理完了"但不打断流程）vs `sleep`（"处理完了 + 安全锁"取决于场景）。
+
+### 11.10 hidutil — 不止键映射
+
+```bash
+# 键盘亮度
+hidutil property --matching '{"Product":"Apple Internal Keyboard"}' --get "UserKeyMapping"
+
+# 触摸板设置（需 IOKit）
+# ioreg -c AppleMultitouchDevice  # 查看触摸板参数
+```
+
+### Stage 11 设计原则
+
+1. **机制 > 工具**。URL Scheme 是 Info.plist 级别的协议——App 开发者改 UI 不会动它。快捷键是 App 的行为契约。
+2. **零安装**。这些全部是 macOS 自带——`open`、`hidutil`、`mdfind`、`networksetup`、`osascript` keystroke。
+3. **可组合**。`open` + URL Scheme = 直接从 shell 跳到系统设置的指定面板。`hidutil` + launchd = 开机自动键映射。
+4. **绑定检查**。用这些技巧前先验证：`open "scheme://"` 是否被目标 App 消费？快捷键是否被 App 注册？`mdfind` 能否搜到标签？——不要假设，要实测。
+
+---
+
+## Stage 12: 文件智能引擎 — 上下文感知整理 (★NEW v7)
+
+> **竞品全在回答"这个文件是什么类型"。我们回答"这个文件在你生活里的位置"。**
+>
+> 五源融合：`Calendar × Mail × yabai × Reminders × 学习引擎` — 这是竞品永远做不到的。
+
+### 竞品格局
+
+| 产品 | 定价 | 机制 | 整理 | 上下文 | 隐私 |
+|------|------|------|------|--------|------|
+| **Hazel** | $42 买断 | 规则手写 | ✅ | ❌ 纯文件名匹配 | 本地 |
+| **Sparkle** | $5/月 | 云端 AI | ✅ | ❌ 只看内容 | **云端上传** |
+| **Sortio** | App Store | AI 自然语言 | ✅ | ❌ | 云端 |
+| **CleanMyMac** | $40/年 | 清理+整理 | ⚠️ 全家桶 | ❌ | 本地 |
+| **mac-file-brain** | **免费/Pro $19 买断** | **五源融合 L1→L3** | ✅ | **✅ Calendar×Mail×yabai×Reminders×学习** | **纯本地** |
+
+### 三层分类架构
+
+```
+L1: 元数据 (mdfind + mdls)    → <1s,  覆盖 80% 文件
+L2: 系统上下文                → 2-5s, 覆盖 15%
+L3: 内容理解                  → 30s+, 覆盖 5% (占位——留给本地 LLM)
+```
+
+### 核心魔法：五种上下文桥接
+
+```bash
+# 运行引擎
+bash scripts/mac-file-brain.sh                          # 扫描 ~/Downloads
+bash scripts/mac-file-brain.sh --scan ~/Desktop         # 扫描桌面
+bash scripts/mac-file-brain.sh --json                   # JSON 输出（管线消费）
+bash scripts/mac-file-brain.sh --execute                # 执行整理（安全门禁）
+bash scripts/mac-file-brain.sh --learn                  # 学习引擎状态
+bash scripts/mac-file-brain.sh --export-hazel           # 导出 Hazel 兼容规则
+bash scripts/mac-file-brain.sh --dump-context           # 导出当前生活上下文
+```
+
+**五种桥接**：
+
+| 桥接类型 | 置信度 | 例子 |
+|---------|--------|------|
+| **时间-日历** | 0.5-0.7 | 文件修改于会议「Q3预算审查」前 30 分钟 → 关联会议 |
+| **语义-日历** | 0.8 | 文件名 "budget-2026.xlsx" + 日历事件 "2026 Budget Review" → 关键词重叠 |
+| **发件人** | 0.75 | 文件下载自 vendor@company.com → 匹配邮件发件人 |
+| **语义-邮件** | 0.65 | 文件名与邮件主题关键词重叠 |
+| **工作区** | 0.55 | 当前在 Xcode 中工作 → 代码文件匹配开发上下文 |
+
+### 安全门禁（防止错误自动执行）
+
+```
+自动执行 (低风险):
+  ✅ sort:    移动文件到按类型分类的目标目录 (置信度 ≥65%)
+  ✅ archive: 移动 DMG/zip 到子目录归档       (置信度 ≥75%)
+
+人工审核:
+  🔒 deep_archive: 移动 90+ 天未访问文件到 ~/.archive
+  🔒 group:        基于上下文关联创建项目文件夹
+  🔒 review_large: 100MB+ 大文件——确认是否保留
+
+保护规则:
+  🛡️ 媒体文件 (图片/视频/音频) 永不深度归档——它们是记忆
+  🛡️ 有未保存文档的应用 → 不关闭
+  🛡️ 最近1小时活跃的文件 → 不动
+```
+
+### 自适应学习
+
+```bash
+bash scripts/mac-file-brain.sh --learn
+# → 🧠 学习引擎状态: 19 样本 | 用户接受: N 条 | 活跃规则: N 条
+```
+
+- 自动记录每次整理操作（文件类型→来源目录→目标目录→用户是否接受）
+- 同一模式累积 ≥3 次 → 自动生成规则（置信度 0.6 + 0.1×次数，上限 0.95）
+- 导出 Hazel 兼容规则（不是可导入格式——是逻辑等价描述）
+
+### 菜单栏集成
+
+SwiftBar 插件：`~/Documents/bar/file-brain.60s.sh`
+
+```
+📁 42    ← 42 个文件有整理建议（菜单栏实时显示）
+
+下拉菜单:
+  🔍 完整扫描 ~/Downloads     ← 点击打开终端执行
+  📋 完整扫描 ~/Desktop
+  ───
+  📁 proposal.pdf → ~/Documents/Meetings/Q3-Budget (85%)
+  📦 QoderWork-arm64.dmg → ~/Downloads/DMG (90%)
+  ...
+  ───
+  🧠 学习状态
+  📤 导出 Hazel 规则
+  🔄 刷新
+```
+
+60 秒刷新，5 分钟缓存——不大材小用。
+
+### 和现有管线的协同
+
+```
+mac-file-brain 扫描 → 发现 34 张图片 → 建议移动到 ~/Pictures/Sorted
+    ↓
+    用户确认后 → 触发 mac-workspace.sh --auto (调整 yabai 布局)
+    ↓
+    新文件 → mac-learn.sh 记录模式 → 下次自动识别
+    ↓
+    mac-rules-engine.sh 定时检查 → 新 DMG 文件 >3 天? → 自动归档提醒
+```
+
+### 竞品无法复制的壁垒
+
+1. **yabai 空间感知**：知道你在哪个项目工作——竞品连 yabai 都没装
+2. **Calendar-Mail 融合**：时间+发件人双重匹配——竞品只读文件
+3. **学习引擎闭环**：用户每次操作都是训练数据——越用越准
+4. **纯本地零上传**：Sparkle/Sortio 上传文件到云端——隐私敏感用户不会选它们
+5. **CLI-native 可组合**：输出 JSON → 任何管线都可以消费
+
+---
+
+## Stage 13: 职场自动化管线 ★NEW v8
+
+> 从"工具能做什么"升级到"早晨 8 点需要什么"。6 个脚本覆盖金融职场高频场景。
+
+### 脚本清单
+
+| 脚本 | 功能 | 用法 | 耗时 |
+|------|------|------|------|
+| `mac-morning-briefing.sh` | 晨会材料生成 (Mail+Reminders→Markdown) | `--brief`/`--clipboard`/`--json` | 2-5s |
+| `mac-mail-triage.sh` | 邮件智能分诊 (5条默认规则) | `--stats`/`--dry-run`/`--apply` | <1s |
+| `mac-daily-digest.sh` | 每日信息汇总 | `--brief`/`--clipboard` | 2s |
+| `mac-push-wechat.sh` | 晨报→微信推送 (呆呆 Bot) | 直接运行 | 7s |
+| `mac-research-to-action.sh` | 调研→Δ排序→执行方案 | `--input research.json` `--apply` | <1s |
+| `mac-file-classifier.py` | Hazel级文件分类 (多条件嵌套) | `--rules rules.json --dir ~/Downloads --apply` | <1s |
+
+### 推送管线
+
+```
+mac-morning-briefing.sh → mac-push-wechat.sh → myagents session send → 微信(呆呆)
+                                                                          ↑
+                                                                    Bot session:
+                                                          61212479-b53a-4474-addb-2d6660b0fa86
+```
+
+### 调研→决策→执行 闭环
+
+```
+deep-research workflow → synthesis.actions → mac-research-to-action.sh → Δ排序
+    │                                                        │
+    │                                                        ├── Δ<0.3 → 自动落地
+    │                                                        ├── Δ<0.5 → 生成方案→确认
+    │                                                        └── Δ>0.5 → 输出给用户
+    │
+    └── (deep-research SKILL.md 已自动集成此步骤——对话说"深度调研X"即全自动)
+```
+
+### Cron 定时
+
+```bash
+# 每早 8:00 推晨报到微信
+myagents cron add --name "晨报推送" --prompt "bash ~/.myagents/projects/mino/.claude/skills/macos-automation/scripts/mac-push-wechat.sh" --schedule "0 8 * * *"
+```
+
+---
+
 ## 完整工具库统计
 
 | 类别 | 工具数 | 来源 |
@@ -704,8 +1147,11 @@ GUI 层：窗口是 AppKit（AX 透光）还是 SwiftUI（AX 黑箱）？
 | Stage 7: AppleScript | 12 | 系统应用 + System Events |
 | Stage 8: Homebrew | 22 | brew install |
 | Stage 9: 诊断/深度系统 | 16 | Xcode CLI + Frameworks + 隐藏工具 |
-| Stage 10: 复合管线 | 6 模板 (25+ 工具串联) | 跨阶段脚本 |
-| **合计** | **130** | |
+| Stage 10: 复合管线 | 7 个活跃管线 | 跨阶段脚本 |
+| Stage 11: 技巧性自动化 | 10 种技巧 | URL Schemes / open隐藏flag / osascript keystroke / hidutil / 标签 / 网络位置 / Services / Hot Corners / 锁屏 / hidutil |
+| Stage 12: 文件智能引擎 ★v7 | 1 引擎 + 5 桥接 | Calendar×Mail×yabai×Reminders×学习引擎 五源融合 |
+| **Stage 13: 职场自动化 ★v8** | **6 脚本** | 晨报/分诊/摘要/推送/决策桥接/文件分类 |
+| **合计** | **165+** | |
 
 ## 实测环境
 
@@ -714,4 +1160,94 @@ GUI 层：窗口是 AppKit（AX 透光）还是 SwiftUI（AX 黑箱）？
 - TCC: Accessibility + Full Disk Access + Automation 已授权
 - sudo: 5 个非破坏性命令 NOPASSWD
 - 402 apps installed · 116 automation tools available
-- Test date: 2026-07-18 (v4.3: 118 工具, 10 阶段, App 天花板矩阵, AppleScript 安全陷阱, 6 管线模板, 5 轮实测全通)
+- Test date: 2026-07-19 (v7: 155+ 工具, 12 阶段, +Stage12 文件智能引擎·五源融合, 竞品格局分析)
+
+---
+
+## 附录 A: BSD/Linux 工具链差异全表
+
+> macOS 26.3 实测。40 个常用 CLI 工具的 BSD vs GNU 差异——按自动化脚本影响分级。
+
+### 🔴 Tier 1: 致命 — 静默产生错误结果
+
+| 工具 | Linux (GNU) | macOS (BSD) | 替代方案 |
+|------|-----------|------------|---------|
+| **`sed -i`** | `sed -i 's/a/b/' file` | `sed -i '' 's/a/b/' file` 必须带备份后缀 | `sed -i ''` |
+| **`grep -P`** | Perl regex `\d+` `\s` `\x{hhhh}` | **不存在** | `pcre2grep --utf` (brew) 或 `rg -P` |
+| **`ps sorting`** | `ps aux --sort=-%cpu` | **不存在** `--sort` | `ps aux -r` (CPU)/`ps aux -m` (内存) 或 `\| sort -k3 -rn` |
+| **`killall`** | **杀死所有进程** (极度危险) | 按进程名杀 (`killall Finder`) | 同名命令**完全不同的语义**——Linux 脚本严禁在 Mac 跑 |
+| **`head -n -1`** | 去掉最后一行 | **不支持负数行数** | `sed '$d'` 或 `ghead` (brew coreutils) |
+| **`base64 -d`** | `base64 -d` 解码 | `base64 -D` (大写) | `base64 -D` 或 `base64 --decode` (macOS 26 开始支持) |
+
+### 🟠 Tier 2: 高危 — 会报错但不静默
+
+| 工具 | Linux (GNU) | macOS (BSD) | 替代方案 |
+|------|-----------|------------|---------|
+| **`stat`** | `stat -c '%s' file` | **完全不同的格式**: `stat -f '%z' file` | `-c` → `-f`, `%s` → `%z`, `%Y` → `%m`, 全表见下方 |
+| **`date`** | `date -d '@1234567890'` | `date -r 1234567890` | `-d` → `-r`. 日期运算: `date -v-1d` (昨天) |
+| **`find -printf`** | `find ... -printf '%s %p\n'` | **不存在** | `find ... -exec stat -f '%z %N' {} \;` |
+| **`cp --parents`** | `cp --parents src/a/b dst/` | **不存在** | `ditto src dst` |
+| **`tar --exclude=`** | `--exclude='*.log'` (等号) | `--exclude '*.log'` (空格) | 不用等号 |
+| **`ping 超时`** | `ping -W 1 host` | `ping -t 1 host` | `-W` → `-t` |
+| **`nc 超时`** | `nc -w 1 host port` | `nc -G 1 host port` | `-w` → `-G` |
+| **`top`** | `top -b -n1` 批处理 | `top -l 1 -n 0` | **完全不同的实现**——不能用同一套 flags |
+
+### 🟡 Tier 3: 中危 — 输出格式差异
+
+| 工具 | 差异 | 影响 | 补救 |
+|------|------|------|------|
+| **`wc -c`** | BSD 输出有前导空格 (`      5 file`) | `$(( $(wc -c < file) ))` 跨平台 | `wc -c < file` 或 awk |
+| **`xargs`** | 无 `-r` flag (空输入时默认执行一次) | 空输入时命令被执行(带空参数) | `if [...] then ... \| xargs` 手动判断 |
+| **`du`** | `--max-depth` → `-d` | flag 名不同 | `du -sh -d 1` |
+| **`diff --color`** | macOS 26 已支持 ✅ | 老版本无 | `git diff --no-index` 或 `delta` |
+| **`cut --complement`** | 不存在 | 无反向选择 | `awk` 手动处理 |
+| **`df`** | 列宽不同 | 解析 `df -h /` 时 $NF 位置可能变 | 用 `df -h / \| tail -1 \| awk '{print $5}'` |
+| **`openssl`** | macOS 26: OpenSSL 3.6.3 (已从 LibreSSL 迁回) ✅ | 老版本是 LibreSSL | 加密算法名可能不兼容 |
+
+### 🟢 Tier 4: 存在性差异 — 有没有这个命令
+
+| Linux 有, macOS 无 | macOS 替代 |
+|-------------------|-----------|
+| **`timeout`** | `brew install coreutils` → `gtimeout` 或 `perl -e 'alarm shift; exec @ARGV' N cmd` |
+| **`shuf`** | `sort -R` 或 perl |
+| **`pwdx`** | `lsof -p PID -Fn \| grep '^fcwd'` |
+| **`rename`** (Perl) | `brew install rename` |
+| **`tac`** | `tail -r` |
+| **`watch`** | `while sleep N; do cmd; done` 或 `brew install watch` |
+| **`ip`** | `ifconfig` + `networksetup` |
+| **`md5sum`** | macOS 26: `/sbin/md5sum` 已存在 ✅ (推荐用 `shasum -a 256` 跨平台) |
+
+### 🟢 macOS 26 新修复（前版本差异，现已对齐）
+
+| 工具 | 过去的问题 | macOS 26 实测 |
+|------|----------|-------------|
+| **`realpath`** | 老版本无此命令 | ✅ `/bin/realpath` 可用 |
+| **`readlink -f`** | 不支持 `-f` | ✅ 已支持 |
+| **`sort -h`** | 无 human-numeric | ✅ 已支持 |
+| **`diff --color`** | 无 `--color` | ✅ 已支持 |
+| **`md5sum`** | 无此命令 | ✅ `/sbin/md5sum` 已加入 |
+
+### stat 格式对照全表
+
+| 含义 | Linux `stat -c` | macOS `stat -f` |
+|------|----------------|----------------|
+| 文件大小 (字节) | `%s` | `%z` |
+| 文件名 | `%n` | `%N` |
+| 修改时间 (epoch) | `%Y` | `%m` |
+| 访问时间 (epoch) | `%X` | `%a` |
+| 权限 (八进制) | `%a` | `%p`/`%Sp` |
+| 硬链接数 | `%h` | `%l` |
+| 设备号 | `%d` | `%d` (相同) |
+| inode | `%i` | `%i` (相同) |
+| 用户 ID | `%u` | `%u` |
+| 组 ID | `%g` | `%g` |
+
+### 跨平台脚本三原则
+
+1. **优先 POSIX** —— `shasum` > `md5`/`md5sum`，`sort -k` > `ps --sort`，`awk` > `grep -P`
+2. **用 `command -v` 检测** —— 不假设工具存在：`if command -v gtimeout >/dev/null; then ...`
+3. **输出管道化** —— `wc -c < file` 而非 `wc -c file | awk '{print $1}'`
+
+---
+
+## 实测环境

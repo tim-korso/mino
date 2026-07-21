@@ -91,6 +91,17 @@ const results = await pipeline(
 // 金融搜完立即进入分析，不等科技和消费搜完
 ```
 
+**⚠️ pipeline() 不是 Unix 管道。** 名字有误导性——它不把数据从一个阶段"流过"到下一个阶段。它的真实语义是 **per-item stream**：每个 item 是一条独立的线，在自己的线上串行经过所有 stage。stages 之间没有数据汇聚。
+
+```
+误解：  [A,B,C] → stage1 → [a1,b1,c1] → stage2 → [a2,b2,c2]   ← Unix pipe
+真相：  A → s1→s2→s3
+        B → s1→s2→s3          ← 各自独立流
+        C → s1→s2→s3
+```
+
+**真正需要数据汇聚时**（去重、合并、全局排序）→ 用 `parallel()` 做 barrier，或在 pipeline stage 里累积到闭包变量。
+
 **stage 回调签名**：`(prevResult, originalItem, index) => ...`
 
 **中间 transform 直接用 JS，不需要 barrier：**
@@ -146,7 +157,39 @@ const subResult = await workflow('deep-research', {question: '...'})
 
 ---
 
-## 六大模式
+## 六大模式 + 两个基础设施
+
+### 前置：错误包装 —— null 丢失信息
+
+agent() 失败返回 `null`——不携带原因（API 错？超时？被跳过？schema 不匹配？）。`.filter(Boolean)` 丢弃了"为什么失败"。下游无法根据失败原因做分支。
+
+**包装 agent() 保留失败语义：**
+
+```javascript
+async function safeAgent(task, opts = {}) {
+  try {
+    const result = await agent(task, opts)
+    return { ok: true, value: result, error: null }
+  } catch (e) {
+    return { ok: false, value: null, error: e.message || String(e), task, opts }
+  }
+}
+// 下游可区分处理：
+// results.filter(r => r.ok).map(r => r.value)  // 成功的
+// results.filter(r => !r.ok).map(r => r.error)  // 失败的——可重试
+```
+
+**验证独立于 schema**——schema 只验 JSON 结构，不验语义。正确的分离：
+
+```
+agent({schema}) → 保证 JSON 结构对                   ← 结构验证（工具层）
+agent({verify prompt}) → 保证内容对、没有漏、没有编造  ← 语义验证（独立 agent）
+```
+
+| 验证类型 | 谁做 | 验证什么 | 失败代价 |
+|---------|------|---------|---------|
+| 结构验证 | schema 参数 | JSON 字段类型/必填 | agent 自动重试 |
+| 语义验证 | 独立 verify agent | 内容正确、无遗漏、无编造 | 需要显式重试/修正 |
 
 ### 1. Fan-out — 并行独立搜索
 
@@ -233,6 +276,61 @@ const angles = await parallel([
 ])
 ```
 
+### 7. Verify & Recover — 语义验证 + 条件重试
+
+schema 只保证 JSON 结构。内容的正确性、完整性、是否有编造——需要独立 agent 做否定性搜索验证。
+
+```javascript
+// Step 1: 提取（结构验证——schema 就够了）
+const findings = await agent('从这个报告提取所有数据主张', {
+  schema: FINDINGS_SCHEMA  // → [{id, text, confidence}]
+})
+
+// Step 2: 语义验证——独立 agent 做否定性搜索
+const VERIFY_SCHEMA = {
+  type: 'object',
+  properties: {
+    finding_id: { type: 'string' },
+    verified: { type: 'boolean' },
+    correction: { type: 'string' },       // 如有错误，正确的应该是什么
+    severity: { type: 'string', enum: ['none','minor','major','false'] },
+    evidence: { type: 'string' },          // 验证依据
+  },
+  required: ['finding_id', 'verified', 'severity']
+}
+
+const verified = await pipeline(
+  findings.claims,
+  f => agent(
+    `独立验证这条主张。做否定性搜索——找反面证据。\n主张: ${f.text}\n原始置信度: ${f.confidence}`,
+    { label: `verify:${f.id}`, schema: VERIFY_SCHEMA, effort: 'high' }
+  ),
+  // Stage 2: 如果验证失败→重试（带修正信息）
+  (prev, f) => {
+    if (!prev.verified && prev.severity === 'major') {
+      return agent(
+        `重新提取。上次的问题: ${prev.correction}\n原始上下文: ${f.text}`,
+        { label: `retry:${f.id}`, schema: FINDINGS_SCHEMA }
+      )
+    }
+    return { ...f, verification: prev }  // 通过→带验证记录返回
+  }
+)
+```
+
+### 8. No-silent-caps — 用 log 声明范围
+
+```javascript
+// ❌ 静默截断——结果看起来像全覆盖，实际不是
+const top10 = results.slice(0, 10)
+
+// ✅ 声明覆盖范围
+const ALL = await pipeline(sources, s => agent(s.query))
+log(`覆盖了 ${ALL.length} 个源。前 10 个高置信度进入下一轮。`)
+const verified = await pipeline(ALL.slice(0, 10), r => agent(`验证: ${r}`))
+log(`剩余 ${ALL.length - 10} 个未验证（低优先级）。`)
+```
+
 ---
 
 ## 决策指南
@@ -269,6 +367,18 @@ const results = await pipeline(
 | 只需要一段文本分析 | ❌ 纯文本足够 |
 | 输出要给人读 | ❌ 纯文本 |
 
+**⚠️ schema ≠ 内容验证。** schema 只保证 JSON 结构正确——字段类型对、必填项存在。不保证内容正确、没有编造、没有遗漏。语义层面的错误 schema 检测不到。内容正确性 → 独立 verify agent（见 Pattern 7）。
+
+### 何时不用 Workflow
+
+| 场景 | 为什么不用 | 替代 |
+|------|-----------|------|
+| 任务结构在运行时才发现 | Workflow 是**确定性**脚本——脚本定了结构就定了 | Goal Loop（迭代执行，每轮根据上轮结果调整方向） |
+| 只有 2-3 个简单子任务 | 脚本的 meta/phases/args boilerplate 比执行逻辑还多 | 手动 `Agent()` 工具调用 |
+| Agent 输出需要人工判断后才能决定下一步 | Workflow 没有 pause-and-wait-for-human 机制 | 手动分步执行，每步看完结果再决定 |
+| 需要跨 Workflow 持久状态 | Workflow 间状态不共享——每次是全新执行 | Task Center（持久状态机）或文件/DB |
+| Agent 间需要实时通信/协商 | Workflow agent 之间只能通过脚本变量传递——没有对话/协商机制 | 单次 agent() 调多个 Agent 互相讨论 |
+
 ### Model / Effort 选择
 
 | 任务 | effort | model |
@@ -282,14 +392,16 @@ const results = await pipeline(
 
 ## 常见坑
 
-1. **Barrier 惯性** — 默认写 `parallel()` 等全部 → 实际上 `pipeline()` 才对。只有真正需要 cross-item 聚合才用 barrier。
-2. **忘写 `export const meta`** — 脚本必须以此开头，纯字面量，不能有变量/函数调用。
-3. **Schema 里的 `required`** — 缺了 agent 会反复重试直到超时。只 required 真正必要的字段。
-4. **worktree isolation 滥用** — 只在并行写文件冲突时才用。每 agent ~200-500ms 开销。
-5. **pipeline stage 签名** — 第二个参数是 `(prevResult, originalItem, index)`，不是 `(prevResult)`。用 `originalItem` 做标签比让 stage1 返回带标签的对象干净。
-6. **null 返回值** — agent 失败或被跳过返回 `null`。链式处理前 `.filter(Boolean)`。
-7. **嵌套 workflow 只一层** — `workflow()` 里不能再调 `workflow()`。
-8. **meta.phases 要和 phase() 调用对齐** — 标题一样才能合并到同个进度组。
+1. **Barrier 惯性** — 默认写 `parallel()` 等全部 → 实际上 `pipeline()` 才对。只有真正需要 cross-item 聚合才用 barrier。名字有误导性——`parallel` 比 `pipeline` 更直观地表达"我要并行"。
+2. **pipeline 不是 Unix pipe** — 名字叫 pipeline 但不是 Unix pipe。数据不在 stages 间汇聚。每个 item 在自己的线上独立走完全程。需要汇聚时用 `parallel()` 做 barrier。
+3. **忘写 `export const meta`** — 脚本必须以此开头，纯字面量，不能有变量/函数调用。
+4. **schema 只验结构不验内容** — ❌ 常见误解：有 schema → 输出已验证。✅ 事实：schema 只保证 JSON 字段类型对。语义层面的编造/遗漏/偏误 → 需要独立 verify agent（Pattern 7）。
+5. **Schema 里的 `required`** — 缺了 agent 会反复重试直到超时。只 required 真正必要的字段。
+6. **worktree isolation 滥用** — 只在并行写文件冲突时才用。每 agent ~200-500ms 开销。
+7. **pipeline stage 签名** — 第二个参数是 `(prevResult, originalItem, index)`，不是 `(prevResult)`。用 `originalItem` 做标签比让 stage1 返回带标签的对象干净。
+8. **null 丢失失败原因** — agent 失败返回 `null`——不知道是 API 错、超时、还是被跳过。`.filter(Boolean)` 之后没法根据失败原因做分支。用 safeAgent wrapper 保留错误语义。
+9. **嵌套 workflow 只一层** — `workflow()` 里不能再调 `workflow()`。
+10. **meta.phases 要和 phase() 调用对齐** — 标题一样才能合并到同个进度组。
 
 ---
 
@@ -303,3 +415,7 @@ const results = await pipeline(
 | `deep-research` | 调研引擎 — 消费 Workflow，被本 skill 编排 |
 
 本 skill 是"怎么写 Workflow 脚本"——当你需要写代码来派 agent、管 agent、验证 agent 输出时加载它。
+
+## 扩展参考
+
+- **[Path Exploration Model](references/path-exploration-model.md)** — 路径探索型问题的四层递进模型（Fork-Join → Async DAG → 主动调度 → 内生孵化）。当问题面上链之间有条件依赖，或需要面主动调度、内生新链时使用。核心新原语：`surface()` + `explore()`。

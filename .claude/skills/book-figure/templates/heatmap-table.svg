@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 340" width="600" height="340">
+  <defs>
+    <style>
+      text { font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', sans-serif; }
+    </style>
+  </defs>
+  <rect width="600" height="340" fill="#fafafa"/>
+  <text x="300" y="22" text-anchor="middle" font-size="13" font-weight="700">TITLE_HERE</text>
+
+  <!-- Table -->
+  <!-- Header: COL1(120) COL2(105) COL3(105) COL4(110) COL5(120) = 560 -->
+  <rect x="20" y="35" width="120" height="32" fill="#000"/>
+  <text x="80" y="55" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">COL1_HEADER</text>
+
+  <rect x="140" y="35" width="105" height="32" fill="#000"/>
+  <text x="192" y="55" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">COL2_HEADER</text>
+
+  <rect x="245" y="35" width="105" height="32" fill="#000"/>
+  <text x="297" y="55" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">COL3_HEADER</text>
+
+  <rect x="350" y="35" width="110" height="32" fill="#000"/>
+  <text x="405" y="55" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">COL4_HEADER</text>
+
+  <rect x="460" y="35" width="120" height="32" fill="#000"/>
+  <text x="520" y="55" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">COL5_HEADER</text>
+
+  <!-- Row template (copy for each row, increment Y by 28) -->
+  <!-- Row 1: DANGER -->
+  <rect x="20" y="67" width="120" height="28" fill="#fff" stroke="#ddd" stroke-width="0.5"/>
+  <text x="80" y="85" text-anchor="middle" font-size="11" font-weight="700">ROW1_LABEL</text>
+  <rect x="140" y="67" width="105" height="28" fill="#fee" stroke="#ddd" stroke-width="0.5"/>
+  <text x="192" y="85" text-anchor="middle" font-size="11" font-weight="700" fill="#c00">ROW1_C2</text>
+  <rect x="245" y="67" width="105" height="28" fill="#fff" stroke="#ddd" stroke-width="0.5"/>
+  <text x="297" y="85" text-anchor="middle" font-size="10">ROW1_C3</text>
+  <rect x="350" y="67" width="110" height="28" fill="#fff" stroke="#ddd" stroke-width="0.5"/>
+  <text x="405" y="85" text-anchor="middle" font-size="8">ROW1_C4</text>
+  <rect x="460" y="67" width="120" height="28" fill="#400" stroke="#000" stroke-width="0.8"/>
+  <text x="520" y="85" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">ROW1_C5</text>
+
+  <!-- Row 2: WARNING -->
+  <rect x="20" y="95" width="120" height="28" fill="#fff" stroke="#ddd" stroke-width="0.5"/>
+  <text x="80" y="113" text-anchor="middle" font-size="11" font-weight="700">ROW2_LABEL</text>
+  <rect x="140" y="95" width="105" height="28" fill="#fee" stroke="#ddd" stroke-width="0.5"/>
+  <text x="192" y="113" text-anchor="middle" font-size="11" font-weight="700" fill="#c00">ROW2_C2</text>
+  <rect x="245" y="95" width="105" height="28" fill="#fff" stroke="#ddd" stroke-width="0.5"/>
+  <text x="297" y="113" text-anchor="middle" font-size="10">ROW2_C3</text>
+  <rect x="350" y="95" width="110" height="28" fill="#fff" stroke="#ddd" stroke-width="0.5"/>
+  <text x="405" y="113" text-anchor="middle" font-size="8">ROW2_C4</text>
+  <rect x="460" y="95" width="120" height="28" fill="#600" stroke="#000" stroke-width="0.8"/>
+  <text x="520" y="113" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">ROW2_C5</text>
+
+  <!-- Row 3: HIGHLIGHT -->
+  <rect x="20" y="123" width="120" height="30" fill="#ffe" stroke="#999" stroke-width="1"/>
+  <text x="80" y="142" text-anchor="middle" font-size="12" font-weight="700">ROW3_LABEL ★</text>
+  <rect x="140" y="123" width="105" height="30" fill="#ffe" stroke="#999" stroke-width="1"/>
+  <text x="192" y="142" text-anchor="middle" font-size="11" font-weight="700" fill="#c60">ROW3_C2</text>
+  <rect x="245" y="123" width="105" height="30" fill="#ffe" stroke="#999" stroke-width="1"/>
+  <text x="297" y="142" text-anchor="middle" font-size="10">ROW3_C3</text>
+  <rect x="350" y="123" width="110" height="30" fill="#ffe" stroke="#999" stroke-width="1"/>
+  <text x="405" y="142" text-anchor="middle" font-size="8">ROW3_C4</text>
+  <rect x="460" y="123" width="120" height="30" fill="#fa0" stroke="#000" stroke-width="0.8"/>
+  <text x="520" y="142" text-anchor="middle" font-size="10" font-weight="700" fill="#000">ROW3_C5</text>
+
+  <!-- Bottom note -->
+  <text x="300" y="260" text-anchor="middle" font-size="10" font-style="italic" fill="#555">NOTE_HERE</text>
+
+  <!-- Key insight -->
+  <rect x="80" y="275" width="440" height="35" rx="4" fill="#fff" stroke="#000" stroke-width="1"/>
+  <text x="300" y="297" text-anchor="middle" font-size="11" font-weight="700">INSIGHT_HERE</text>
+
+  <text x="300" y="335" text-anchor="middle" font-size="7" fill="#999">SOURCE_HERE</text>
+</svg>

@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 680" width="520" height="680">
+  <defs><style>text{font-family:'PingFang SC','Hiragino Sans GB','Heiti SC',sans-serif}</style></defs>
+  <rect width="520" height="680" fill="#fafafa"/>
+  <text x="260" y="28" text-anchor="middle" font-size="15" font-weight="700">图：龟——形态学特征示意</text>
+
+  <!-- Ground -->
+  <line x1="60" y1="560" x2="460" y2="560" stroke="#999" stroke-width="0.8" stroke-dasharray="4,4"/>
+
+  <!-- SHELL (carapace) -->
+  <ellipse cx="260" cy="380" rx="150" ry="105" fill="#fff" stroke="#000" stroke-width="2.5"/>
+  <!-- Shell dome highlight -->
+  <ellipse cx="260" cy="360" rx="120" ry="75" fill="none" stroke="#555" stroke-width="0.8"/>
+  <ellipse cx="260" cy="340" rx="80" ry="45" fill="none" stroke="#999" stroke-width="0.5"/>
+
+  <!-- Scutes (shell plates) -->
+  <!-- Central scutes -->
+  <path d="M180,340 L260,300 L340,340 L260,380 Z" fill="none" stroke="#555" stroke-width="1.2"/>
+  <path d="M160,370 L260,340 L360,370 L260,400 Z" fill="none" stroke="#555" stroke-width="1.0"/>
+  <!-- Lateral scutes -->
+  <path d="M180,340 L140,360 L160,370 L200,350" fill="none" stroke="#555" stroke-width="0.8"/>
+  <path d="M340,340 L380,360 L360,370 L320,350" fill="none" stroke="#555" stroke-width="0.8"/>
+  <path d="M160,370 L130,400 L150,410 L180,390" fill="none" stroke="#999" stroke-width="0.6"/>
+  <path d="M360,370 L390,400 L370,410 L340,390" fill="none" stroke="#999" stroke-width="0.6"/>
+
+  <!-- Plastron (belly shell, visible at bottom edge) -->
+  <path d="M140,460 Q260,490 380,460" fill="none" stroke="#000" stroke-width="1.8"/>
+  <path d="M160,465 Q260,485 360,465" fill="#ddd" stroke="none"/>
+
+  <!-- HEAD -->
+  <path d="M140,340 Q100,320 85,300 Q75,285 70,275 Q65,260 72,250 Q80,242 90,245" fill="none" stroke="#000" stroke-width="2.5"/>
+  <path d="M90,245 Q105,230 120,235 Q130,240 135,255 Q140,275 140,300 Q142,320 145,340" fill="none" stroke="#000" stroke-width="2.5"/>
+  <!-- Head fill -->
+  <ellipse cx="105" cy="285" rx="28" ry="32" fill="#fff" stroke="none"/>
+
+  <!-- EYE -->
+  <circle cx="82" cy="272" r="6" fill="#000"/>
+  <circle cx="84" cy="270" r="2" fill="#fff"/>
+
+  <!-- MOUTH -->
+  <path d="M72,290 Q78,296 88,294" fill="none" stroke="#000" stroke-width="1.0"/>
+
+  <!-- NECK -->
+  <line x1="140" y1="330" x2="118" y2="300" stroke="#555" stroke-width="0.8"/>
+  <line x1="142" y1="360" x2="120" y2="340" stroke="#555" stroke-width="0.8"/>
+
+  <!-- FRONT LEFT LEG -->
+  <path d="M160,430 Q140,470 130,515 Q125,540 128,555 Q132,565 142,565" fill="none" stroke="#000" stroke-width="2.3"/>
+  <path d="M142,565 Q150,568 158,564 Q162,558 158,550" fill="none" stroke="#000" stroke-width="1.5"/>
+  <!-- Claws -->
+  <line x1="140" y1="564" x2="138" y2="572" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+  <line x1="148" y1="565" x2="148" y2="574" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+  <line x1="156" y1="562" x2="158" y2="570" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+  <!-- Leg texture -->
+  <path d="M145,460 L150,500" fill="none" stroke="#ddd" stroke-width="0.8"/>
+
+  <!-- FRONT RIGHT LEG -->
+  <path d="M340,430 Q355,470 360,515 Q362,540 358,555 Q354,565 344,565" fill="none" stroke="#000" stroke-width="2.3"/>
+  <path d="M344,565 Q336,568 328,564 Q324,558 328,550" fill="none" stroke="#000" stroke-width="1.5"/>
+  <line x1="330" y1="564" x2="326" y2="572" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+  <line x1="338" y1="565" x2="336" y2="574" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+  <line x1="346" y1="562" x2="348" y2="570" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+
+  <!-- BACK LEFT LEG -->
+  <path d="M180,440 Q160,485 148,525 Q142,550 145,562 Q150,570 158,570" fill="none" stroke="#000" stroke-width="2.5"/>
+  <path d="M158,570 Q168,574 176,568 Q180,560 174,554" fill="none" stroke="#000" stroke-width="1.5"/>
+  <line x1="164" y1="570" x2="165" y2="578" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+  <line x1="172" y1="568" x2="175" y2="576" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+
+  <!-- BACK RIGHT LEG -->
+  <path d="M330,440 Q350,485 360,525 Q365,550 362,562 Q358,570 350,570" fill="none" stroke="#000" stroke-width="2.5"/>
+  <path d="M350,570 Q340,574 332,568 Q328,560 334,554" fill="none" stroke="#000" stroke-width="1.5"/>
+  <line x1="338" y1="570" x2="336" y2="578" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+  <line x1="344" y1="568" x2="342" y2="576" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+
+  <!-- TAIL -->
+  <path d="M400,380 Q420,395 435,410 Q445,420 440,425" fill="none" stroke="#000" stroke-width="1.5"/>
+  <path d="M440,425 Q435,432 425,428 Q418,422 415,415" fill="none" stroke="#000" stroke-width="1.0"/>
+
+  <!-- LABELS -->
+  <!-- Shell/carapace -->
+  <line x1="260" y1="280" x2="260" y2="210" stroke="#000" stroke-width="0.8"/>
+  <circle cx="260" cy="280" r="2.5" fill="#000"/>
+  <text x="268" y="205" font-size="12" font-weight="700">背甲 (carapace)</text>
+  <text x="268" y="221" font-size="10" fill="#555">角质盾片 · 肋骨融合演化</text>
+
+  <!-- Scute -->
+  <line x1="260" y1="340" x2="160" y2="300" stroke="#000" stroke-width="0.8"/>
+  <circle cx="260" cy="340" r="2" fill="#000"/>
+  <text x="130" y="293" text-anchor="end" font-size="10" font-weight="700">盾片 (scute)</text>
+  <text x="130" y="308" text-anchor="end" font-size="9" fill="#555">角蛋白·生长纹</text>
+
+  <!-- Plastron -->
+  <line x1="260" y1="475" x2="340" y2="520" stroke="#000" stroke-width="0.8"/>
+  <circle cx="260" cy="475" r="2" fill="#000"/>
+  <text x="345" y="516" font-size="10" font-weight="700">腹甲 (plastron)</text>
+  <text x="345" y="532" font-size="9" fill="#555">扁平·防护腹面</text>
+
+  <!-- Head -->
+  <line x1="85" y1="248" x2="40" y2="200" stroke="#000" stroke-width="0.8"/>
+  <circle cx="85" cy="248" r="2.5" fill="#000"/>
+  <text x="35" y="193" text-anchor="end" font-size="12" font-weight="700">头部</text>
+  <text x="35" y="208" text-anchor="end" font-size="10" fill="#555">可缩入壳内·无齿喙</text>
+
+  <!-- Claw -->
+  <line x1="156" y1="570" x2="200" y2="610" stroke="#000" stroke-width="0.8"/>
+  <circle cx="156" cy="568" r="2" fill="#000"/>
+  <text x="205" y="606" font-size="10" font-weight="700">爪</text>
+  <text x="205" y="622" font-size="9" fill="#555">趾行·掘穴</text>
+
+  <!-- Tail -->
+  <line x1="435" y1="418" x2="480" y2="440" stroke="#000" stroke-width="0.8"/>
+  <circle cx="435" cy="418" r="2" fill="#000"/>
+  <text x="485" y="436" font-size="10" font-weight="700">尾</text>
+  <text x="485" y="452" font-size="9" fill="#555">短小·泄殖腔</text>
+
+  <!-- Footer -->
+  <text x="260" y="668" text-anchor="middle" font-size="9" fill="#999">图：龟——物体图示例 · 背甲盾片 + 腹甲 + 头尾四肢 · DPT-CP1 四级灰度</text>
+</svg>

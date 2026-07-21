@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 380" width="640" height="380">
+  <defs>
+    <style>
+      text { font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', sans-serif; }
+    </style>
+    <marker id="arrowR" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#000"/>
+    </marker>
+    <marker id="arrowU" markerWidth="6" markerHeight="8" refX="3" refY="0" orient="auto">
+      <path d="M0,8 L3,0 L6,8 Z" fill="#000"/>
+    </marker>
+  </defs>
+  <rect width="640" height="380" fill="#fafafa"/>
+  <text x="320" y="18" text-anchor="middle" font-size="13" font-weight="700">TITLE_HERE</text>
+
+  <!-- Grid area -->
+  <rect x="80" y="30" width="520" height="290" fill="#fafafa" stroke="#ddd" stroke-width="0.5"/>
+
+  <!-- Axes -->
+  <line x1="80" y1="320" x2="600" y2="320" stroke="#000" stroke-width="1.5" marker-end="url(#arrowR)"/>
+  <line x1="80" y1="320" x2="80" y2="30" stroke="#000" stroke-width="1.5" marker-end="url(#arrowU)"/>
+
+  <!-- Axis labels -->
+  <text x="340" y="370" text-anchor="middle" font-size="13" font-weight="700">X_LABEL</text>
+  <text x="25" y="180" text-anchor="middle" font-size="13" font-weight="700" transform="rotate(-90,25,180)">Y_LABEL</text>
+
+  <!-- Grid lines (edit for your data range) -->
+  <line x1="80" y1="280" x2="600" y2="280" stroke="#ddd" stroke-width="0.5" stroke-dasharray="4,4"/>
+  <line x1="80" y1="220" x2="600" y2="220" stroke="#ddd" stroke-width="0.5" stroke-dasharray="2,6"/>
+  <line x1="80" y1="160" x2="600" y2="160" stroke="#ddd" stroke-width="0.5" stroke-dasharray="2,6"/>
+  <line x1="80" y1="100" x2="600" y2="100" stroke="#ddd" stroke-width="0.5" stroke-dasharray="2,6"/>
+  <line x1="184" y1="30" x2="184" y2="320" stroke="#ddd" stroke-width="0.5" stroke-dasharray="4,4"/>
+  <line x1="288" y1="30" x2="288" y2="320" stroke="#ddd" stroke-width="0.5" stroke-dasharray="4,4"/>
+  <line x1="392" y1="30" x2="392" y2="320" stroke="#ddd" stroke-width="0.5" stroke-dasharray="4,4"/>
+  <line x1="496" y1="30" x2="496" y2="320" stroke="#ddd" stroke-width="0.5" stroke-dasharray="4,4"/>
+
+  <!-- Data points (position each with cx,cy; label below) -->
+  <rect x="150" y="280" width="30" height="18" rx="2" fill="#555" stroke="#000" stroke-width="0.8"/>
+  <text x="165" y="293" text-anchor="middle" font-size="8" fill="#fff">ITEM1</text>
+
+  <rect x="280" y="220" width="36" height="18" rx="2" fill="#999" stroke="#000" stroke-width="0.8"/>
+  <text x="298" y="233" text-anchor="middle" font-size="8" fill="#fff">ITEM2</text>
+
+  <rect x="370" y="200" width="36" height="18" rx="2" fill="#aaa" stroke="#000" stroke-width="0.8"/>
+  <text x="388" y="213" text-anchor="middle" font-size="8" fill="#fff">ITEM3</text>
+
+  <rect x="490" y="110" width="40" height="22" rx="2" fill="#000" stroke="#000" stroke-width="1"/>
+  <text x="510" y="124" text-anchor="middle" font-size="9" fill="#fff">ITEM4</text>
+
+  <!-- Source -->
+  <text x="80" y="350" font-size="7" fill="#999">SOURCE_HERE</text>
+</svg>

@@ -15,6 +15,7 @@ workspace/
 
 # Backups
 *.zip
+.claude/hooks/backups/
 
 # Claude Code auto-memory (separate from your memory system)
 .claude-auto-memory/
@@ -22,3 +23,6 @@ workspace/
 # Credentials (never commit secrets)
 .config/
 myagents_files/
+ikebana/.local-packages/
+.claude/plans/myagents/
+workspace/claims.db

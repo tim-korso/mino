@@ -1,9 +1,13 @@
 #!/bin/bash
 # mac-probe — 设计时能力探测器
+# @capability: capability-detection
+# @capability: system-audit
+# @capability: e2e-testing
 # 枚举所有可行方案 → 并行测试 → 报告哪个能用
 #
 # 用法:
 #   mac-probe.sh <capability>           文本报告
+#   mac-probe.sh <capability> --e2e    端到端测试(真实输入验证)
 #   mac-probe.sh <capability> --json    JSON 输出
 #   mac-probe.sh <capability> --refresh 强制重测
 #   mac-probe.sh list                   列出所有能力
@@ -19,7 +23,8 @@ CACHE_TTL=300
 
 cache_get() {
   local key="$1"
-  local f="$CACHE_DIR/$key.json"
+  local script_mtime=$(stat -f %m "$0" 2>/dev/null || echo 0)
+  local f="$CACHE_DIR/${key}_${script_mtime}.json"
   [ -f "$f" ] || return 1
   local age=$(($(date +%s) - $(stat -f %m "$f" 2>/dev/null || echo 0)))
   [ "$age" -lt "$CACHE_TTL" ] || { rm -f "$f"; return 1; }
@@ -28,7 +33,10 @@ cache_get() {
 
 cache_set() {
   local key="$1"
-  cat > "$CACHE_DIR/$key.json"
+  local script_mtime=$(stat -f %m "$0" 2>/dev/null || echo 0)
+  # 清理此能力的旧缓存 (不同 mtime 的)
+  rm -f "$CACHE_DIR/${key}_"*.json 2>/dev/null
+  cat > "$CACHE_DIR/${key}_${script_mtime}.json"
 }
 
 # 计时运行一个测试
@@ -234,11 +242,25 @@ probe_image_detect() {
   fi
   echo ','
   
-  if [ -f "/tmp/_qrread" ]; then
+  # CoreImage QR: 自包含测试 (生成QR→检测, 零外部依赖)
+  if [ ! -f "/tmp/_qrprobe" ]; then
+    cat > /tmp/_qrprobe.swift << 'SWIFT_QR'
+import CoreImage
+let data = "PROBE".data(using: .utf8)!
+let filter = CIFilter(name: "CIQRCodeGenerator")!
+filter.setValue(data, forKey: "inputMessage")
+let qrImage = filter.outputImage!
+let detector = CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: [:])!
+let features = detector.features(in: qrImage)
+print(features.count > 0 ? "CIQR_OK" : "CIQR_FAIL")
+SWIFT_QR
+    swiftc /tmp/_qrprobe.swift -o /tmp/_qrprobe 2>/dev/null
+  fi
+  if [ -f "/tmp/_qrprobe" ]; then
     probe "CoreImage QR" native \
-      "file /tmp/_qrread 2>&1 | grep -q 'Mach-O'"
+      "/tmp/_qrprobe 2>&1 | grep -q 'CIQR_OK'"
   else
-    probe "CoreImage QR" native "false # 未编译"
+    probe "CoreImage QR" native "false # 编译失败"
   fi
   echo ','
   
@@ -261,28 +283,72 @@ probe_image_detect() {
 }
 
 probe_speech_to_text() {
-  # 语音转文字
+  # 语音转文字 — macOS 双栈架构 + whisper-cpp
+  # 深坑见 2026-07-19: DictationIM ≠ SFSpeechRecognizer, 两套独立模型, entitlement门禁
   echo '['
-  
+
+  # A. SFSpeechRecognizer (Speech framework API) — binary + 模型双双检查
   if [ -f "/tmp/_speech2text" ]; then
-    probe "Speech framework" native \
-      "file /tmp/_speech2text 2>&1 | grep -q 'Mach-O'"
+    MODEL_DIR="$HOME/Library/Caches/com.apple.speech.SpeechRecognizerService"
+    MODEL_COUNT=$(find "$MODEL_DIR" -type f 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$MODEL_COUNT" -gt 0 ]; then
+      probe "SFSpeechRecognizer (离线)" native \
+        "file /tmp/_speech2text 2>&1 | grep -q 'Mach-O' && [ $MODEL_COUNT -gt 0 ]"
+    else
+      probe "SFSpeechRecognizer (无模型)" native \
+        "false # binary已编译但模型未下载——需entitlement+签名+Aqua session触发speechdatainstallerd"
+    fi
   else
-    probe "Speech framework" native "false # 未编译——需先跑 mac-speech-transcribe.sh"
+    probe "SFSpeechRecognizer" native "false # 未编译"
   fi
   echo ','
-  
-  probe "whisper (brew)" brew \
-    "which whisper 2>/dev/null && whisper --help 2>&1 | head -1"
+
+  # B. whisper-cpp — 真正可用的离线方案
+  probe "whisper-cpp (cli)" brew \
+    "(whisper-cli 2>&1 || true) | grep -qm1 usage"
   echo ','
-  
-  probe "Dictation (系统)" native \
-    "defaults read com.apple.speech.recognition.AppleSpeechRecognition.prefs 2>&1 | grep -q 'DictationIM'"
+
+  # whisper 模型文件
+  WHISPER_MODEL=""
+  [ -f "$HOME/.myagents/models/ggml-small.bin" ] && WHISPER_MODEL="$HOME/.myagents/models/ggml-small.bin"
+  [ -f "/tmp/ggml-small.bin" ] && WHISPER_MODEL="/tmp/ggml-small.bin"
+  if [ -n "$WHISPER_MODEL" ]; then
+    probe "whisper 中文模型 (small)" native \
+      "ls -la '$WHISPER_MODEL' 2>&1 | grep -q ."
+  else
+    probe "whisper 模型" native "false # 未下载——需 curl -x proxy -L huggingface.co/.../ggml-small.bin"
+  fi
   echo ','
-  
+
+  # C. DictationIM (键盘听写) — 区分在线/离线
+  DICT_ENABLED=$(defaults read com.apple.speech.recognition.AppleSpeechRecognition.prefs DictationIMEnabled 2>/dev/null)
+  DICT_OFFLINE=$(defaults read com.apple.speech.recognition.AppleSpeechRecognition.prefs DictationIMUseOnlyOfflineDictation 2>/dev/null)
+  if [ "$DICT_ENABLED" = "1" ]; then
+    if [ "$DICT_OFFLINE" = "1" ]; then
+      probe "DictationIM (离线)" native \
+        "true # DictationIM已启用+离线模式——按两下Fn触发"
+    else
+      probe "DictationIM (在线)" native \
+        "true # DictationIM已启用但走Apple服务器——非离线方案"
+    fi
+  else
+    probe "DictationIM" native "false # 系统设置中未启用"
+  fi
+  echo ','
+
+  # DictationIM 系统级模型 (独立于 SFSpeechRecognizer)
+  ASSET_COUNT=$(find /System/Library/AssetsV2 -path "*AutomaticSpeechRecognition*" -name "weights.bin" 2>/dev/null | wc -l | tr -d ' ')
+  if [ "$ASSET_COUNT" -gt 0 ]; then
+    probe "DictationIM 模型资产" native \
+      "true # ${ASSET_COUNT}个权重文件——系统级,仅DictationIM可用"
+  else
+    probe "DictationIM 模型资产" native "false # 未下载"
+  fi
+  echo ','
+
   probe "Shortcuts Dictate" native \
     "shortcuts list 2>/dev/null | grep -qi 'dictate\|听写\|语音'"
-  
+
   echo ']'
 }
 
@@ -299,7 +365,7 @@ probe_text_to_speech() {
   echo ','
   
   probe "NSSpeechSynthesizer" native \
-    "swift -e 'import AppKit; print(NSSpeechSynthesizer.availableVoices())' 2>&1; [ \$? -eq 0 ]"
+    "swift -e 'import AppKit; print(NSSpeechSynthesizer.availableVoices.count)' 2>/dev/null | grep -q '^[0-9]'"
   
   echo ']'
 }
@@ -309,7 +375,7 @@ probe_gui_click() {
   echo '['
   
   probe "cliclick" brew \
-    "which cliclick 2>/dev/null && cliclick -V 2>&1"
+    "cliclick -V 2>/dev/null"
   echo ','
   
   probe "osascript System Events" native \
@@ -443,10 +509,134 @@ probe_brew_deps() {
   for tool in "${tools[@]}"; do
     $first || echo ','
     first=false
-    probe "$tool" brew \
-      "which $tool 2>/dev/null && $tool --version 2>&1 | head -1 || $tool --help 2>&1 | head -1"
+    local cmd
+    # 工具特定覆盖: binary名 ≠ probe名, 或 flag ≠ --version
+    case "$tool" in
+      imagemagick) cmd="magick -version 2>&1 | head -1" ;;
+      cliclick)    cmd="cliclick -V 2>&1" ;;
+      *)           cmd="which $tool 2>/dev/null && $tool --version 2>&1 | head -1 || $tool --help 2>&1 | head -1" ;;
+    esac
+    probe "$tool" brew "$cmd"
   done
   
+  echo ']'
+}
+
+probe_input_method() {
+  # 输入法检测+切换 (macOS 26 唯一100%存活面)
+  echo '['
+
+  probe "defaults 当前布局" native     "defaults read com.apple.HIToolbox AppleCurrentKeyboardLayoutInputSourceID 2>&1 | grep -q 'keylayout'"
+  echo ','
+
+  probe "osascript 菜单栏" native     "osascript -e 'tell app "System Events" to tell process "TextInputMenuAgent" to return name of menu bar item 1 of menu bar 1' 2>/dev/null | grep -q ."
+  echo ','
+
+  # Swift Carbon 检测
+  if [ ! -f "/tmp/_imeprobe" ]; then
+    cat > /tmp/_imeprobe.swift << 'SWIFT'
+import Carbon
+if let src = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() {
+    let name = TISGetInputSourceProperty(src, kTISPropertyLocalizedName)
+    if let n = name {
+        print(Unmanaged<CFString>.fromOpaque(n).takeUnretainedValue() as String)
+    }
+}
+SWIFT
+    swiftc /tmp/_imeprobe.swift -o /tmp/_imeprobe 2>/dev/null
+  fi
+  if [ -f "/tmp/_imeprobe" ]; then
+    probe "Swift Carbon 检测" native       "/tmp/_imeprobe 2>&1 | grep -q ."
+  else
+    probe "Swift Carbon 检测" native "false # 编译失败"
+  fi
+  echo ','
+
+  # Swift Carbon 切换
+  if [ ! -f "/tmp/_imeswitch" ]; then
+    cat > /tmp/_imeswitch.swift << 'SWIFT2'
+import Carbon
+if let sources = TISCreateInputSourceList(nil, false)?.takeRetainedValue() as? [TISInputSource] {
+    for src in sources {
+        if let name = TISGetInputSourceProperty(src, kTISPropertyLocalizedName) {
+            let n = Unmanaged<CFString>.fromOpaque(name).takeUnretainedValue() as String
+            if n.contains("ABC") {
+                let err = TISSelectInputSource(src)
+                print(err == noErr ? "SWITCH_OK" : "SWITCH_FAIL")
+                break
+            }
+        }
+    }
+}
+SWIFT2
+    swiftc /tmp/_imeswitch.swift -o /tmp/_imeswitch 2>/dev/null
+  fi
+  if [ -f "/tmp/_imeswitch" ]; then
+    probe "Swift Carbon 切换" native       "/tmp/_imeswitch 2>&1 | grep -q 'SWITCH_OK'"
+  else
+    probe "Swift Carbon 切换" native "false # 编译失败"
+  fi
+
+  echo ']'
+}
+
+probe_audio_device() {
+  # 音频输出设备检测 (CoreAudio原生·零依赖)
+  echo '['
+
+  probe "system_profiler 音频" native     "system_profiler SPAudioDataType 2>&1 | grep -q 'Output'"
+  echo ','
+
+  # Swift CoreAudio
+  if [ ! -f "/tmp/_audioprobe" ]; then
+    cat > /tmp/_audioprobe.swift << 'SWIFT'
+import CoreAudio
+var addr = AudioObjectPropertyAddress(mSelector: kAudioHardwarePropertyDefaultOutputDevice, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
+var deviceID = AudioDeviceID(); var size = UInt32(MemoryLayout<AudioDeviceID>.size)
+let err = AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &addr, 0, nil, &size, &deviceID)
+if err == noErr {
+    var nameAddr = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyDeviceNameCFString, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
+    var name: CFString? = nil; var nameSize = UInt32(MemoryLayout<CFString?>.size)
+    let nameErr = AudioObjectGetPropertyData(deviceID, &nameAddr, 0, nil, &nameSize, &name)
+    if nameErr == noErr, let n = name { print(n as String) } else { print("DeviceID_\(deviceID)") }
+}
+SWIFT
+    swiftc /tmp/_audioprobe.swift -o /tmp/_audioprobe 2>/dev/null
+  fi
+  if [ -f "/tmp/_audioprobe" ]; then
+    probe "Swift CoreAudio" native       "/tmp/_audioprobe 2>&1 | grep -q ."
+  else
+    probe "Swift CoreAudio" native "false # 编译失败"
+  fi
+
+  echo ']'
+}
+
+probe_window_list() {
+  # 窗口列表检测 (CGWindowList·yabai·osascript 三路径)
+  echo '['
+
+  probe "yabai 窗口查询" native     "yabai -m query --windows 2>&1 | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))' 2>/dev/null | grep -q ."
+  echo ','
+
+  probe "osascript 前台窗口" native     "osascript -e 'tell app "System Events" to get name of first process whose frontmost is true' 2>/dev/null | grep -q ."
+  echo ','
+
+  # Swift CGWindowList
+  if [ ! -f "/tmp/_winprobe" ]; then
+    cat > /tmp/_winprobe.swift << 'SWIFT'
+import CoreGraphics
+let windows = CGWindowListCopyWindowInfo(.optionOnScreenOnly, kCGNullWindowID) as? [[String: Any]]
+print(windows?.count ?? 0)
+SWIFT
+    swiftc /tmp/_winprobe.swift -o /tmp/_winprobe 2>/dev/null
+  fi
+  if [ -f "/tmp/_winprobe" ]; then
+    probe "CGWindowList" native       "/tmp/_winprobe 2>&1 | grep -q '^[0-9]'"
+  else
+    probe "CGWindowList" native "false # 编译失败"
+  fi
+
   echo ']'
 }
 
@@ -496,6 +686,9 @@ apple-script    AppleScript连通 (Calendar/Reminders/Mail/Notes/Finder)
 security        安全状态        (SIP/Gatekeeper/TCC/Firewall/XProtect)
 brew-deps       Homebrew依赖   (12个关键工具)
 system-info     系统信息        (system_profiler/sysctl/top/memory_pressure)
+input-method    输入法          (defaults/osascript/Swift Carbon检测+切换)
+audio-device    音频设备        (system_profiler/Swift CoreAudio零依赖)
+window-list     窗口列表        (yabai/osascript/Swift CGWindowList)
 all             全部探头        (一次性跑所有)
 EOF
 }
@@ -556,17 +749,86 @@ main() {
       list_capabilities
       exit 0
       ;;
+    scan|--scan)
+      echo "═══ @capability 扫描 — 能力交叉索引 ═══"
+      echo ""
+      python3 - "$(dirname "$0")" << 'PYEOF'
+import sys, os, re
+scan_dir = sys.argv[1]
+cap_map = {}
+for f in sorted(os.listdir(scan_dir)):
+    if not f.endswith('.sh'): continue
+    with open(os.path.join(scan_dir, f)) as fh:
+        for line in fh:
+            if not line.startswith('# @capability:'): continue
+            cap = line.split('@capability:')[1].strip()
+            cap_map.setdefault(cap, []).append(f)
+for cap in sorted(cap_map):
+    print(f"  {cap:24} → {', '.join(cap_map[cap])}")
+PYEOF
+      echo ""
+      echo "💡 @capability: <能力名> 写在脚本注释头, mac-probe.sh --scan 自动发现"
+      exit 0
+      ;;
     all|-a|--all)
       echo "═══ 全量能力探测 ═══"
       echo ""
-      local total=0 ok_count=0 fail_count=0
-      for c in text-input net-check ocr notify clipboard image-detect speech-to-text text-to-speech gui-click app-detect file-watch browser-url apple-script security brew-deps system-info; do
+      local SELF
+      SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+      for c in text-input net-check ocr notify clipboard image-detect speech-to-text text-to-speech gui-click app-detect file-watch browser-url apple-script security brew-deps system-info input-method audio-device window-list; do
         local data
-        data=$("probe_$c" 2>/dev/null | python3 -c "import sys,json; print(json.dumps(json.load(sys.stdin)))")
-        format_report "$data" "$c" 2>/dev/null
+        data=$(bash "$SELF" "$c" --json --refresh 2>/dev/null)
+        if [ -n "$data" ]; then
+          format_report "$data" "$c" 2>/dev/null
+        else
+          echo "能力: $c"
+          echo "───────────────────────────────────────"
+          echo "  ❌ 探测失败 (无输出)"
+        fi
         echo ""
-        ok_count=$((ok_count + $(echo "$data" | python3 -c "import sys,json; print(len([r for r in json.load(sys.stdin) if r['status']=='ok']))" 2>/dev/null || echo 0)))
       done
+      exit 0
+      ;;
+    e2e|--e2e)
+      echo "═══ 端到端测试 — 编译二进制 =══"
+      echo ""
+      local e2e_ok=0 e2e_fail=0
+      # OCR: 生成纯色图 + 文字 → Vision 识别
+      if [ -f "/tmp/_ocr" ]; then
+        python3 -c "from PIL import Image; img=Image.new('RGB',(200,50),'white'); img.save('/tmp/_e2e_ocr.png')" 2>/dev/null
+        if [ -f /tmp/_e2e_ocr.png ]; then
+          if /tmp/_ocr /tmp/_e2e_ocr.png 2>/dev/null | grep -q .; then
+            echo "  🟢 _ocr (Vision): OK"; e2e_ok=$((e2e_ok+1))
+          else
+            echo "  🔴 _ocr (Vision): 无输出"; e2e_fail=$((e2e_fail+1))
+          fi
+          rm -f /tmp/_e2e_ocr.png
+        fi
+      else
+        echo "  ⚪ _ocr: 未编译,跳过"
+      fi
+      # whisper: 用 say 生成测试音频 → 转录
+      if command -v whisper-cli &>/dev/null && [ -f ~/.myagents/models/ggml-small.bin ]; then
+        say "端到端测试" -o /tmp/_e2e_whisper.aiff 2>/dev/null
+        ffmpeg -y -i /tmp/_e2e_whisper.aiff -ar 16000 -ac 1 /tmp/_e2e_whisper.wav 2>/dev/null
+        if RESULT=$(whisper-cli -m ~/.myagents/models/ggml-small.bin -f /tmp/_e2e_whisper.wav -l zh --no-timestamps 2>/dev/null); then
+          echo "  🟢 whisper-cli: $RESULT"; e2e_ok=$((e2e_ok+1))
+        else
+          echo "  🔴 whisper-cli: 转录失败"; e2e_fail=$((e2e_fail+1))
+        fi
+        rm -f /tmp/_e2e_whisper.*
+      else
+        echo "  ⚪ whisper: 未安装,跳过"
+      fi
+      # TTS: say 中文
+      if say "测试" --voice Tingting -o /tmp/_e2e_tts.aiff 2>/dev/null && [ -f /tmp/_e2e_tts.aiff ]; then
+        echo "  🟢 say (TTS): OK ($(ls -lh /tmp/_e2e_tts.aiff | awk '{print $5}'))"; e2e_ok=$((e2e_ok+1))
+        rm -f /tmp/_e2e_tts.aiff
+      else
+        echo "  🔴 say (TTS): 失败"; e2e_fail=$((e2e_fail+1))
+      fi
+      echo ""
+      echo "端到端: $e2e_ok 通过, $e2e_fail 失败"
       exit 0
       ;;
   esac

@@ -52,6 +52,7 @@ for w in ws:
   local skhd_ok="❌"; pgrep -q skhd && skhd_ok="✅"
   local hs_ok="❌"; pgrep -q Hammerspoon && hs_ok="✅"
   local flclash_ok="❌"; pgrep -q FlClashCo && flclash_ok="✅"
+  local flclash_cpu=$(ps aux 2>/dev/null | awk '/FlClashCore/ && !/awk|grep/ {print $3}' | head -1)
   local swiftbar_ok="❌"; pgrep -q SwiftBar && swiftbar_ok="✅"
 
   if $JSON_OUT; then
@@ -75,7 +76,7 @@ PYEOF
     echo "  ───────────────────────────────────────────"
     echo "  📧 ${mail}未读  ✅ ${reminders}待办  🖥 ${frontmost}"
     echo "  ───────────────────────────────────────────"
-    echo "  🔧 yabai ${yabai_ok}  skhd ${skhd_ok}  Hammerspoon ${hs_ok}  FlClash ${flclash_ok}  SwiftBar ${swiftbar_ok}"
+    echo "  🔧 yabai ${yabai_ok}  skhd ${skhd_ok}  Hammerspoon ${hs_ok}  FlClash ${flclash_ok}(${flclash_cpu:-?}%)  SwiftBar ${swiftbar_ok}"
     echo "  ───────────────────────────────────────────"
     echo "  Top CPU:"
     echo "$procs" | while IFS='|' read -r name cpu mem; do

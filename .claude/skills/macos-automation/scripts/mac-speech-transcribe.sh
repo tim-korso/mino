@@ -1,5 +1,7 @@
 #!/bin/bash
 # mac-speech-transcribe.sh — 离线语音转文字 (Speech 框架, 零配置)
+# @capability: speech-to-text
+# @capability: audio-transcribe
 # 用法: bash mac-speech-transcribe.sh <音频文件>
 #        bash mac-speech-transcribe.sh --mic 5    # 录音 5 秒并转录
 

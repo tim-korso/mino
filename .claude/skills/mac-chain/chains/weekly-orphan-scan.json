@@ -1,0 +1,21 @@
+{
+  "name": "周度孤儿文件扫描",
+  "description": "每周日扫描全盘残留文件（已卸载 App 留下的 plist/缓存/容器），统计+报告，不自动删除。安全：只读 + 敏感度 L1。",
+  "trigger": {"type": "cron", "schedule": "0 10 * * 0"},
+  "steps": [
+    {
+      "tool": "mac-pearcleaner.sh",
+      "args": "--list-orphaned --json",
+      "description": "扫描全盘残留（~30s），输出 JSON。无破坏性。",
+      "on_failure": "continue",
+      "verify": "echo '$OUTPUT' | python3 -c 'import json,sys; d=json.load(sys.stdin); print(f\"{d[\"orphaned_file_count\"]} 残留文件\")'"
+    },
+    {
+      "tool": "mac-observability.sh",
+      "args": "--event cleanup_scan",
+      "description": "记录到 event bus，供趋势跟踪",
+      "on_failure": "continue"
+    }
+  ],
+  "feedback": {"type": "notify", "detail": "发现 {count} 个残留文件 → macOS 通知"}
+}

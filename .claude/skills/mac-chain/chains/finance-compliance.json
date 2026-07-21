@@ -1,0 +1,27 @@
+{
+  "name": "金融文件合规管线",
+  "description": "银行流水/监管发文/客户合同→分类→OCR提取→日历提醒→晨报引用。Hazel触发或手动运行。",
+  "trigger": {"type": "hazel", "schedule": "FSEvents ~/Downloads"},
+  "steps": [
+    {
+      "tool": "mac-file-classifier.py",
+      "args": "--rules ~/.myagents/projects/mino/.claude/skills/macos-automation/config/file-classifier-rules.json --dir ~/Downloads --apply",
+      "description": "多条件分类: 发票→待报销 账单→银行账单 合同→Contracts",
+      "on_failure": "continue",
+      "verify": "test -d ~/Documents/Finance/待报销 && test -d ~/Documents/Finance/银行账单"
+    },
+    {
+      "tool": "mac-ocr.sh",
+      "args": "--file ~/Documents/Finance/银行账单/$(ls -t ~/Documents/Finance/银行账单/ 2>/dev/null | head -1) --json 2>/dev/null",
+      "description": "OCR 提取最新银行账单的金额/日期/账号",
+      "on_failure": "continue"
+    },
+    {
+      "tool": "mac-activity.sh",
+      "args": "--event finance_file_processed 'source=chain,type=compliance'",
+      "description": "写事件总线——供晨报引用",
+      "on_failure": "continue"
+    }
+  ],
+  "feedback": {"type": "log", "detail": "金融文件合规处理完成 → mac-activity.db"}
+}

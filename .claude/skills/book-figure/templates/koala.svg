@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 680" width="520" height="680">
+  <defs><style>text{font-family:'PingFang SC','Hiragino Sans GB','Heiti SC',sans-serif}</style></defs>
+  <rect width="520" height="680" fill="#fafafa"/>
+  <text x="260" y="28" text-anchor="middle" font-size="15" font-weight="700">图：考拉——形态学特征示意</text>
+
+  <!-- Tree branch -->
+  <path d="M20,520 Q100,505 200,510 Q300,518 400,508 Q460,502 500,510" fill="none" stroke="#000" stroke-width="3.0" stroke-linecap="round"/>
+  <path d="M30,518 Q120,503 210,508" fill="none" stroke="#555" stroke-width="1.0"/>
+  <path d="M280,515 Q380,506 480,510" fill="none" stroke="#555" stroke-width="1.0"/>
+
+  <!-- BODY — round, plump, sitting on branch -->
+  <ellipse cx="260" cy="380" rx="100" ry="120" fill="#fff" stroke="#000" stroke-width="2.5"/>
+
+  <!-- Chest lighter area -->
+  <ellipse cx="260" cy="405" rx="55" ry="70" fill="#ddd" stroke="none"/>
+
+  <!-- Fur texture on body -->
+  <path d="M180,340 Q185,345 182,350" fill="none" stroke="#999" stroke-width="0.5"/>
+  <path d="M185,370 Q190,375 187,380" fill="none" stroke="#999" stroke-width="0.5"/>
+  <path d="M340,350 Q335,355 338,360" fill="none" stroke="#999" stroke-width="0.5"/>
+
+  <!-- HEAD — large, round -->
+  <ellipse cx="260" cy="250" rx="80" ry="72" fill="#fff" stroke="#000" stroke-width="2.5"/>
+
+  <!-- EARS — large, fluffy, round -->
+  <!-- Left ear -->
+  <ellipse cx="182" cy="195" rx="35" ry="38" fill="#fff" stroke="#000" stroke-width="2.3"/>
+  <ellipse cx="182" cy="195" rx="20" ry="24" fill="#ddd" stroke="none"/>
+  <!-- Ear fluff -->
+  <path d="M155,185 Q152,178 158,175" fill="none" stroke="#999" stroke-width="0.8"/>
+  <path d="M152,198 Q148,195 154,190" fill="none" stroke="#999" stroke-width="0.8"/>
+  <path d="M160,210 Q155,212 158,218" fill="none" stroke="#999" stroke-width="0.8"/>
+
+  <!-- Right ear -->
+  <ellipse cx="338" cy="195" rx="35" ry="38" fill="#fff" stroke="#000" stroke-width="2.3"/>
+  <ellipse cx="338" cy="195" rx="20" ry="24" fill="#ddd" stroke="none"/>
+  <path d="M365,185 Q368,178 362,175" fill="none" stroke="#999" stroke-width="0.8"/>
+  <path d="M368,198 Q372,195 366,190" fill="none" stroke="#999" stroke-width="0.8"/>
+  <path d="M360,210 Q365,212 362,218" fill="none" stroke="#999" stroke-width="0.8"/>
+
+  <!-- EYES — small relative to head -->
+  <ellipse cx="235" cy="235" rx="7" ry="8" fill="#000"/>
+  <circle cx="237" cy="233" r="2.5" fill="#fff"/>
+  <ellipse cx="285" cy="235" rx="7" ry="8" fill="#000"/>
+  <circle cx="287" cy="233" r="2.5" fill="#fff"/>
+
+  <!-- NOSE — large, prominent, leathery -->
+  <ellipse cx="260" cy="265" rx="22" ry="18" fill="#555" stroke="#000" stroke-width="1.5"/>
+  <!-- Nostrils -->
+  <ellipse cx="252" cy="268" rx="4" ry="3" fill="#000"/>
+  <ellipse cx="268" cy="268" rx="4" ry="3" fill="#000"/>
+  <!-- Nose highlight -->
+  <ellipse cx="256" cy="260" rx="6" ry="3" fill="none" stroke="#999" stroke-width="0.5"/>
+
+  <!-- MOUTH -->
+  <path d="M248,285 Q260,295 272,285" fill="none" stroke="#000" stroke-width="1.0"/>
+
+  <!-- FRONT ARMS — gripping branch -->
+  <!-- Left arm -->
+  <path d="M175,340 Q155,380 148,430 Q142,470 145,505 Q148,515 155,518" fill="none" stroke="#000" stroke-width="2.5"/>
+  <!-- Left paw on branch -->
+  <ellipse cx="158" cy="516" rx="15" ry="8" fill="#fff" stroke="#000" stroke-width="1.8"/>
+  <line x1="148" y1="518" x2="144" y2="524" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+  <line x1="155" y1="520" x2="153" y2="527" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+  <line x1="163" y1="520" x2="163" y2="527" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+
+  <!-- Right arm -->
+  <path d="M345,340 Q365,380 372,430 Q378,470 375,505 Q372,515 365,518" fill="none" stroke="#000" stroke-width="2.5"/>
+  <!-- Right paw on branch -->
+  <ellipse cx="362" cy="516" rx="15" ry="8" fill="#fff" stroke="#000" stroke-width="1.8"/>
+  <line x1="372" y1="518" x2="376" y2="524" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+  <line x1="365" y1="520" x2="367" y2="527" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+  <line x1="357" y1="520" x2="357" y2="527" stroke="#000" stroke-width="1.0" stroke-linecap="round"/>
+
+  <!-- BACK LEGS — gripping branch behind body -->
+  <!-- Left back leg -->
+  <path d="M190,460 Q175,490 168,510 Q162,520 170,522" fill="none" stroke="#000" stroke-width="2.3"/>
+  <ellipse cx="173" cy="520" rx="14" ry="7" fill="#fff" stroke="#000" stroke-width="1.5"/>
+
+  <!-- Right back leg -->
+  <path d="M330,460 Q345,490 352,510 Q358,520 350,522" fill="none" stroke="#000" stroke-width="2.3"/>
+  <ellipse cx="347" cy="520" rx="14" ry="7" fill="#fff" stroke="#000" stroke-width="1.5"/>
+
+  <!-- LABELS -->
+  <!-- Ear -->
+  <line x1="182" y1="158" x2="100" y2="120" stroke="#000" stroke-width="0.8"/>
+  <circle cx="182" cy="158" r="2.5" fill="#000"/>
+  <text x="95" y="113" text-anchor="end" font-size="12" font-weight="700">耳廓</text>
+  <text x="95" y="128" text-anchor="end" font-size="10" fill="#555">大而圆·绒毛密布·听觉灵敏</text>
+
+  <!-- Nose -->
+  <line x1="282" y1="265" x2="370" y2="235" stroke="#000" stroke-width="0.8"/>
+  <circle cx="282" cy="265" r="2.5" fill="#000"/>
+  <text x="375" y="230" font-size="12" font-weight="700">鼻镜 (rhinarium)</text>
+  <text x="375" y="246" font-size="10" fill="#555">大而裸露·革质·嗅觉核心</text>
+
+  <!-- Pouch (marsupial) -->
+  <line x1="235" y1="440" x2="140" y2="460" stroke="#000" stroke-width="0.8"/>
+  <circle cx="235" cy="440" r="2.5" fill="#000"/>
+  <text x="135" y="453" text-anchor="end" font-size="10" font-weight="700">育儿袋 (pouch)</text>
+  <text x="135" y="468" text-anchor="end" font-size="9" fill="#555">有袋类·开口向后</text>
+
+  <!-- Branch -->
+  <line x1="420" y1="508" x2="480" y2="480" stroke="#000" stroke-width="0.8"/>
+  <circle cx="420" cy="508" r="2" fill="#000"/>
+  <text x="485" y="475" font-size="10" font-weight="700">树栖 (arboreal)</text>
+  <text x="485" y="491" font-size="9" fill="#555">桉树枝干·强握力爪</text>
+
+  <!-- Diet -->
+  <line x1="290" y1="300" x2="400" y2="310" stroke="#000" stroke-width="0.8"/>
+  <text x="405" y="306" font-size="10" font-weight="700">食性</text>
+  <text x="405" y="322" font-size="9" fill="#555">专食桉叶 · 低营养 · 久睡</text>
+
+  <!-- Footer -->
+  <text x="260" y="668" text-anchor="middle" font-size="9" fill="#999">图：考拉——物体图示例 · 树栖有袋类 · DPT-CP1 四级灰度</text>
+</svg>

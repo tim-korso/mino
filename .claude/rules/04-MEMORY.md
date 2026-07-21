@@ -34,6 +34,7 @@
 | **macOS Automation Skill** ★NEW | `memory/topics/macos-automation.md` | 2026-07-18 v5。130工具·10阶段·App天花板矩阵·AppleScript安全陷阱·7管线脚本。全部实测全通 |
 | **book-figure — AI 配图** ★NEW | `memory/topics/book-figure.md` | 2026-07-15。通义万相生成线稿 + Qwen-VL 视觉定位 + SVG DPT-CP1 标注。**核心突破**：扩散模型做生成、VLM 做定位——分而治之，不逼一个模型做两件事 |
 | **smmart — 资源下载** ★ | `memory/topics/smmart.md` | 2026-07-18。三层管线(快速/中等/慢速) + 11 平台云盘链接验证(dl-validate) + 错误恢复层(7类信号→7种动作)。核心洞见：云盘链接验证可自动化——匿名 API 无需登录 |
+| **潜规则判断引擎 — Unwritten** ★NEW | `memory/topics/unwritten-rules.md` | 2026-07-19 v1。chinese-politics 书 7 章传导链框架（吴思×孔飞力×黄仁宇×周雪光）编码为 5.4KB system prompt。框架 vs 裸 LLM 对照测试已验证：多出权力分析/合法伤害权/规则切换/位置分析四个维度。Skill + CLI 已交付 |
 
 ## Critical Lessons
 
@@ -64,6 +65,7 @@
 - **macOS 26 SwiftUI AX 黑箱 (2026-07-18)**：System Settings 和 Mail 设置窗口的 SwiftUI 内容区对 System Events Accessibility 完全不透光——只暴露 toolbar 按钮，内部控件是 AXGroup 黑箱。GUI 脚本化在此类窗口上不可靠。键盘 Tab 导航不稳定且无反馈。
 - **iCloud CloudKit 秒级覆盖 (2026-07-18)**：bird 守护进程以 CloudKit 为权威源——本地 plist 修改 <3s 被覆盖。绕过: 写到 Unsynced 等价文件(如 UnsyncedRules.plist)。注意: Unsynced 文件的条件字段生效，动作字段被过滤(安全限制)。这个模型适用于所有 iCloud-synced App (Notes/Calendar/Reminders/Safari/Contacts)。
 - **BSD 工具链 Unicode 盲区 (2026-07-18)**：macOS BSD grep 无 `-P` (Perl regex)——Unicode 类 `\x{hhhh}` 不可用。`stat -f` vs `stat -c`、`sed -i ''` vs `sed -i`、`find` 无 `-printf`——都是 Mac/Linux 自动化脚本的经典互坑点。统一用 Python 做 Unicode 处理，或用 Homebrew 的 `rg`/`pcregrep`。
+- **CLI 输出格式不是 API 契约 (2026-07-19)**：macOS 26 安全审计脚本 5 个 awk 解析失败——`spctl --status` 输出去掉了冒号、`socketfilterfw` 各子命令的输出格式全变、XProtect 从 bundle 迁到 plist。`awk '{print $N}'` 是最脆弱的解析方式——假设了不存在的稳定性。**原则：CLI 输出给人看，plist/db/API 给脚本看。** `defaults read` 的 key、TCC.db 的 schema、`system_profiler -xml` 的结构是程序化接口——Apple 改它们的成本远高于改人读的英文。跨版本稳定的自动化必须走程序化接口，不解析人读文本。
 - **ClashMeta TUN stack 2000 倍 CPU 差距 (2026-07-18)**：FlClash 的 `mixed` stack = 194% CPU (28线程忙轮询——macOS kqueue 限制)，`gvisor` stack = 0.1% CPU。重装 FlClash + 清偏好后自动切到 gvisor。不是所有代理都有这问题——ClashMeta 内核特有问题。
 - **代理 App 配置不可程序化修改 (2026-07-18)**：FlClash 的 `flutter.config` 通过 `defaults import` 修改后破坏 GUI↔Core 状态同步。Surge 破解仓库被 DMCA。VLESS 协议 Surge 不支持。代理 App 是自动化天花板矩阵的新条目——三层(API×GUI×存储)全封死。
 - **cognitive-license 自检设计决策有效 (2026-07-18)**："构建者不能验证自己输出"的元规则再次验证——对 smmart 设计讨论跑 cognitive-license，发现 C018（"链接验证必须亲自试"）被实测推翻、C022（"提取码→链接维护"）因果倒置被 REJECT。自己设计自己审 = 盲区，第三方冷启动评估发现真问题。

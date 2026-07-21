@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 680" width="520" height="680">
+  <defs><style>text{font-family:'PingFang SC','Hiragino Sans GB','Heiti SC',sans-serif}</style></defs>
+  <rect width="520" height="680" fill="#fafafa"/>
+  <text x="260" y="28" text-anchor="middle" font-size="15" font-weight="700">图：兔——形态学特征示意</text>
+
+  <!-- Ground shadow -->
+  <ellipse cx="260" cy="595" rx="140" ry="12" fill="#ddd"/>
+
+  <!-- EARS -->
+  <!-- Left ear -->
+  <path d="M210,165 Q195,80 200,55 Q205,30 218,38 Q230,45 228,65 Q232,100 228,162" fill="#fff" stroke="#000" stroke-width="2.0"/>
+  <path d="M208,155 Q202,85 206,60 Q210,42 218,45" fill="#ddd" stroke="none"/>
+  <!-- Right ear -->
+  <path d="M290,165 Q305,75 305,52 Q305,28 318,36 Q330,43 328,63 Q325,100 320,162" fill="#fff" stroke="#000" stroke-width="2.0"/>
+  <path d="M298,152 Q304,80 302,58 Q300,44 306,42" fill="#ddd" stroke="none"/>
+
+  <!-- HEAD -->
+  <ellipse cx="260" cy="210" rx="70" ry="65" fill="#fff" stroke="#000" stroke-width="2.0"/>
+  <!-- Cheek fluff -->
+  <path d="M195,210 Q185,215 190,225 Q195,230 200,225" fill="none" stroke="#000" stroke-width="1.5"/>
+  <path d="M325,210 Q335,215 330,225 Q325,230 320,225" fill="none" stroke="#000" stroke-width="1.5"/>
+
+  <!-- EYES -->
+  <ellipse cx="238" cy="200" rx="10" ry="12" fill="#000"/>
+  <circle cx="242" cy="196" r="3.5" fill="#fff"/>
+  <circle cx="235" cy="204" r="1.5" fill="#fff"/>
+  <ellipse cx="282" cy="200" rx="10" ry="12" fill="#000"/>
+  <circle cx="286" cy="196" r="3.5" fill="#fff"/>
+  <circle cx="279" cy="204" r="1.5" fill="#fff"/>
+
+  <!-- NOSE -->
+  <path d="M256,222 L264,222 L260,228 Z" fill="#555"/>
+
+  <!-- MOUTH -->
+  <path d="M252,232 Q260,242 268,232" fill="none" stroke="#000" stroke-width="1.0"/>
+  <line x1="260" y1="228" x2="260" y2="236" stroke="#000" stroke-width="0.8"/>
+
+  <!-- WHISKERS -->
+  <line x1="195" y1="218" x2="225" y2="222" stroke="#555" stroke-width="0.8"/>
+  <line x1="193" y1="228" x2="223" y2="228" stroke="#555" stroke-width="0.8"/>
+  <line x1="325" y1="218" x2="295" y2="222" stroke="#555" stroke-width="0.8"/>
+  <line x1="327" y1="228" x2="297" y2="228" stroke="#555" stroke-width="0.8"/>
+
+  <!-- BODY -->
+  <ellipse cx="260" cy="380" rx="95" ry="110" fill="#fff" stroke="#000" stroke-width="2.0"/>
+  <!-- Belly -->
+  <ellipse cx="260" cy="400" rx="55" ry="70" fill="#ddd" stroke="#999" stroke-width="0.8"/>
+
+  <!-- FRONT LEGS -->
+  <path d="M185,340 Q175,400 178,460 Q180,510 185,540 Q188,555 195,562" fill="none" stroke="#000" stroke-width="2.0"/>
+  <path d="M195,562 Q200,568 210,568 Q218,565 220,558" fill="none" stroke="#000" stroke-width="1.5"/>
+  <path d="M335,340 Q345,400 342,460 Q340,510 335,540 Q332,555 325,562" fill="none" stroke="#000" stroke-width="2.0"/>
+  <path d="M325,562 Q320,568 310,568 Q302,565 300,558" fill="none" stroke="#000" stroke-width="1.5"/>
+
+  <!-- Front paw toes -->
+  <line x1="207" y1="562" x2="207" y2="570" stroke="#555" stroke-width="0.6"/>
+  <line x1="199" y1="560" x2="197" y2="568" stroke="#555" stroke-width="0.6"/>
+  <line x1="310" y1="562" x2="308" y2="570" stroke="#555" stroke-width="0.6"/>
+  <line x1="318" y1="560" x2="320" y2="568" stroke="#555" stroke-width="0.6"/>
+
+  <!-- BACK LEGS -->
+  <path d="M195,420 Q170,480 172,540 Q174,570 185,580" fill="none" stroke="#000" stroke-width="2.0"/>
+  <path d="M185,580 Q190,590 200,592 Q208,590 210,582" fill="none" stroke="#000" stroke-width="1.5"/>
+  <path d="M325,420 Q350,480 348,540 Q346,570 335,580" fill="none" stroke="#000" stroke-width="2.0"/>
+  <path d="M335,580 Q330,590 320,592 Q312,590 310,582" fill="none" stroke="#000" stroke-width="1.5"/>
+
+  <!-- TAIL -->
+  <circle cx="260" cy="480" r="22" fill="#fff" stroke="#000" stroke-width="1.5"/>
+  <circle cx="260" cy="480" r="14" fill="#ddd" stroke="none"/>
+  <!-- Tail fluff -->
+  <path d="M248,472 Q240,465 245,458" fill="none" stroke="#999" stroke-width="0.6"/>
+  <path d="M272,472 Q280,465 275,458" fill="none" stroke="#999" stroke-width="0.6"/>
+  <path d="M248,488 Q240,495 245,502" fill="none" stroke="#999" stroke-width="0.6"/>
+  <path d="M272,488 Q280,495 275,502" fill="none" stroke="#999" stroke-width="0.6"/>
+
+  <!-- CARROT (held) -->
+  <path d="M200,420 Q190,410 185,400 Q182,392 186,388" fill="none" stroke="#000" stroke-width="1.5"/>
+  <path d="M186,388 L170,340 L178,338 L190,385" fill="#fff" stroke="#000" stroke-width="1.5"/>
+  <path d="M178,338 L168,330" fill="none" stroke="#000" stroke-width="1.2"/>
+  <path d="M180,342 L172,328" fill="none" stroke="#000" stroke-width="1.2"/>
+  <!-- Carrot lines -->
+  <line x1="176" y1="355" x2="185" y2="360" stroke="#555" stroke-width="0.5"/>
+  <line x1="173" y1="368" x2="182" y2="372" stroke="#555" stroke-width="0.5"/>
+  <line x1="171" y1="380" x2="180" y2="383" stroke="#555" stroke-width="0.5"/>
+
+  <!-- LABELS -->
+  <line x1="220" y1="58" x2="120" y2="40" stroke="#000" stroke-width="0.8"/>
+  <circle cx="220" cy="58" r="2.5" fill="#000"/>
+  <text x="115" y="35" text-anchor="end" font-size="12" font-weight="700">耳廓 (pinna)</text>
+  <text x="115" y="51" text-anchor="end" font-size="10" fill="#555">长耳·血管丰富·散热</text>
+
+  <line x1="350" y1="195" x2="420" y2="170" stroke="#000" stroke-width="0.8"/>
+  <circle cx="350" cy="195" r="2.5" fill="#000"/>
+  <text x="425" y="165" font-size="12" font-weight="700">眼</text>
+  <text x="425" y="181" font-size="10" fill="#555">侧位·广角视野</text>
+
+  <line x1="440" y1="460" x2="490" y2="480" stroke="#000" stroke-width="0.8"/>
+  <circle cx="440" cy="460" r="2.5" fill="#000"/>
+  <text x="495" y="475" font-size="12" font-weight="700">后肢</text>
+  <text x="495" y="491" font-size="10" fill="#555">跳跃力·跖行</text>
+
+  <line x1="310" y1="480" x2="420" y2="520" stroke="#000" stroke-width="0.8"/>
+  <circle cx="310" cy="480" r="2.5" fill="#000"/>
+  <text x="425" y="515" font-size="12" font-weight="700">尾 (scut)</text>
+  <text x="425" y="531" font-size="10" fill="#555">短尾·绒球状</text>
+
+  <!-- Footer -->
+  <text x="260" y="658" text-anchor="middle" font-size="9" fill="#999">图：兔——物体图示例 · DPT-CP1 四级灰度 + 解剖标注 · 非严格比例</text>
+</svg>

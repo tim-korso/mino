@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 380" width="620" height="380">
+  <defs>
+    <style>
+      text { font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', sans-serif; }
+    </style>
+  </defs>
+  <rect width="620" height="380" fill="#fafafa"/>
+  <text x="310" y="22" text-anchor="middle" font-size="13" font-weight="700">TITLE_HERE</text>
+
+  <!-- Timeline axis -->
+  <line x1="50" y1="80" x2="590" y2="80" stroke="#000" stroke-width="2"/>
+  <circle cx="50" cy="80" r="4" fill="#000"/>
+  <circle cx="590" cy="80" r="4" fill="#000"/>
+
+  <!-- 5 frequency markers (90, 210, 330, 450, 550) -->
+  <!-- FR1 -->
+  <line x1="90" y1="75" x2="90" y2="110" stroke="#000" stroke-width="1"/>
+  <rect x="20" y="115" width="140" height="115" rx="5" fill="#fff" stroke="#000" stroke-width="1.2"/>
+  <rect x="20" y="115" width="140" height="24" rx="5" fill="#000"/>
+  <text x="90" y="131" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">FREQ_1</text>
+  <text x="35" y="155" font-size="9">• item</text>
+  <text x="35" y="170" font-size="9">• item</text>
+
+  <!-- FR2 -->
+  <line x1="210" y1="75" x2="210" y2="110" stroke="#000" stroke-width="1"/>
+  <rect x="140" y="115" width="140" height="115" rx="5" fill="#fff" stroke="#000" stroke-width="1.2"/>
+  <rect x="140" y="115" width="140" height="24" rx="5" fill="#555"/>
+  <text x="210" y="131" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">FREQ_2</text>
+  <text x="155" y="155" font-size="9">• item</text>
+
+  <!-- FR3 -->
+  <line x1="330" y1="75" x2="330" y2="110" stroke="#000" stroke-width="1"/>
+  <rect x="260" y="115" width="140" height="115" rx="5" fill="#ffe" stroke="#000" stroke-width="1.2"/>
+  <rect x="260" y="115" width="140" height="24" rx="5" fill="#888"/>
+  <text x="330" y="131" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">FREQ_3</text>
+  <text x="275" y="155" font-size="9">• item</text>
+
+  <!-- FR4 -->
+  <line x1="450" y1="75" x2="450" y2="110" stroke="#000" stroke-width="1.5"/>
+  <rect x="380" y="115" width="140" height="115" rx="5" fill="#fee" stroke="#000" stroke-width="1.5"/>
+  <rect x="380" y="115" width="140" height="24" rx="5" fill="#000"/>
+  <text x="450" y="131" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">★ FREQ_4</text>
+  <text x="395" y="155" font-size="9">• item</text>
+
+  <!-- FR5 -->
+  <line x1="550" y1="75" x2="550" y2="110" stroke="#000" stroke-width="1.5"/>
+  <rect x="480" y="115" width="130" height="115" rx="5" fill="#efe" stroke="#000" stroke-width="1.5"/>
+  <rect x="480" y="115" width="130" height="24" rx="5" fill="#000"/>
+  <text x="545" y="131" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">FREQ_5</text>
+  <text x="495" y="155" font-size="9">• item</text>
+
+  <!-- What NOT to do -->
+  <rect x="20" y="255" width="580" height="55" rx="6" fill="#fff" stroke="#c00" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="310" y="277" text-anchor="middle" font-size="11" font-weight="700" fill="#c00">✕ 绝对不要做的事</text>
+  <text x="110" y="298" font-size="9">DONT_1</text>
+  <text x="310" y="298" font-size="9">DONT_2</text>
+  <text x="520" y="298" font-size="9">DONT_3</text>
+
+  <!-- Quote -->
+  <rect x="60" y="325" width="500" height="42" rx="5" fill="#000"/>
+  <text x="310" y="345" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">QUOTE_HERE</text>
+  <text x="310" y="360" text-anchor="middle" font-size="9" fill="#aaa">ATTRIBUTION</text>
+</svg>

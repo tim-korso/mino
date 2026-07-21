@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 680" width="520" height="680">
+  <defs>
+    <style>
+      text { font-family: 'PingFang SC', 'Hiragino Sans GB', 'Heiti SC', sans-serif; }
+    </style>
+  </defs>
+  <rect width="520" height="680" fill="#fafafa"/>
+
+  <!-- TITLE -->
+  <text x="260" y="25" text-anchor="middle" font-size="15" font-weight="700">TITLE_HERE</text>
+
+  <!-- Cross-section frame -->
+  <rect x="50" y="45" width="350" height="520" fill="#fff" stroke="#000" stroke-width="2.0"/>
+
+  <!-- LAYER 1 (top, boundary) -->
+  <rect x="50" y="45" width="350" height="30" fill="#ddd"/>
+  <text x="65" y="65" font-size="12" font-weight="700">LAYER_1_NAME</text>
+  <text x="250" y="65" font-size="10" fill="#555">description</text>
+
+  <!-- LAYER 2 -->
+  <rect x="50" y="75" width="350" height="45" fill="#fff" stroke="#999" stroke-width="0.5"/>
+  <text x="65" y="95" font-size="12" font-weight="700">LAYER_2_NAME</text>
+  <text x="65" y="112" font-size="10" fill="#555">description</text>
+
+  <!-- LAYER 3 -->
+  <rect x="50" y="120" width="350" height="40" fill="#ddd"/>
+  <text x="65" y="140" font-size="12" font-weight="700">LAYER_3_NAME</text>
+  <text x="65" y="157" font-size="10" fill="#555">description with cell body circles</text>
+  <!-- Cell body indicators -->
+  <circle cx="130" cy="148" r="6" fill="none" stroke="#000" stroke-width="1.0"/>
+  <circle cx="180" cy="145" r="7" fill="none" stroke="#000" stroke-width="1.0"/>
+  <circle cx="240" cy="148" r="6" fill="none" stroke="#000" stroke-width="1.0"/>
+
+  <!-- LAYER 4 (synaptic) -->
+  <rect x="50" y="160" width="350" height="35" fill="#fff" stroke="#999" stroke-width="0.5"/>
+  <text x="65" y="178" font-size="12" font-weight="700">LAYER_4_NAME</text>
+  <text x="65" y="192" font-size="10" fill="#555">synaptic zone</text>
+  <circle cx="120" cy="182" r="1.5" fill="#000"/>
+  <circle cx="160" cy="185" r="1.5" fill="#000"/>
+  <circle cx="200" cy="180" r="1.5" fill="#000"/>
+  <circle cx="240" cy="184" r="1.5" fill="#000"/>
+  <circle cx="280" cy="181" r="1.5" fill="#000"/>
+
+  <!-- LAYER 5 -->
+  <rect x="50" y="195" width="350" height="40" fill="#ddd"/>
+  <text x="65" y="215" font-size="12" font-weight="700">LAYER_5_NAME</text>
+  <text x="65" y="232" font-size="10" fill="#555">description</text>
+
+  <!-- LAYER 6 (synaptic) -->
+  <rect x="50" y="235" width="350" height="35" fill="#fff" stroke="#999" stroke-width="0.5"/>
+  <text x="65" y="253" font-size="12" font-weight="700">LAYER_6_NAME</text>
+  <text x="65" y="267" font-size="10" fill="#555">synaptic zone</text>
+
+  <!-- LAYER 7 -->
+  <rect x="50" y="270" width="350" height="45" fill="#ddd"/>
+  <text x="65" y="290" font-size="12" font-weight="700">LAYER_7_NAME</text>
+  <text x="65" y="307" font-size="10" fill="#555">dense cell bodies</text>
+  <circle cx="100" cy="300" r="4" fill="none" stroke="#000" stroke-width="0.8"/>
+  <circle cx="120" cy="298" r="4" fill="none" stroke="#000" stroke-width="0.8"/>
+  <circle cx="140" cy="301" r="4" fill="none" stroke="#000" stroke-width="0.8"/>
+  <circle cx="160" cy="297" r="4" fill="none" stroke="#000" stroke-width="0.8"/>
+
+  <!-- LAYER 8 (boundary) -->
+  <rect x="50" y="315" width="350" height="25" fill="#fff" stroke="#999" stroke-width="0.5"/>
+  <text x="65" y="332" font-size="12" font-weight="700">LAYER_8_NAME</text>
+  <text x="250" y="332" font-size="10" fill="#555">boundary membrane</text>
+
+  <!-- LAYER 9 (active zone) -->
+  <rect x="50" y="340" width="350" height="65" fill="#ddd"/>
+  <text x="65" y="360" font-size="12" font-weight="700">LAYER_9_NAME</text>
+  <text x="65" y="378" font-size="10" fill="#555">active zone with detailed substructure</text>
+  <!-- Substructure indicators -->
+  <line x1="100" y1="390" x2="100" y2="398" stroke="#000" stroke-width="0.5"/>
+  <line x1="120" y1="392" x2="120" y2="398" stroke="#000" stroke-width="0.5"/>
+  <line x1="140" y1="388" x2="140" y2="398" stroke="#000" stroke-width="0.5"/>
+  <line x1="200" y1="390" x2="200" y2="398" stroke="#000" stroke-width="0.5"/>
+  <line x1="250" y1="392" x2="250" y2="398" stroke="#000" stroke-width="0.5"/>
+
+  <!-- LAYER 10 (base, critical) -->
+  <rect x="50" y="405" width="350" height="45" fill="#555"/>
+  <text x="65" y="425" font-size="12" font-weight="700" fill="#fff">LAYER_10_NAME</text>
+  <text x="65" y="442" font-size="10" fill="#ddd">critical boundary layer</text>
+
+  <!-- Bottom structure -->
+  <rect x="50" y="450" width="350" height="115" fill="#999"/>
+  <text x="65" y="475" font-size="12" font-weight="700" fill="#fff">BOTTOM_STRUCTURE</text>
+  <text x="65" y="495" font-size="10" fill="#ddd">supporting tissue with vasculature</text>
+  <!-- Vessel indicators -->
+  <circle cx="120" cy="520" r="10" fill="none" stroke="#fff" stroke-width="0.8"/>
+  <circle cx="200" cy="510" r="8" fill="none" stroke="#fff" stroke-width="0.6"/>
+  <circle cx="300" cy="525" r="12" fill="none" stroke="#fff" stroke-width="0.8"/>
+
+  <!-- Direction arrow -->
+  <rect x="415" y="45" width="80" height="520" fill="#fff" stroke="#999" stroke-width="0.5"/>
+  <line x1="455" y1="65" x2="455" y2="545" stroke="#000" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <polygon points="448,545 455,558 462,545" fill="#000"/>
+  <text x="455" y="58" text-anchor="middle" font-size="10" font-weight="700">DIRECTION</text>
+  <text x="455" y="565" text-anchor="middle" font-size="10" font-weight="700">LABEL</text>
+
+  <!-- Footer -->
+  <text x="260" y="670" text-anchor="middle" font-size="9" fill="#999">图：LAYER_STACK_DESCRIPTION。为清晰展示，厚度比例非严格解剖比例。</text>
+</svg>
