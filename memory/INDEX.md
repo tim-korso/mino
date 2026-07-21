@@ -3,7 +3,7 @@
 > **Gateway file.** Always read this first when waking up in a new session.
 > 04-MEMORY.md is auto-loaded core memory (critical lessons). This file is the archival index — what topics exist, where they are, when they were last touched.
 
-**Stats**: 22 topics | 22 journal days | last rebuilt 2026-07-20
+**Stats**: 24 topics | 22 journal days | last rebuilt 2026-07-21
 
 ---
 
@@ -35,6 +35,8 @@
 | 20 | **deep-research-paths** | `memory/topics/deep-research-paths.md` | 07-12 | search, research-engine, query-archive, strategy-reuse |
 | 21 | **macos-automation** | `memory/topics/macos-automation.md` | 07-18 | macOS, CLI, AppleScript, ceiling-matrix, pipeline, brew, proxy, diagnostics |
 | 22 | **espanso-automation** | `memory/topics/espanso-automation.md` | 07-20 | espanso, text-expansion, shell-extension, forms, regex, app-config, pipeline-integration |
+| 23 | **deepseek-api-edge-cases** | `memory/topics/deepseek-api-edge-cases.md` | 07-21 | deepseek, API, edge-cases, caching, stability, cost-optimization |
+| 24 | **subagent-model-routing** | `memory/topics/subagent-model-routing.md` | 07-21 | subagent, workflow, model-alias, routing, modelAliases, verification |
 
 ## Recent Sessions
 

@@ -44,29 +44,55 @@ cmd_init() {
   now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
   local session_id="${CLAUDE_CODE_SESSION_ID:-unknown}"
 
-  python3 -c "
-import json, sys
+  # ★ Goal Mode 集成 (L1): 检测 active Goal
+  local goal_active="false"
+  local goal_objective=""
+  if command -v myagents &>/dev/null; then
+    local goal_json
+    goal_json=$(myagents goal get 2>/dev/null || echo "")
+    if [[ -n "$goal_json" ]] && echo "$goal_json" | python3 -c "import json,sys; d=json.load(sys.stdin); exit(0 if d else 1)" 2>/dev/null; then
+      goal_active="true"
+      goal_objective=$(echo "$goal_json" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('objective','')[:200])" 2>/dev/null || echo "")
+    fi
+  fi
+
+  RS_SLUG="$slug" RS_TITLE="$arg3" RS_NOW="$now" RS_SESSION="$session_id" \
+  RS_GOAL_ACTIVE="$goal_active" RS_GOAL_OBJECTIVE="$goal_objective" \
+  RS_DIR="$dir" python3 << 'PYEOF'
+import json, sys, os
+
+slug = os.environ.get("RS_SLUG", "?")
+title = os.environ.get("RS_TITLE", "?")
+now = os.environ.get("RS_NOW", "?")
+session_id = os.environ.get("RS_SESSION", "unknown")
+goal_active = os.environ.get("RS_GOAL_ACTIVE", "false")
+goal_objective = os.environ.get("RS_GOAL_OBJECTIVE", "")
+directory = os.environ.get("RS_DIR", "")
+
 state = {
-    'slug': '$slug',
-    'title': '''$arg3''',
-    'created': '$now',
-    'updated': '$now',
-    'round': 0,
-    'status': 'active',
-    'mode': 'deep',
-    'sessions': ['$session_id'],
-    'accumulated_findings': [],
-    'gap_queue': [],
-    'coverage_map': {},
-    'budget': {'total_spent': 0, 'rounds_planned': 3},
-    'goal_integration': {'active': False, 'objective': ''}
+    "slug": slug,
+    "title": title,
+    "created": now,
+    "updated": now,
+    "round": 0,
+    "status": "active",
+    "mode": "deep",
+    "sessions": [session_id],
+    "accumulated_findings": [],
+    "gap_queue": [],
+    "coverage_map": {},
+    "budget": {"total_spent": 0, "rounds_planned": 3},
+    "goal_integration": {"active": goal_active == "true", "objective": goal_objective},
 }
-with open('$dir/state.json', 'w') as f:
+
+with open(f"{directory}/state.json", "w") as f:
     json.dump(state, f, ensure_ascii=False, indent=2)
-print(f'✅ 调研项目已创建: {slug}')
-print(f'   标题: {arg3}')
-print(f'   目录: $dir')
-" 2>/dev/null
+
+print(f"✅ 调研项目已创建: {slug}")
+print(f"   标题: {title}")
+print(f"   目录: {directory}")
+PYEOF
+
 }
 
 # ─── add round ───
@@ -132,8 +158,18 @@ with open(f'$dir/rounds/round-{state[\"round\"]:03d}.json', 'w') as f:
 
 new_count = len(new_findings)
 total_count = len(state['accumulated_findings'])
+gaps_remaining = len(state['gap_queue'])
 print(f'✅ Round {state[\"round\"]} 已保存: {new_count} new findings → {total_count} total')
-print(f'   缺口: {len(state[\"gap_queue\"])} pending')
+print(f'   缺口: {gaps_remaining} pending')
+
+# Goal 进度上报 (L2)
+if state.get('goal_integration', {}).get('active'):
+    obj = state['goal_integration'].get('objective', '')[:100]
+    if gaps_remaining == 0:
+        print(f'   🎯 Goal 进度: 所有缺口已覆盖')
+    else:
+        pct = max(0, min(100, int(100 * total_count / max(1, total_count + gaps_remaining))))
+        print(f'   🎯 Goal 进度: ~{pct}% | {obj}')
 " 2>/dev/null
 }
 

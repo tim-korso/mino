@@ -74,7 +74,7 @@ description: 'Deep research engine. Default (Deep) mode auto-runs multi-angle-re
 |------|------|
 | **1. Synthesize 不放 Workflow** | 复杂合成 >3min 无文本输出 → 确定性 180s stall |
 | **2. 搜索 Agent 默认 effort='low'** | 减少 token 间延迟 → 降低达到超时阈值的概率 |
-| **3. 两击规则 — 同 API 2 次 stall → 切备用** | DeepSeek 不稳定时段 (亚洲白天) 切 Claude Haiku |
+| **3. 两击规则 — 同 API 2 次 stall → 切备用** | DeepSeek 不稳定时段 (亚洲白天) 切 Workflow 内轻量档 'fable'(实测→kimi-k2.6) |
 | **4. Workflow 启动后立即 `wf-recover --last`** | 确认上一个 Workflow 没残留问题 |
 | **5. pipeline() > parallel() — 永远默认 pipeline** | 一个 item 死不影响其他；parallel 的 barrier 会等全部 |
 | **6. 禁止 Date.now()/Math.random()/new Date()** | 破坏 Resume 缓存确定性 → 缓存失效 |
@@ -152,18 +152,84 @@ Active Goal → deep-research auto-feeds Goal
 如果用户指定了 token budget (+500k):
     │
     ├── budget.total → 总预算
+    ├── budget.spent() → 跨 session 已消耗 (共享池)
     ├── budget.remaining() → 剩余
-    ├── 每轮分配: remaining / planned_rounds
-    └── 剩余 < 50K → 切换到 Quick 模式补充缺口
+    │
+    ├── remaining ≥ 200K → 全深度: 5 angles × effort=low, verify + challenger
+    ├── remaining ≥ 100K → 中等: 3 angles search + verify, 跳过 challenger
+    ├── remaining ≥  50K → 浅层: 2 angles Quick search, 不验证
+    └── remaining <  30K → 停止——log 当前位置，建议用户加预算
 ```
 
 Workflow `budget` API 在脚本里可用:
 ```javascript
-if (budget.total && budget.remaining() < 50000) {
-  log('Budget low — switching to Quick mode for remaining gaps')
-  // Fall back to lighter search
+// 预算分配策略 (在 Workflow 脚本内)
+const perRound = budget.total
+  ? Math.floor(budget.remaining() / 3)  // 为 3 轮预留
+  : Infinity
+
+const searchDepth = perRound > 100_000 ? 5 : (perRound > 50_000 ? 3 : 2)
+log(`Budget: ${budget.total ? Math.round(budget.remaining()/1000) + 'k remaining' : 'unlimited'} → ${searchDepth} angles`)
+
+if (budget.total && budget.remaining() < 30_000) {
+  log('⚠️ Budget critically low — stopping. Suggest +100K to continue.')
+  return { findings: [], budget_exhausted: true }
 }
 ```
+
+**关键**: `budget.spent()` 池是跨 Workflow **共享**的——同一 session 多个 Workflow 共享消耗。脚本中记录本 Workflow 的增量消耗。
+
+### API Fallback (v5 NEW)
+
+```
+DeepSeek 不稳定检测:
+    │
+    ├── 启动 Workflow 前: bash api-router.sh → 推荐模型
+    ├── 时段路由: 亚洲白天 10:00-18:00 → 50% 概率切轻量档 ('fable')
+    ├── 健康检测: curl API models endpoint (需 DEEPSEEK_API_KEY)
+    └── 两击规则: 同 API 连续 2 次 stall → 下一轮全部轻量档 ('fable')
+```
+
+```bash
+# Workflow 启动前自动检测
+MODEL=$(bash api-router.sh)
+echo "推荐模型: $MODEL"
+
+# 在 Workflow 脚本里 agent() 调用时使用推荐模型
+agent(prompt, { model: MODEL === 'fable' ? 'fable' : undefined, effort: 'low', schema: FINDINGS })
+```
+
+**时段策略**:
+| 窗口 | 时间 (UTC+8) | 策略 |
+|------|:---:|------|
+| 深夜 | 02:00-06:00 | DeepSeek 全深度——最稳定 |
+| 早晨 | 06:00-10:00 | DeepSeek 默认 |
+| **白天** | **10:00-18:00** | **交替 轻量档('fable')/DeepSeek——降低负载** |
+| 傍晚 | 18:00-22:00 | DeepSeek 默认 |
+| 深夜 | 22:00-02:00 | DeepSeek 全深度 |
+
+**轻量档 fallback 标注**: 使用 fallback 模型的调研发现自动标注 `[MODEL: cheap-fallback]`。低置信度发现事后用 DeepSeek 补搜。
+
+**模型路由规则（v5.1）**:
+
+> ⚠️ **别名实测（2026-07-21, moonshot provider）**: `fable`/`sonnet`/`opus` → kimi-k2.6（轻量档）；省略 → 继承会话（当前 kimi-k3）;**`haiku` → 已下架模型，调用即报错，禁止使用**。别名表由 provider `modelAliases` 配置决定，会漂移——改路由前先跑探针验证。跨 provider 模型串（如 `deepseek-v4-pro`）在 Workflow 内不可用，DeepSeek 角色走 `api-router.sh` 脚本直连。
+
+```javascript
+// Workflow 搜索 Agent 默认用轻量档 'fable'(实测→kimi-k2.6, $0.95/$4)
+// DeepSeek Flash($0.14/M) 更便宜但 Workflow 内不可达——走 api-router.sh 脚本直连
+// Challenger 和 Synthesize 继承会话旗舰(对抗验证需要推理质量)
+const SEARCH_MODEL = 'fable'           // 轻量档: kimi-k2.6, 搜索够用
+const CHALLENGER_MODEL = undefined     // 继承会话(当前 k3): 对抗验证需要推理质量
+const SYNTHESIS_MODEL = undefined      // 继承会话: 主会话合成不需要指定
+
+// 搜索 Agent 调用
+agent(prompt, { model: SEARCH_MODEL, effort: 'low', schema: FINDINGS })
+
+// Challenger Agent 调用（保持 Pro——对抗验证需要推理质量）
+agent(prompt, { model: CHALLENGER_MODEL, effort: 'low', schema: VERDICT })
+```
+
+**时段自适应路由**: 亚洲白天 10:00-18:00 DeepSeek 高峰期 → `bash api-router.sh` 自动返回 `fable`
 
 ---
 
@@ -795,6 +861,7 @@ contradiction_omitted → 必须在报告中新增矛盾条目
 | 脚本 | 用途 |
 |------|------|
 | **`scripts/research-state.sh`** 🆕 | 长程调研状态管理——init/add/status/gaps/resume/list |
+| **`scripts/api-router.sh`** 🆕 | API 健康检测 + 时段路由——DeepSeek/轻量档('fable')智能切换 |
 
 ## ★ Canon Mapper 集成模式（v2.1·NEW）
 

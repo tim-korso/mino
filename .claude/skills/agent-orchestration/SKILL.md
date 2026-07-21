@@ -42,7 +42,7 @@ return result
 |-----|------|------|
 | `schema` | JSON Schema | 结构化输出，自动校验+重试。有 schema → 返回 object，没有 → 返回 string |
 | `label` | string | 显示的标签名 |
-| `model` | `'sonnet' \| 'opus' \| 'haiku' \| 'fable'` | 模型覆盖，一般不设 |
+| `model` | `'sonnet' \| 'opus' \| 'haiku' \| 'fable'` | 模型覆盖，一般不设（省略=继承会话模型）。⚠️ 实测 2026-07-21(moonshot provider): sonnet/opus/fable **全部→kimi-k2.6**;**haiku→已下架模型，调用即报错❌**;跨 provider 模型串（如 deepseek-v4-pro）不可用。别名表随 provider `modelAliases` 配置漂移——用前先跑探针验证 |
 | `effort` | `'low' \| 'medium' \| 'high' \| 'xhigh' \| 'max'` | 推理深度，low=机械任务，high+=复杂验证 |
 | `isolation` | `'worktree'` | git worktree 隔离，**昂贵**（~200-500ms），仅并行写文件冲突时才用 |
 

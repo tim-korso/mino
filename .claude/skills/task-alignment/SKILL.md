@@ -49,5 +49,5 @@ AskUserQuestion({
 | 阶段 | 走什么 |
 |------|--------|
 | 需求模糊 | task-alignment → 反问澄清 |
-| 需求明确但方案分叉 | Think 通道 `Agent(model:"opus")` |
+| 需求明确但方案分叉 | Think 通道 `Agent()`（继承会话旗舰——独立上下文即 Think 价值；`model:"opus"` 实测降为 k2.6，勿用） |
 | 需求明确路径唯一 | 直接执行（Fast） |

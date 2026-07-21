@@ -307,7 +307,7 @@ book-figure 项目：通义万相生成线稿时要求标注 → 触发 capabili
 | 模式 | 触发 | 耗时 | 做什么 |
 |------|------|------|--------|
 | **quick** | `mode: "quick"` | ~30s | 单 Agent 扫描六类危险信号，只报最明显的。不逐条分级 |
-| **full** | `mode: "full"`（默认） | ~3-5min | 完整三角分离管线：机械提取 → 冷启动分级(opus) → 报告 |
+| **full** | `mode: "full"`（默认） | ~3-5min | 完整三角分离管线：机械提取 → 冷启动分级（继承会话旗舰） → 报告 |
 
 ### 冷启动强制执行
 
@@ -317,7 +317,7 @@ Workflow 架构天然保证冷启动：
 Phase 1: agent("extract-claims")  ← 提取主张（机械操作）
     │  输出: claims[]
     ▼
-Phase 2: agent("cold-grader")     ← ★ 独立Agent, opus模型
+Phase 2: agent("cold-grader")     ← ★ 独立Agent（继承会话模型；独立性来自冷启动上下文隔离——'opus' 别名实测降为 k2.6，勿用）
     │  prompt: 只包含主张文本 + 分级标准
     │  prompt: 不包含原始文本、生成上下文、用户问题
     │  不同模型 = 不同参数 = 零路径热惯性

@@ -19,7 +19,7 @@
 | 参数 | 位置 | 默认值 | 推荐值 | 说明 |
 |------|------|--------|--------|------|
 | `effort` | agent() opts | 继承 session | `'low'` (搜索) `'medium'` (验证) `'high'` (合成—但合成不放 Workflow) | 控制推理深度/时间 |
-| `model` | agent() opts | 继承 session | 省略（继承） | 需要 fallback 时设 `'haiku'` |
+| `model` | agent() opts | 继承 session | 省略（继承） | 需要 fallback 时设 `'fable'`(实测→kimi-k2.6)。`'haiku'`→已下架模型，调用即报错❌(2026-07-21 实测) |
 | `schema` | agent() opts | 无 | 搜索 Agent 必须有 | 无 schema = 输出不可恢复 |
 | `isolation` | agent() opts | 无 | 省略（贵，~500ms 开销） | 只在并行写文件时需要 |
 | Concurrency cap | SDK 内置 | min(16, cores-2) | 默认 | 影响 Agent 排队时间 |
@@ -78,9 +78,9 @@ bash wf-recover.sh --last --json | python3 -c "... 提取 findings ..."
 ```bash
 # 两击规则触发 → 切备用
 # 在 Workflow 脚本中:
-agent(prompt, {model: 'haiku', effort: 'low', schema: FINDINGS})
-# → Claude Haiku 做搜索 (更快, 更稳定, 能力略低)
-# → 关键验证仍用 DeepSeek/Opus
+agent(prompt, {model: 'fable', effort: 'low', schema: FINDINGS})
+# → kimi-k2.6 做搜索 (便宜档 $0.95/$4, 更快, 能力略低)
+# → 关键验证仍用 DeepSeek(api-router.sh 脚本直连)/继承会话旗舰
 ```
 
 ### Scenario C: 超大 Workflow (30+ agents) 中断
