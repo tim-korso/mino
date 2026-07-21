@@ -92,3 +92,47 @@ references/
 | Date | Session ID | What Happened |
 |------|-----------|---------------|
 | 2026-06-27 | — | v1 设计+落地；AI芯片实测(1轮收敛,8数据点验证)；v2 全增强(P0+P1+P2+工具层)；量子计算实测(Challenger发现6项修正)；session-archive |
+
+---
+
+## v5 Architecture (2026-07-21)
+
+### Synthesize 分离 (P0)
+
+基于 105 Workflows / 1373 agents 的实证数据 (99.3% 成功率), 核心改进: **Synthesize 不放 Workflow**。
+
+v3 失败模式: Synthesize agent >3min 无文本输出 → SDK 180s liveness check 触发 → 6 次重试全失败 → 整个 Workflow 死。
+v5 修复: Workflow 只做 5 角度搜索 (effort='low') → 结构化 findings 返回 → AI 在主会话合成。
+
+实测对比 (同一问题 "CLI=GUI 同引擎工具"):
+- v3: 11 agents, 6671s, 6 dead → **STALLED**
+- v5: 5 agents, 398s, 0 dead → **ALL SUCCESS** (125 tools found)
+
+### Incremental 模式
+
+长程调研断点续研: research-state.sh → state.json 持久化 → 每轮只搜缺口 → 自动去重合并。
+支持: Multi-Round Accumulation / Monitor & Update (cron 定期) / Goal-Driven Research。
+
+### Budget Pacing
+
+四档自适应深度: remaining ≥200K → 全深度; ≥100K → 中等; ≥50K → 浅层; <30K → 停止。
+Workflow `budget` API 可用: `budget.total`, `budget.remaining()`, `budget.spent()` (跨 Workflow 共享)。
+
+### API Fallback
+
+api-router.sh: 时段路由 (亚洲白天 10:00-18:00 切轻量档 'fable'(实测→kimi-k2.6)) + 健康检测 (curl models endpoint) + 两击规则。
+
+### 模型路由教训 (2026-07-21)
+
+> ⚠️ `haiku` → 在 moonshot provider 下已下架, 调用即报错。Workflow 内可用别名: `fable`/`sonnet`/`opus` → 均映射 kimi-k2.6; 省略 → 继承会话 (kimi-k3)。aliases 会漂移——改路由前先跑探针验证。
+
+### 注册工具
+
+- `wf-recover`: Workflow 中断后从 agent-*.jsonl 提取已完成 Agent 的输出
+- `research-state`: 长程调研状态管理 (init/add/status/gaps/resume/list)
+
+两者均通过 `myagents tool add` 注册——全 runtime 自动发现。
+
+### 参考文件
+
+- `references/workflow-resilience.md`: 容错设计参考 (失败模式/SDK 参数/恢复手册/检查清单)

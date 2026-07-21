@@ -23,7 +23,7 @@
 | 10 | **shopping-price-compare** | `memory/topics/shopping-price-compare.md` | 06-03 | shopping, price-tracking, platforms |
 | 11 | **xianyu-shopping** | `memory/topics/xianyu-shopping.md` | 06-03 | shopping, second-hand, xianyu |
 
-| 12 | **deep-research** | `memory/topics/deep-research.md` | 06-27 | search, research-engine, skill, verification, challenger |
+| 12 | **deep-research** | `memory/topics/deep-research.md` | 07-21 | search, research-engine, skill, verification, challenger |
 | 13 | **life-change-notes** | `memory/topics/life-change-notes.md` | 06-30 | life-org, change-tracking, accountability, habits, minimalism |
 | 14 | **agent-farm** | `memory/topics/agent-farm.md` | 07-06 | farm, portfolio, goal-loop, meta-system, agent-orchestration |
 | 15 | **personal-goal-loop** | `memory/topics/personal-goal-loop.md` | 07-08 | philosophy, happiness, goal-loop, meta-cognition, personal |
@@ -33,9 +33,10 @@
 | 18 | **smmart** | `memory/topics/smmart.md` | 07-18 | download, multi-source, aria2c, yt-dlp, libgen, sci-hub, cloud-drive, link-validation |
 | 19 | **white-mafia** | `memory/topics/white-mafia.md` | 07-07 | china, corruption, finance, power, regulation, deep-research |
 | 20 | **deep-research-paths** | `memory/topics/deep-research-paths.md` | 07-12 | search, research-engine, query-archive, strategy-reuse |
-| 21 | **macos-automation** | `memory/topics/macos-automation.md` | 07-18 | macOS, CLI, AppleScript, ceiling-matrix, pipeline, brew, proxy, diagnostics |
+| 21 | **macos-automation** | `memory/topics/macos-automation.md` | 07-21 | macOS, CLI, AppleScript, ceiling-matrix, pipeline, brew, proxy, diagnostics |
 | 22 | **espanso-automation** | `memory/topics/espanso-automation.md` | 07-20 | espanso, text-expansion, shell-extension, forms, regex, app-config, pipeline-integration |
 | 23 | **deepseek-api-edge-cases** | `memory/topics/deepseek-api-edge-cases.md` | 07-21 | deepseek, API, edge-cases, caching, stability, cost-optimization |
+| 25 | **wf-recover** + **research-state** | `memory/topics/deep-research.md` §v5 | 07-21 | workflow, recovery, research, persistence, tool-registration |
 | 24 | **subagent-model-routing** | `memory/topics/subagent-model-routing.md` | 07-21 | subagent, workflow, model-alias, routing, modelAliases, verification |
 
 ## Recent Sessions

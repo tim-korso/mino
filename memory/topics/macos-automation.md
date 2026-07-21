@@ -133,3 +133,56 @@ cliclick, pcre2grep, watchexec, entr, jc, dasel, yq, lnav, fastgron, delta, dust
 - S9 诊断工具 sudo NOPASSWD 白名单已配但 MyAgents 沙箱封 sudo——需终端执行
 - VLM+坐标点击的 GUI 自动化——判定不可行（VLM 不能像素回归）
 - 反向代理替代品方案——Surge 破解版仓库被 DMCA，VLESS 协议不兼容
+---
+
+## Stage 14: 深度诊断三神器 (2026-07-21)
+
+基于 CLI=GUI 同引擎工具的深度调研，发现三个 macOS 内置 CLI——暴露 GUI 没有的硬件层。
+
+### mac-deepdiag.sh 统一入口
+
+`macos-automation/scripts/mac-deepdiag.sh` — 三神器统一封装:
+
+```bash
+bash mac-deepdiag.sh --power --1s          # 8 core 频率直方图 + C-state + 热状态 (JSON)
+bash mac-deepdiag.sh --plist <file> --keys # key-path 嵌套读写 (binary-safe)
+bash mac-deepdiag.sh --biometrics --audit  # Touch ID 安全审计
+```
+
+### 三个神器
+
+| 工具 | CLI | 引擎 | GUI 盲区 |
+|------|-----|------|---------|
+| **powermetrics** | `/usr/bin/powermetrics` | IOKit PM (同电池菜单) | 每核频率直方图, C-state 驻留, ANE 功耗, 热状态——GUI 只显示"能耗影响"一个数字 |
+| **PlistBuddy** | `/usr/libexec/PlistBuddy` | CoreFoundation plist (同 Xcode plist 编辑器) | key-path CRUD——`defaults` 只能读顶层, `plutil` 只能验证/转换。这个能编辑嵌套值 |
+| **bioutil** | `/usr/bin/bioutil` | BiometricKit.framework (同 Touch ID 设置) | 指纹数, unlock/Pay 独立开关, 三种超时——GUI 只有 on/off toggle |
+
+### 已知限制
+- powermetrics: 需要 sudo (NOPASSWD 已配置在 `/etc/sudoers`)
+- PlistBuddy: binary plist 需先 `plutil -convert xml1` 转 temp, 用 `grep -aE` 防 BSD grep "Binary file" 污染
+- bioutil: 只读 audit 无需 sudo; 写操作需要 admin
+
+### systemsetup (2026-07-21 实测)
+
+24 命令全部存在于 macOS 26——但**全部需要 admin**。绕过路径:
+- 计算机名/本地主机名 → `scutil --get ComputerName` (无需 sudo)
+- 时区 → `readlink /etc/localtime`
+- 电源设置 → `pmset -g`
+- 网络设置 → `networksetup` (部分需 sudo)
+
+结论: systemsetup 不作为日常自动化工具推荐, 用 scutil/pmset/networksetup 替代。
+
+### corebrightnessdiag (2026-07-21 实测)
+
+`/usr/libexec/corebrightnessdiag` — 5 子命令全部可用:
+- `nightshift`: JSON-like 状态 (AutoBlueReductionEnabled, schedule 等)
+- `sunschedule`: 日出日落时间 + 当前是否为白天
+- `status-info`: XML plist (亮度传感器详情)
+- 无需 sudo, 脚本可直接调用。比 System Settings GUI 多 3 层信息。
+
+### Pearcleaner 集成 (2026-07-21)
+
+`mac-pearcleaner.sh`: 自动切搜索敏感度 L1 → 跑命令 → 恢复的 CLI 安全封装。
+集成: mac-hygiene Phase 5 (专业卸载层) + mac-chain 链 D (应用卸载) + 链 E (周度残留扫描)。
+
+核心发现: Pearcleaner GUI 和 CLI 编译进同一 Mach-O 二进制。`AppPathFinder` 类在内存中只有一份——GUI 和 CLI 走同一条代码路径。`defaults write` 控制搜索敏感度, 即时生效。
