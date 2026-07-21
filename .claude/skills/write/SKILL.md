@@ -820,23 +820,8 @@ const bible = await agent(
 if (!bible) throw new Error('Book Bible生成失败')
 log(`Book Bible: ${bible.terminology.length}术语 | ${bible.cross_chapter_deps.length}跨章依赖 | ${bible.style_rules.length}风格规则`)
 
-// ═══ Phase 1: 写章——两条路径选择（2026-07-22 起） ═══
-//
-// 【路径A: llm-call.py directAPI——量产默认，试点实测通过】
-//   python3 .claude/skills/write/scripts/llm-call.py --role volume \
-//     --manifest workspace/<book>/prompts/manifest.tsv --out-dir <chapters目录> \
-//     --system-file workspace/<book>/prompts/system.txt --parallel 3 --max-tokens 8000
-//   优势: DeepSeek V4 Pro $0.87/MTok(≈k2.6的1/4)、无180s stall、无20-Agent上限、
-//         缓存白嫖(共享system→输入近免费)、可跨厂商(challenger→k2.7-code)
-//   实测(FJ第4章): $0.0032/章 59.8s [C]61%[D]28%[E]11% 禁用词干净
-//   代价: 无CHAPTER_SCHEMA结构化自检(靠prompt硬规则+产出后Read过检)、
-//         无Workflow resume缓存、Book Bible需手工编入prompt文件
-//   适用: 大批量写章(>3章)、长章(>4000字)、DeepSeek稳定时段
-// 【路径B: 下方 Workflow——结构化默认】
-//   适用: 需要schema强制自检清单、需要pipeline容错/resume、单章试写
-//   注意: 锁定会话provider(k2.6便宜档/k3旗舰档, 别名实测见subagent-model-routing)
-
 // ═══ Phase 1: 写章（pipeline——每根缺失骨头一个Agent独立写+Book Bible） ═══
+// 注: directAPI 多模型路由(llm-call.py)已于 2026-07-22 由汤姆决策回退——write 统一走 Workflow(K3 编排)。脚本保留未引用。
 if (state.chapters_missing.length > 0) {
   phase('写章')
 
@@ -995,19 +980,6 @@ ${sync ? JSON.stringify(sync.alignment_issues, null, 1) : '（无同步合成数
     if (devEdit) {
       log(`发展编辑: ${devEdit.structural_issues_count || 0}个结构问题 | ${devEdit.fixes_applied || 0}处修复`)
     }
-
-    // ═══ Phase 1.6 路径选择（2026-07-22 起） ═══
-    // 【路径A: llm-call.py --role challenger——跨厂商对抗，量产默认】
-    //   原则: Challenger 必须与写章者不同厂商（"构建者不能验证自己输出"的结构性补偿）。
-    //         写章=DeepSeek(volume) → 对抗=kimi-k2.7-code(challenger, Moonshot直连)。
-    //   用法: 每章生成 attack prompt(攻击指令+章节全文) →
-    //     python3 .claude/skills/write/scripts/llm-call.py --role challenger \
-    //       --manifest attack-manifest.tsv --out-dir <book>/attacks/ --parallel 3 --max-tokens 6000
-    //   红利: 对抗充实是602-Agent跑6次连接中断的重灾区(stall集中于长研究Agent)——
-    //         directAPI 无180s liveness，此阶段中断率归零。
-    //   代价: 无ADVERSARIAL_SCHEMA硬校验、无Phase Gate自动REJECT——
-    //         fatal靠人工/脚本从文本报告判定。需要硬门禁时走路径B。
-    // 【路径B: 下方 Workflow——Phase Gate 硬阻断保留】
 
     // ═══ Phase 1.6: 对抗充实（每章一个Challenger攻击→补强→复检） ═══
     // 关键改进：Phase Gate 硬阻断。Challenger 发现 fatal → 章节被 REJECT → 必须通过复检才能进入下一阶段。

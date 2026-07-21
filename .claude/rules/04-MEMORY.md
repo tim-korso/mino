@@ -77,6 +77,8 @@
 - **WeChat Bridge 主动推送 (2026-06-11)**：cron→bot heartbeat 链路过长且不稳定。替代方案：主 session 产出内容 → `myagents session send <botSessionId>` 直接投递到微信 bot 的活跃 session。bot 收到 prompt 后自动回复到微信。关键是先找到活跃 bot session（grep 日志或 sessions.json 中 agentDir 含 mino 且 lastActiveAt 最近的）
 - **三层认知空白分析 (2026-06-21)**：识别被C端低估的科技公司。五误判模式——甜点判主厨(用非核心产品判断公司)、时间错位(用旧体验判断快迭代公司)、大厂对比偏见(用大厂C端标准判断创业公司)、模态忽视、制裁信号钝感(被BIS制裁=最强第三方技术背书)。核心洞见：C端App体验最易获取→最易被过度加权。真正有价值的信号(自研架构/API增速/被制裁/投资方质量)不在App里。详见 `memory/topics/cognitive-gap-analysis.md`，Skill: `cognitive-gap-analysis`
 
+- **幻觉滚雪球 (2026-07-22)**：读取命令返回 No such file → 我当噪声略过 → 编造骨架/章节/主张继续干活 → 假引用被跨厂商 challenger 撕碎 → 我再编"db投毒""数据丢失"两层叙事保护幻觉 → transcript 取证才定罪。**记忆≠读取结果**；error 输出不是噪声是红绿灯。唯一没被骗的是跨厂商 challenger。详见 `memory/2026-07-22.md`
+
 ## 探路叙事
 
 灵感实现的探路过程记在每日日记 `🧭 探索：<名字>` 小节。三段式：**出发点 → 过程 → 教训**。给你自己看的——下次 Agent 卡方向时翻翻，回忆起当时怎么探的路，就能给 Agent 指路。

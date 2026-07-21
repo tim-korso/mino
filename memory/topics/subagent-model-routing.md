@@ -70,3 +70,6 @@ const r = await agent('Compute 13*17. Reply with ONLY the number.', {model:'sonn
 | ~/.myagents/.claude/rules/01-REASONING.md | 全局 Think 通道去硬编码别名 |
 
 **教训沉淀**：模型别名是**会腐烂的间接层**——技能文档写角色（轻量档/旗舰档），不写具体模型名；具体映射集中在一处（未来 model-router.yml）。这是"规则净效应"在模型路由层的实例：分散硬编码 × 时间 = 系统性漂移。
+
+
+**2026-07-22 决策**：write 技能回退多模型路由（汤姆决策）——统一走 Workflow(K3 编排),llm-call.py 角色表保留但未引用。K3 职责定位：Agent 工具链编排。
