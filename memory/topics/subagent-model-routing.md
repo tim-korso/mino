@@ -37,11 +37,14 @@ metadata:
 - openrouter: fable/opus/sonnet→gemini-3.1-pro-preview, haiku→gemini-3-flash-preview
 - siliconflow: 全部→DeepSeek-V4-Pro
 
-**根因修复（已执行，两层）**：
-1. 全局层：`myagents config set providerModelAliases.moonshot` → 修复 haiku（对无 agent 级钉住的别名生效）
-2. **agent 层（决定性）**：Mino(agents[1]) 的 `providerEnvJson.modelAliases` 原本钉死 `{fable/sonnet/opus→kimi-k2.6}` 且无 haiku——`config set agents.1.providerEnvJson` 整体重写（仅改 modelAliases，其他字段原样保留；apiKey 全程脚本内处理不进对话）→ `{fable:kimi-k2.6, haiku:kimi-k2.6, sonnet:kimi-k2.7-code, opus:kimi-k3}`
+**根因修复（已执行，两层）+ 持久性修正（07-22 实测）**：
+1. 全局层：`myagents config set providerModelAliases.moonshot` → **持久生效**（CLI 产品入口写入，应用认可）
+2. agent 层：Mino(agents[1]) 的 `providerEnvJson.modelAliases` 曾钉死 `{fable/sonnet/opus→kimi-k2.6}`——手改后 r6 探针全绿，**但数小时后被应用持久化周期整体清除**（providerEnvJson 由应用运行时重写，不接受带外手术）。清除后别名解析回落全局层——而全局层已是目标分档，**行为不变**。
 
-**优先级规则（实测）**：agent 级 `providerEnvJson.modelAliases` > 全局 `providerModelAliases`。逐键生效——agent 级没有的别名才回落全局。
+**持久性规则（血泪）**：凡 `config set` 走产品 CLI 的改动持久；凡直接写 agents[].providerEnvJson 的改动会被应用覆写。**只走产品入口。**
+
+**当前生效分档（全局层）**：haiku/fable→kimi-k2.6, sonnet→kimi-k2.7-code, opus→kimi-k3。
+**密钥提取同理**：llm-call.py 的 get_key 已从 providerEnvJson 改为三级回退 env → providerEnvJson → **availableProvidersJson（应用 provider 注册表，稳定源）**。
 
 **验收**：kimi-k2.7-code 经 `myagents model verify` 实证存在；配置写入经脱敏 diff 验证；运行时映射待会话重启后探针终验（预期 haiku/fable→k2.6, sonnet→k2.7-code 编程档, opus→k3 旗舰档）。备份：`config.json.bak-20260721-alias` + `config.json.bak-20260721-agentalias`。
 

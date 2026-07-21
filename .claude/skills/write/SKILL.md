@@ -996,6 +996,19 @@ ${sync ? JSON.stringify(sync.alignment_issues, null, 1) : '（无同步合成数
       log(`发展编辑: ${devEdit.structural_issues_count || 0}个结构问题 | ${devEdit.fixes_applied || 0}处修复`)
     }
 
+    // ═══ Phase 1.6 路径选择（2026-07-22 起） ═══
+    // 【路径A: llm-call.py --role challenger——跨厂商对抗，量产默认】
+    //   原则: Challenger 必须与写章者不同厂商（"构建者不能验证自己输出"的结构性补偿）。
+    //         写章=DeepSeek(volume) → 对抗=kimi-k2.7-code(challenger, Moonshot直连)。
+    //   用法: 每章生成 attack prompt(攻击指令+章节全文) →
+    //     python3 .claude/skills/write/scripts/llm-call.py --role challenger \
+    //       --manifest attack-manifest.tsv --out-dir <book>/attacks/ --parallel 3 --max-tokens 6000
+    //   红利: 对抗充实是602-Agent跑6次连接中断的重灾区(stall集中于长研究Agent)——
+    //         directAPI 无180s liveness，此阶段中断率归零。
+    //   代价: 无ADVERSARIAL_SCHEMA硬校验、无Phase Gate自动REJECT——
+    //         fatal靠人工/脚本从文本报告判定。需要硬门禁时走路径B。
+    // 【路径B: 下方 Workflow——Phase Gate 硬阻断保留】
+
     // ═══ Phase 1.6: 对抗充实（每章一个Challenger攻击→补强→复检） ═══
     // 关键改进：Phase Gate 硬阻断。Challenger 发现 fatal → 章节被 REJECT → 必须通过复检才能进入下一阶段。
     // 不再是"建议性补强"——是"结构性门禁"。

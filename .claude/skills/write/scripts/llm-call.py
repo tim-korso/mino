@@ -70,6 +70,7 @@ def get_key(vendor):
         return _key_cache[vendor]
     v = VENDORS[vendor]
     key = os.environ.get(v["keyenv"])
+    cfg = None
     if not key:
         cfg = json.load(open(CONFIG_PATH))
         agents = cfg.get("agents", [])
@@ -84,7 +85,20 @@ def get_key(vendor):
                 key = p["apiKey"]
                 break
     if not key:
-        raise RuntimeError(f"找不到 {vendor} 的 API key（env {v['keyenv']} 或 config.json providerEnvJson）")
+        # agents[].providerEnvJson 会被应用持久化周期重写（2026-07-22 实测被清）
+        # → 回退到应用 provider 注册表（稳定源）
+        apj = cfg.get("availableProvidersJson") or []
+        if isinstance(apj, str):
+            try:
+                apj = json.loads(apj)
+            except Exception:
+                apj = []
+        for pr in apj:
+            if pr.get("id") == v["provider_id"] and pr.get("apiKey"):
+                key = pr["apiKey"]
+                break
+    if not key:
+        raise RuntimeError(f"找不到 {vendor} 的 API key（env {v['keyenv']} / providerEnvJson / availableProvidersJson）")
     _key_cache[vendor] = key
     return key
 
@@ -117,9 +131,17 @@ def call_once(vendor, model, system, prompt, max_tokens, temperature, timeout=60
         return {"ok": False, "error": f"{type(e).__name__}: {e}", "latency": time.time() - t0}
     latency = time.time() - t0
     try:
-        content = resp["choices"][0]["message"]["content"]
+        choice = resp["choices"][0]
+        msg = choice["message"]
+        content = msg.get("content") or ""
         usage = resp.get("usage", {})
-        return {"ok": True, "content": content, "usage": usage, "latency": latency}
+        finish = choice.get("finish_reason")
+        if not content.strip():
+            # 强制思考模型(k2.7-code等): max_tokens 全烧在 reasoning 上时 content 为空
+            return {"ok": False,
+                    "error": f"empty content (finish_reason={finish})——思考模型额度全用于推理，提高 --max-tokens",
+                    "latency": latency, "retryable": True}
+        return {"ok": True, "content": content, "usage": usage, "latency": latency, "finish_reason": finish}
     except (KeyError, IndexError):
         return {"ok": False, "error": f"bad response: {json.dumps(resp)[:300]}", "latency": latency}
 
