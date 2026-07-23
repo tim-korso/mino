@@ -1377,7 +1377,7 @@ function Set-PptAnimation {
     finally { Close-PowerPointPresentation $ctx -Save }
 }
 
-# ---- CHART (v3) ----
+# ---- CHART (v3.1 — CSV data loading) ----
 function Add-PptChart {
     param([string]$Path, [string]$ChartType, [string]$DataSpec)
     if (-not $Path -or -not $ChartType) { Write-PowerPointHelp; return }
@@ -1386,53 +1386,170 @@ function Add-PptChart {
     $parts  = $ChartType -split ':'
     $ctName = $parts[0]
     $ctTitle = if ($parts.Count -gt 1) { $parts[1] } else { '' }
+    $csvPath = if ($parts.Count -gt 2) { $parts[2] } else { $DataSpec }
     $ctx = Open-PowerPointPresentation -FilePath $AbsPath
     if (-not $ctx) { return }
     try {
         $cc = @{bar=2;line=4;pie=5;column=1;area=3;doughnut=17;scatter=7;bubble=8}
         $ctVal = if ($cc.ContainsKey($ctName)) { $cc[$ctName] } else { 1 }
         $slide = $ctx.Presentation.Slides.Item($ctx.Presentation.Slides.Count)
+        if (-not $slide) { throw "Slide not found (count=$($ctx.Presentation.Slides.Count))" }
         $chartShape = $slide.Shapes.AddChart2(-1, $ctVal, 80, 120, 800, 420)
+        if (-not $chartShape) { throw "AddChart2 returned null" }
         $chart = $chartShape.Chart
+        if (-not $chart) { throw "Chart property returned null" }
         if ($ctTitle) { try { $chart.HasTitle = $true; $chart.ChartTitle.Text = $ctTitle } catch {} }
-        # Note: CSV data loading via ChartData.Workbook requires embedded Excel
-        # activation which can fail in headless COM mode. Use defaults for now.
-        Write-Mino "Chart: $ctName" -Level SUCCESS
-        Write-Mino "Chart: $ctName" -Level SUCCESS
+
+        # Load CSV data into chart via embedded Excel workbook
+        if ($csvPath) {
+            $resolvedCsv = [System.IO.Path]::GetFullPath($csvPath)
+            if (Test-Path $resolvedCsv) {
+                # Wait for embedded Excel to initialize (AddChart2 starts it async)
+                $wb = $null; $excelReady = $false
+                for ($retry = 0; $retry -lt 20; $retry++) {
+                    try {
+                        $chart.ChartData.Activate()
+                        $wb = $chart.ChartData.Workbook
+                        if ($wb -and $wb.Name) { $excelReady = $true; break }
+                    } catch {}
+                    Start-Sleep -Milliseconds 500
+                }
+                if ($excelReady) {
+                    try {
+                        $ws = $wb.Worksheets.Item(1)
+                        $csv = Import-Csv $resolvedCsv
+                        if ($csv.Count -gt 0) {
+                            $headers = $csv[0].PSObject.Properties.Name
+                            $rows = $csv.Count + 1
+                            $cols = $headers.Count
+                            $data = New-Object 'object[,]' $rows, $cols
+                            for ($c = 0; $c -lt $cols; $c++) {
+                                $data[0, $c] = $headers[$c]
+                            }
+                            for ($r = 0; $r -lt $csv.Count; $r++) {
+                                for ($c = 0; $c -lt $cols; $c++) {
+                                    $val = $csv[$r].($headers[$c])
+                                    $num = 0
+                                    if ([double]::TryParse($val, [ref]$num)) {
+                                        $data[($r + 1), $c] = $num
+                                    } else {
+                                        $data[($r + 1), $c] = $val
+                                    }
+                                }
+                            }
+                            $range = $ws.Range($ws.Cells.Item(1, 1), $ws.Cells.Item($rows, $cols))
+                            $range.Value = $data
+                        }
+                        $wb.Close()
+                        Write-Mino "Chart: $ctName + $($csv.Count) rows from $resolvedCsv" -Level SUCCESS
+                    } catch {
+                        Write-Mino "Chart: $ctName (data write failed: $($_.Exception.Message))" -Level ERROR
+                        try { $wb.Close() } catch {}
+                    }
+                } else {
+                    Write-Mino "Chart: $ctName (embedded Excel init timeout — chart empty)" -Level WARN
+                }
+            } else {
+                Write-Mino "Chart: $ctName (CSV not found: $resolvedCsv)" -Level WARN
+            }
+        } else {
+            Write-Mino "Chart: $ctName (no data)" -Level SUCCESS
+        }
     } catch { Write-Mino "Chart failed: $($_.Exception.Message)" -Level ERROR }
     finally { Close-PowerPointPresentation $ctx -Save }
 }
 
-# ---- VIDEO EXPORT (v3) ----
+# ---- VIDEO EXPORT (v4 — FFmpeg pipeline) ----
 function Export-PptVideo {
     param([string]$Path, [string]$Output, [string]$Resolution)
     if (-not $Path -or -not $Output) { Write-PowerPointHelp; return }
     $AbsPath = [System.IO.Path]::GetFullPath($Path)
     $AbsOut  = [System.IO.Path]::GetFullPath($Output)
     if (-not (Test-Path $AbsPath)) { Write-Mino "Not found: $AbsPath" -Level ERROR; return }
+
+    # Find ffmpeg
+    $ffmpeg = (Get-Command ffmpeg -ErrorAction SilentlyContinue).Source
+    if (-not $ffmpeg) {
+        Write-Mino "ffmpeg not found - install via: winget install Gyan.FFmpeg" -Level ERROR
+        return
+    }
+
+    $resMap = @{'1080p' = @(1920, 1080); '720p' = @(1280, 720); '480p' = @(854, 480)}
+    $res = if ($resMap.ContainsKey($Resolution)) { $resMap[$Resolution] } else { $resMap['720p'] }
+    $w, $h = $res[0], $res[1]
+
     $ctx = Open-PowerPointPresentation -FilePath $AbsPath
     if (-not $ctx) { return }
+
+    # Phase 1: collect slide timings + export PNGs
+    $tmpDir = Join-Path ([System.IO.Path]::GetTempPath()) ('mino-video-' + (Get-Random -Min 1000 -Max 9999))
+    New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
+    $slideCount = $ctx.Presentation.Slides.Count
+    $durations = @()
+
+    Write-Mino "Exporting $slideCount slides to $tmpDir..." -Level INFO
     try {
-        $vr = if ($Resolution -eq '1080p') { 1080 } elseif ($Resolution -eq '480p') { 480 } else { 720 }
-        # UseTimingsAndNarrations=$false - avoids hanging on slides without AdvanceTime set
-        $ctx.Presentation.CreateVideo($AbsOut, $false, 5, $vr, 30, 85)
-        Write-Mino "Video encoding: $AbsOut (${vr}p)" -Level SUCCESS
-        Write-Mino "Waiting for completion (up to 10 min)..."
-        $elapsed = 0
-        while ($elapsed -lt 600) {
-            Start-Sleep -Seconds 5; $elapsed += 5
-            $st = $ctx.Presentation.CreateVideoStatus
-            if ($st -eq 4) { Write-Mino "Video done: $AbsOut (${elapsed}s)" -Level SUCCESS; break }
-            if ($st -eq 3) { Write-Mino "Video failed at ${elapsed}s" -Level ERROR; break }
-            if ($elapsed % 30 -eq 0) { Write-Mino "Still encoding... ${elapsed}s" -Level INFO }
+        for ($i = 1; $i -le $slideCount; $i++) {
+            $slide = $ctx.Presentation.Slides.Item($i)
+            $pngPath = Join-Path $tmpDir ('slide_{0:D4}.png' -f $i)
+            $slide.Export($pngPath, 'PNG', $w, $h)
+
+            $dur = 5.0
+            try {
+                $st = $slide.SlideShowTransition
+                if ($st.AdvanceOnTime -and $st.AdvanceTime -gt 0) { $dur = $st.AdvanceTime }
+            } catch {}
+            $durations += $dur
+            Write-Mino "  Slide $i/$slideCount — ${dur}s" -Level INFO
         }
-        if ($elapsed -ge 600) { Write-Mino "Video timeout (600s)" -Level ERROR }
-        if ($st -eq 3) {
-            Write-Mino "CreateVideo requires Windows Media Foundation (wmfdist11-wmvdecoder)" -Level WARN
-            Write-Mino "Check: Get-WindowsCapability -Online | ? Name -like '*Media*'" -Level INFO
+    } finally {
+        Close-PowerPointPresentation $ctx -NoSave
+    }
+
+    # Phase 2: create per-slide video segments with ffmpeg
+    Write-Mino "Encoding segments..." -Level INFO
+    $segments = @()
+    for ($i = 0; $i -lt $slideCount; $i++) {
+        $pngPath = Join-Path $tmpDir ('slide_{0:D4}.png' -f ($i + 1))
+        $segPath = Join-Path $tmpDir ('seg_{0:D4}.mp4' -f ($i + 1))
+        $dur = $durations[$i]
+
+        $null = & $ffmpeg -y -hide_banner -loglevel error `
+            -loop 1 -i $pngPath -c:v libx264 -t $dur -pix_fmt yuv420p -r 30 `
+            -vf "scale=${w}:${h}:force_original_aspect_ratio=decrease,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2,setsar=1" `
+            $segPath
+        if (Test-Path $segPath) {
+            $size = (Get-Item $segPath).Length
+            $segments += $segPath
+            Write-Mino "  Seg $($i+1)/$slideCount — ${dur}s ($([math]::Round($size/1KB)) KB)" -Level INFO
+        } else {
+            Write-Mino "  Seg $($i+1) FAILED" -Level ERROR
         }
-    } catch { Write-Mino "Video failed: $($_.Exception.Message)" -Level ERROR }
-    finally { Close-PowerPointPresentation $ctx -Save }
+    }
+
+    if ($segments.Count -eq 0) {
+        Write-Mino "No segments produced" -Level ERROR
+        Remove-Item -Recurse -Force $tmpDir -ErrorAction SilentlyContinue
+        return
+    }
+
+    # Phase 3: concat segments into final video
+    $listFile = Join-Path $tmpDir 'concat.txt'
+    ($segments | ForEach-Object { "file '$_'" }) -join "`n" | Out-File -FilePath $listFile -Encoding ascii
+
+    Write-Mino "Concatenating $($segments.Count) segments..." -Level INFO
+    $null = & $ffmpeg -y -hide_banner -loglevel error -f concat -safe 0 -i $listFile -c copy $AbsOut
+
+    if (Test-Path $AbsOut) {
+        $finalSize = (Get-Item $AbsOut).Length
+        $totalDur = [math]::Round(($durations | Measure-Object -Sum).Sum, 1)
+        Write-Mino "Video: $AbsOut ($finalSize bytes, ${totalDur}s, ${w}x${h})" -Level SUCCESS
+    } else {
+        Write-Mino "Concat failed — check ffmpeg" -Level ERROR
+    }
+
+    # Cleanup
+    Remove-Item -Recurse -Force $tmpDir -ErrorAction SilentlyContinue
 }
 
 # ---- EXPORT SLIDE (v3) ----
