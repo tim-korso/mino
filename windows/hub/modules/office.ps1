@@ -1383,7 +1383,7 @@ function Add-PptChart {
     if (-not $Path -or -not $ChartType) { Write-PowerPointHelp; return }
     $AbsPath = [System.IO.Path]::GetFullPath($Path)
     if (-not (Test-Path $AbsPath)) { Write-Mino "Not found: $AbsPath" -Level ERROR; return }
-    $parts  = $ChartType -split ':'
+    $parts  = $ChartType -split ':', 3
     $ctName = $parts[0]
     $ctTitle = if ($parts.Count -gt 1) { $parts[1] } else { '' }
     $csvPath = if ($parts.Count -gt 2) { $parts[2] } else { $DataSpec }
