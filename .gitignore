@@ -7,6 +7,9 @@
 # Daily workspace (temp tasks, don't track)
 workspace/
 
+# Windows workspace (tracked — machine-specific)
+!windows/workspace/
+
 # Generated images (ignore loose, track in folder)
 *.png
 *.jpeg
