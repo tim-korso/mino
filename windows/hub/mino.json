@@ -1,0 +1,44 @@
+{
+  "version": "1.0",
+  "created": "2026-07-23",
+  "machine": "Win11 Pro",
+  "paths": {
+    "bleachbit": "C:\\Tools\\BleachBit\\bleachbit_console.exe",
+    "sifty": "%LOCALAPPDATA%\\Microsoft\\WinGet\\Packages\\Vortrix5.Sifty_Microsoft.Winget.Source_8wekyb3d8bbwe\\sifty.exe",
+    "czkawka": "%LOCALAPPDATA%\\Microsoft\\WinGet\\Packages\\qarmin.czkawka.cli_Microsoft.Winget.Source_8wekyb3d8bbwe\\windows_czkawka_cli.exe",
+    "office": "C:\\Program Files\\Microsoft Office\\Root\\Office16",
+    "tesseract": "C:\\Program Files\\Tesseract-OCR\\tesseract.exe",
+    "ffmpeg": "C:\\Tools\\ffmpeg\\bin\\ffmpeg.exe",
+    "ahk": "C:\\Program Files\\AutoHotkey\\AutoHotkeyU64.exe"
+  },
+  "cleanup": {
+    "daily_whitelist": [
+      "system.tmp", "system.cache", "system.recycle_bin", "system.thumbs_db",
+      "system.clipboard", "firefox.cache", "firefox.vacuum",
+      "chrome.cache", "chrome.vacuum", "edge.cache"
+    ],
+    "scan_dirs": ["Downloads", "Desktop", "Documents"],
+    "exclude_patterns": ["*\\.git*", "*node_modules*", "*\\AppData\\Local\\Microsoft\\*"]
+  },
+  "cron": {
+    "daily_cleanup": "0 2 * * *",
+    "weekly_deep": "0 3 * * 0",
+    "morning_brief": "30 6 * * 1-5"
+  },
+  "tweaks": {
+    "show_extensions": true,
+    "show_hidden_files": true,
+    "hide_task_view": true,
+    "disable_bing_search": true,
+    "disable_silent_installs": true,
+    "iso_date_format": true,
+    "faster_menus": true,
+    "disable_background_apps": true
+  },
+  "office": {
+    "excel_visible_default": false,
+    "word_visible_default": false,
+    "outlook_available": false,
+    "auto_backup": true
+  }
+}

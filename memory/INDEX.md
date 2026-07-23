@@ -3,7 +3,7 @@
 > **Gateway file.** Always read this first when waking up in a new session.
 > 04-MEMORY.md is auto-loaded core memory (critical lessons). This file is the archival index — what topics exist, where they are, when they were last touched.
 
-**Stats**: 24 topics | 22 journal days | last rebuilt 2026-07-21
+**Stats**: 25 topics | 22 journal days | last rebuilt 2026-07-23
 
 ---
 
@@ -38,6 +38,7 @@
 | 23 | **deepseek-api-edge-cases** | `memory/topics/deepseek-api-edge-cases.md` | 07-21 | deepseek, API, edge-cases, caching, stability, cost-optimization |
 | 25 | **wf-recover** + **research-state** | `memory/topics/deep-research.md` §v5 | 07-21 | workflow, recovery, research, persistence, tool-registration |
 | 24 | **subagent-model-routing** | `memory/topics/subagent-model-routing.md` | 07-21 | subagent, workflow, model-alias, routing, modelAliases, verification |
+| 25 | **win-deep-automation** | `memory/topics/win-deep-automation.md` | 07-23 | windows, powershell, COM, AHK, office-automation, system-diagnostics |
 
 ## Recent Sessions
 
