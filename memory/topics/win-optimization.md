@@ -14,8 +14,24 @@
 
 ## 统一入口
 
-`windows/workspace/2026-07-23-windows-optimization-tools/scripts/toolchain.ps1`
-- status | check | quick | full | backup | dryrun
+`mino/workspace/toolchain.ps1` — 整合 BleachBit + Sifty + Czkawka + 注册表调优的统一 CLI
+
+**8 条命令**：
+
+| 命令 | 功能 | 频率 |
+|------|------|------|
+| `scan` | 系统健康扫描（磁盘/临时文件/回收站/Sifty/BleachBit 预览） | 按需 |
+| `clean` | 日常轻扫（BleachBit 安全清理 + Sifty daily + 用户 Temp） | 每天 2:00 |
+| `deep-clean` | 每周深度清理（日常 + 日志 + SQLite vacuum + Czkawka 重复检测 + winapp2.ini 更新） | 周一 3:00 |
+| `bleachbit` | BleachBit 专项（preview/clean/preset/list/shred/update-winapp2） | 按需 |
+| `analyze` | 磁盘使用分析（目录 Top10 + AppData + pagefile/hiberfil） | 每月 4:00 |
+| `dupes` | Czkawka 重复文件 + 空文件夹 + 临时文件检测 | 按需 |
+| `tweak` | 注册表隐私/性能调优（11 项一键应用） | 按需/新装 |
+| `setup` | 创建/更新 3 个定时任务（Daily + Weekly + Monthly） | 首次/变更 |
+
+**BleachBit 自动化安全白名单**：`system.tmp` `system.cache` `system.recycle_bin` `system.thumbs_db` `system.clipboard` `firefox.cache` `firefox.vacuum` `chrome.cache` `chrome.vacuum` `edge.cache`
+
+**详细调研报告**：`workspace/2026-07-23-bleachbit-research/00-bleachbit-深度调研报告.md`
 
 ## 优化后系统状态
 
