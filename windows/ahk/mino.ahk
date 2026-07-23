@@ -13,23 +13,27 @@
 #+b:: {
     if WinExist("ahk_exe Clash Verge.exe") {
         WinActivate
-        Send("^b")           ; Ctrl+B = toggle system proxy (FlClash)
+        Send("^b")
+    } else if WinExist("ahk_exe FlClash.exe") {
+        WinActivate
+        Send("^b")
     } else {
-        Run("powershell.exe -NoProfile -Command `"Start-Process 'Clash Verge'`"")
+        Run("powershell.exe -NoProfile -Command Start-Process 'Clash Verge'")
     }
 }
 
 ; Win+Shift+M: Quick launcher menu
 #+m:: {
     menu := Menu()
-    menu.Add("System Snapshot", (*) => RunMino('system snapshot'))
+    menu.Add("System Health", (*) => RunMino('system health'))
+    menu.Add("System Snapshot", (*) => RunMino('system snapshot --json'))
     menu.Add("Cleanup Scan", (*) => RunMino('cleanup scan'))
     menu.Add("Weekly Report", (*) => RunMino('workplace weekly'))
     menu.Add("Morning Brief", (*) => RunMino('workplace brief'))
-    menu.Add("File Organizer", (*) => RunMino('workplace organize'))
-    menu.Add("---", (*) => {})
-    menu.Add("Open Mino Hub", (*) => Run('explorer.exe "' HubPath() '"'))
+    menu.Add()
+    menu.Add("Open Mino Hub", (*) => Run('explorer.exe "' . HubPath() . '"'))
     menu.Add("Kill Office Zombies", (*) => RunMino('office kill'))
+    menu.Add("Reload Mino", (*) => Reload())
     menu.Show()
 }
 
@@ -39,8 +43,15 @@
 }
 
 RunMino(cmd) {
-    RunWait('powershell.exe -NoProfile -ExecutionPolicy Bypass -File "'
-        . HubPath() . '\mino.ps1" ' . cmd)
+    ps1Path := HubPath() . '\mino.ps1'
+    if not FileExist(ps1Path) {
+        MsgBox('mino.ps1 not found at: ' . ps1Path, 'Mino Error', 'Iconx')
+        return
+    }
+    ; Run async so hotkeys are not blocked (some commands take 10-30s)
+    Run('powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' . ps1Path . '" ' . cmd)
+    ToolTip('Mino: ' . cmd, , , 1)
+    SetTimer () => ToolTip(,,,1), -2000  ; clear tooltip after 2s
 }
 
 HubPath() {

@@ -93,6 +93,46 @@ function Invoke-CleanupDaily {
     Write-Mino 'Daily cleanup complete' -Level SUCCESS
 }
 
+# --- repair system files (DISM RestoreHealth + SFC scannow) ---
+function Invoke-RepairSystem {
+    Write-Mino 'System file repair (DISM RestoreHealth + SFC /scannow)' -Level INFO
+
+    # 1. DISM - check if component store is repairable
+    Invoke-MinoSafe 'DISM CheckHealth' {
+        $r = Start-Process dism -ArgumentList '/Online','/Cleanup-Image','/CheckHealth' `
+            -NoNewWindow -PassThru -Wait
+        if ($r.ExitCode -ne 0) { throw "DISM CheckHealth exit: $($r.ExitCode)" }
+    }
+
+    # 2. DISM - full component store scan
+    Invoke-MinoSafe 'DISM ScanHealth' {
+        $r = Start-Process dism -ArgumentList '/Online','/Cleanup-Image','/ScanHealth' `
+            -NoNewWindow -PassThru -Wait
+        if ($r.ExitCode -ne 0) { throw "DISM ScanHealth exit: $($r.ExitCode)" }
+    }
+
+    # 3. DISM - restore health from Windows Update
+    Invoke-MinoSafe 'DISM RestoreHealth' {
+        $r = Start-Process dism -ArgumentList '/Online','/Cleanup-Image','/RestoreHealth' `
+            -NoNewWindow -PassThru -Wait
+        if ($r.ExitCode -ne 0) {
+            Write-Mino 'RestoreHealth failed - may need /Source with install.wim' -Level WARN
+            throw "DISM RestoreHealth exit: $($r.ExitCode)"
+        }
+    }
+
+    # 4. SFC - full system file repair
+    Invoke-MinoSafe 'SFC scannow' {
+        $r = Start-Process sfc -ArgumentList '/scannow' `
+            -NoNewWindow -PassThru -Wait
+        if ($r.ExitCode -ne 0) {
+            Write-Mino 'SFC found and repaired corrupt files' -Level WARN
+        }
+    }
+
+    Write-Mino 'System repair complete' -Level SUCCESS
+}
+
 # --- deep: thorough cleanup ---
 function Invoke-CleanupDeep {
     Write-Banner 'Deep Cleanup'
@@ -118,9 +158,14 @@ function Invoke-CleanupDeep {
         }
     }
 
+    # System file repair (DISM + SFC)
+    Invoke-RepairSystem
+
     # Windows Update cleanup
     Invoke-MinoSafe 'DISM component cleanup' {
-        dism /Online /Cleanup-Image /StartComponentCleanup /ResetBase 2>&1 | Out-Null
+        $c = Start-Process dism -ArgumentList '/Online','/Cleanup-Image','/StartComponentCleanup','/ResetBase' `
+            -NoNewWindow -PassThru -Wait
+        if ($c.ExitCode -ne 0) { throw "DISM exit code: $($c.ExitCode)" }
     }
 
     # cleanmgr system files

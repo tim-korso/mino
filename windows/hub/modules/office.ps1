@@ -1316,7 +1316,8 @@ function Save-PowerPoint {
     try {
         if ($Format -eq 'pdf') {
             $pdfPath = [System.IO.Path]::ChangeExtension($AbsPath, '.pdf')
-            $ctx.Presentation.ExportAsFixedFormat($pdfPath, 2, 2)
+            # ppSaveAsPDF = 32 (PpSaveAsFileType), bypasses ExportAsFixedFormat MsoTriState issue
+            $ctx.Presentation.SaveAs($pdfPath, 32)
             Write-Mino "PDF: $pdfPath" -Level SUCCESS
         } else {
             $ctx.Presentation.SaveAs($AbsPath)
@@ -1413,15 +1414,22 @@ function Export-PptVideo {
     if (-not $ctx) { return }
     try {
         $vr = if ($Resolution -eq '1080p') { 1080 } elseif ($Resolution -eq '480p') { 480 } else { 720 }
-        $ctx.Presentation.CreateVideo($AbsOut, $true, 5, $vr, 30, 85)
+        # UseTimingsAndNarrations=$false - avoids hanging on slides without AdvanceTime set
+        $ctx.Presentation.CreateVideo($AbsOut, $false, 5, $vr, 30, 85)
         Write-Mino "Video encoding: $AbsOut (${vr}p)" -Level SUCCESS
-        Write-Mino "Waiting for completion..."
+        Write-Mino "Waiting for completion (up to 10 min)..."
         $elapsed = 0
-        while ($elapsed -lt 120) {
-            Start-Sleep -Seconds 3; $elapsed += 3
+        while ($elapsed -lt 600) {
+            Start-Sleep -Seconds 5; $elapsed += 5
             $st = $ctx.Presentation.CreateVideoStatus
-            if ($st -eq 4) { Write-Mino "Video done: $AbsOut" -Level SUCCESS; break }
-            if ($st -eq 3) { Write-Mino "Video failed" -Level ERROR; break }
+            if ($st -eq 4) { Write-Mino "Video done: $AbsOut (${elapsed}s)" -Level SUCCESS; break }
+            if ($st -eq 3) { Write-Mino "Video failed at ${elapsed}s" -Level ERROR; break }
+            if ($elapsed % 30 -eq 0) { Write-Mino "Still encoding... ${elapsed}s" -Level INFO }
+        }
+        if ($elapsed -ge 600) { Write-Mino "Video timeout (600s)" -Level ERROR }
+        if ($st -eq 3) {
+            Write-Mino "CreateVideo requires Windows Media Foundation (wmfdist11-wmvdecoder)" -Level WARN
+            Write-Mino "Check: Get-WindowsCapability -Online | ? Name -like '*Media*'" -Level INFO
         }
     } catch { Write-Mino "Video failed: $($_.Exception.Message)" -Level ERROR }
     finally { Close-PowerPointPresentation $ctx -Save }
