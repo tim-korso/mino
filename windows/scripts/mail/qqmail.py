@@ -64,6 +64,8 @@ def decode_str(s):
 
 
 def imap_connect(addr, code):
+    # Python <= 3.13 的 imaplib 未注册 ID 命令，手动注册（登录后状态为 AUTH）
+    imaplib.Commands.setdefault("ID", ("AUTH",))
     m = imaplib.IMAP4_SSL(IMAP_HOST, IMAP_PORT)
     m.login(addr, code)
     m._simple_command("ID", IMAP_ID)  # QQ 特有要求
