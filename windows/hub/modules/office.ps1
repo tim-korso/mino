@@ -1172,6 +1172,7 @@ function Invoke-OfficePowerPoint {
         'video'        { Export-PptVideo -Path $target -Output $arg2 -Resolution $arg3 }
         'export-slide' { Export-PptSlide -Path $target -SlideIndex $arg2 -Output $arg3 }
         'layout'       { Set-PptLayout -Path $target -LayoutName $arg2 -Theme $arg3 }
+        'theme'        { Set-PptTheme -Path $target -Config $arg2 }
         default        { Write-PowerPointHelp }
     }
 }
@@ -1195,6 +1196,11 @@ function Write-PowerPointHelp {
     video     <file> <output> [res]    Export to MP4 (720p,1080p)
     export-slide<file> <slide#> <out>  Export slide as PNG image
     layout    <file> [list|<#>]        List/apply slide layouts + theme
+	    theme     <file> [brand.json]      Inject brand theme colors+fonts (python-pptx)
+
+	  Examples:
+	    mino office ppt theme deck.pptx                              # default Mino brand
+	    mino office ppt theme deck.pptx custom-brand.json            # custom colors
 
   Examples:
     mino office ppt new deck.pptx
@@ -1591,4 +1597,43 @@ function Set-PptLayout {
         }
     } catch { Write-Mino "Layout failed: $($_.Exception.Message)" -Level ERROR }
     finally { Close-PowerPointPresentation $ctx -Save }
+}
+
+
+# ---- THEME (v1) ----
+function Set-PptTheme {
+    param([string]$Path, [string]$Config)
+    if (-not $Path) { Write-PowerPointHelp; return }
+    $AbsPath = [System.IO.Path]::GetFullPath($Path)
+    if (-not (Test-Path $AbsPath)) { Write-Mino "Not found: $AbsPath" -Level ERROR; return }
+
+    $hubRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
+    $pyScript = Join-Path $hubRoot 'workspace\theme-inject.py'
+    if (-not (Test-Path $pyScript)) {
+        Write-Mino "Theme script not found: $pyScript" -Level ERROR
+        return
+    }
+
+    $pyExe = (Get-Command python -ErrorAction SilentlyContinue).Source
+    if (-not $pyExe) {
+        Write-Mino 'python not found in PATH' -Level ERROR
+        return
+    }
+
+    $args = @($pyScript, $AbsPath)
+    if ($Config) { $args += $Config }
+
+    Write-Mino "Injecting Mino brand theme -> $AbsPath..." -Level INFO
+    try {
+        $result = & $pyExe $args 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Mino "Theme injected: $AbsPath" -Level SUCCESS
+            if ($result) { $result | ForEach-Object { Write-Mino "  $_" -Level INFO } }
+        } else {
+            Write-Mino "Theme injection failed (exit $LASTEXITCODE)" -Level ERROR
+            if ($result) { $result | ForEach-Object { Write-Mino "  $_" -Level WARN } }
+        }
+    } catch {
+        Write-Mino "Theme injection error: $($_.Exception.Message)" -Level ERROR
+    }
 }
