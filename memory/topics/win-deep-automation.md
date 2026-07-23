@@ -63,6 +63,8 @@ ahk/
 ## 下一步
 
 - [x] Excel COM 全功能实测 (v1 7命令 → v2 15命令 → v3 22命令, 全部通过)
+- [x] PPT COM 自动化 v1 (10 命令, 9/10 实测通过)
+- [x] Farm Dashboard Excel (巡田数据→5 sheet 高级可视化)
 - [ ] AHK mino.ahk 常驻实测 (Win+Shift+M 菜单)
 - [ ] 安装 Outlook (或降级方案：网页邮件+AHK)
 - [ ] myagents cron 定时任务创建
@@ -139,6 +141,54 @@ ahk/
 
 - `office.ps1` @ lines 26-611: 完整 Excel 引擎 (585行, v2)
 - `com-helpers.ps1` @ lines 212-280: `Write-ExcelArray`, `Write-ExcelObjects`, `Set-ExcelFormat`, `Convert-ExcelDate`
+
+## PPT COM 引擎 v1 (2026-07-23)
+
+### 命令矩阵
+
+| 类别 | 命令 | 功能 | 实测 |
+|------|------|------|------|
+| **Create** | `new <path> [template]` | 新建演示文稿 (含默认幻灯片) | ✅ 4 slides |
+| | `slide <path> <layout> [title]` | 添加幻灯片 (title/content/blank/section) | ✅ |
+| | `layout <path> <layout> <theme>` | 切换版式+应用主题 | ✅ retro+themes |
+| **Content** | `text <path> <text> [pos]` | 添加文本框 (x,y,w,h) | ✅ 中英文 |
+| | `image <path> <file> [pos]` | 插入图片 (PNG/JPG) | ✅ |
+| | `chart <path> <type> [data]` | 原生图表 (AddChart2, 嵌入Excel引擎) | ✅ column/line/pie/bar |
+| **Animation** | `transition <path> <idx> <spec>` | 幻灯片过渡 (push/fade/wipe/dissolve/zoom...) | ✅ push+advance 3s |
+| | `animate <path> <name> <spec>` | 形状动画 (flyin/fade/zoom/wipe) | ✅ flyin+fade |
+| **Output** | `save <path> [format]` | 保存 (pptx 正常, pdf ExportAsFixedFormat 有类型问题) | ✅ pptx |
+| | `export-slide <path> <idx> <out>` | 导出单页为 PNG (自定义分辨率) | ✅ 1920×1080 |
+| | `video <path> <out> [res]` | 导出视频 (CreateVideo, 耗时长) | ⏳ 编码未测试 |
+
+### 关键技巧
+
+- **AddChart2 必须可见窗口**: `Presentations.Open(..., $true)` — 第4参数 WithWindow=$true 是图表引擎激活前提。嵌入 Excel COM 在隐藏窗口下不启动。
+- **PpEntryEffect 枚举值**: fade=1793, flyFromLeft=3331, pushRight=3853, wipeRight=2819, dissolve=1537, random=513。不是常规小整数，必须查 MSDN。
+- **新建演示文稿无幻灯片**: `Presentations.Add()` → `Slides.Add(1, 1)` 补第一张。
+- **SlideShowTransition**: EntryEffect + Duration + AdvanceOnTime + AdvanceTime 控制自动播放。`ppAdvanceOnTime = 2`。
+- **AnimationSettings (旧版)**: pre-2010 动画模型，TextLevelEffect=1 逐级文本。新动画用 TimeLine (未实现)。
+- **ExportAsFixedFormat MsoTriState 陷阱**: PS COM 无法传递正确的 MsoTriState 枚举对象给 ExportAsFixedFormat → PDF 导出失败。pptx 保存正常。
+- **Slide.Export**: 直接 COM 调用，支持自定义分辨率。`$slide.Export($path, "PNG", 1920, 1080)`。
+- **DisplayAlerts**: `$ppt.DisplayAlerts = 2` (ppAlertsAll) — AddChart2 需要，否则可能静默失败。
+
+### 文件清单
+
+- `office.ps1` @ PowerPoint 段: 10 函数 ~400 行 + dispatch 路由
+- `com-helpers.ps1` @ Open/Close-PowerPointPresentation: COM 生命周期管理
+
+## Farm Dashboard (2026-07-23)
+
+独立脚本 `windows/hub/modules/farm-dashboard.ps1` (~530行), 从巡田数据生成高级 Excel Dashboard:
+
+| Sheet | 内容 | 高级功能 |
+|-------|------|----------|
+| Dashboard | 概览 + 2图表 | 条件格式 4种, 数据验证 2列 |
+| Watchlist | 8公司明细 | 迷你图 (4周趋势), 条件格式 |
+| SignalMatrix | 8×5 信号矩阵 | 色阶热度图 |
+| WeeklyTrend | 4周数据 | 迷你图数据源 |
+| PivotSource (hidden) | 透视表源 | 计算字段 |
+
+**全 ASCII 标签** (绕过 PS 5.1 GBK 编码陷阱) + 所有数值 `[double]` 转换 (COM Value2 兼容)。
 
 ## 对照 macOS
 
