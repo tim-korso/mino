@@ -29,3 +29,4 @@ myagents_files/
 ikebana/.local-packages/
 .claude/plans/myagents/
 workspace/claims.db
+__pycache__/
