@@ -269,6 +269,42 @@ function Convert-ExcelDate {
     return $Value
 }
 
+# --- PowerPoint: open presentation ---
+function Open-PowerPointPresentation {
+    param(
+        [Parameter(Mandatory)][string]$FilePath,
+        [switch]$Visible,
+        [switch]$Create
+    )
+    $AbsPath = [System.IO.Path]::GetFullPath($FilePath)
+    $ppt = New-ComObject -ProgID 'PowerPoint.Application' -Visible:$Visible
+    if (-not $ppt) { return $null }
+    $ppt.DisplayAlerts = 2  # ppAlertsAll (let errors through — AddChart2 needs this)
+    try {
+        if ($Create -or (-not (Test-Path $AbsPath))) {
+            $pres = $ppt.Presentations.Add()
+        } else {
+            $pres = $ppt.Presentations.Open($AbsPath, $false, $false, $true)
+        }
+        return @{ PowerPoint = $ppt; Presentation = $pres; Path = $AbsPath }
+    } catch {
+        Write-Mino "Cannot open/create presentation: $($_.Exception.Message)" -Level ERROR
+        $ppt.Quit(); Remove-ComObject $ppt
+        return $null
+    }
+}
+
+# --- PowerPoint: safe close ---
+function Close-PowerPointPresentation {
+    param($Context, [switch]$Save)
+    if (-not $Context) { return }
+    try { if ($Save) { $Context.Presentation.SaveAs($Context.Path) } } catch { }
+    try { $Context.Presentation.Close() } catch { }
+    try { $Context.PowerPoint.Quit() } catch { }
+    Remove-ComObject $Context.Presentation
+    Remove-ComObject $Context.PowerPoint
+}
+
 # --- Word: safe close ---
 function Close-WordDocument {
     param($Context, [switch]$Save)
