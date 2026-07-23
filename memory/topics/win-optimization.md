@@ -33,6 +33,8 @@
 
 **详细调研报告**：`workspace/2026-07-23-bleachbit-research/00-bleachbit-深度调研报告.md`
 
+**v2 升级 (2026-07-23)**：winapp2.ini 已下载（3,715 条社区规则 @ `%APPDATA%\BleachBit\Cleaners\`）。扩展日扫白名单至 26 项（+Claude/VSCode/Slack/Discord/Zoom/Java/Brave/Adobe Reader/WinRAR/Edge Vacuum）。周扫扩展至 30 项（+Windows Defender 日志/deepscan.tmp/CleanerML deep scan 模式/cleanmgr Windows Update 清理）。新增安全防护：周扫前自动创建系统还原点。
+
 ## 优化后系统状态
 
 | 项目 | 值 |
