@@ -1173,6 +1173,10 @@ function Invoke-OfficePowerPoint {
         'export-slide' { Export-PptSlide -Path $target -SlideIndex $arg2 -Output $arg3 }
         'layout'       { Set-PptLayout -Path $target -LayoutName $arg2 -Theme $arg3 }
         'theme'        { Set-PptTheme -Path $target -Config $arg2 }
+        'cinematic'    {
+            . (Join-Path $PSScriptRoot 'ppt-cinematic.ps1')
+            Build-CinematicDeckJson -SpecFile $target -Output $arg2
+        }
         default        { Write-PowerPointHelp }
     }
 }
@@ -1197,10 +1201,12 @@ function Write-PowerPointHelp {
     export-slide<file> <slide#> <out>  Export slide as PNG image
     layout    <file> [list|<#>]        List/apply slide layouts + theme
 	    theme     <file> [brand.json]      Inject brand theme colors+fonts (python-pptx)
+    cinematic <spec.json> [out.pptx]   Build full deck from JSON spec (cards/timeline/chart/notes/animations)
 
 	  Examples:
 	    mino office ppt theme deck.pptx                              # default Mino brand
 	    mino office ppt theme deck.pptx custom-brand.json            # custom colors
+	    mino office ppt cinematic week7-spec.json week7.pptx         # JSON -> cinematic deck
 
   Examples:
     mino office ppt new deck.pptx
