@@ -67,17 +67,26 @@ function Get-SystemHealth {
     }
 
     # DISM component store - check by exit code, not text (PS 5.1 encoding limit)
+    # Exit codes: 0=healthy, 3010=success-reboot-needed, other=issue
+    # Note: CheckHealth is read-only, so 3010 is unexpected here. Included for safety.
     try {
         $dismProc = Start-Process dism -ArgumentList '/Online','/Cleanup-Image','/CheckHealth' -NoNewWindow -PassThru -Wait
-        # Exit 0 = healthy, non-zero = issue
-        $health.DISM = if ($dismProc.ExitCode -eq 0) { 'OK' } else { "EXIT:$($dismProc.ExitCode)" }
+        $dismOk = @(0, 3010)
+        $health.DISM = if ($dismOk -contains $dismProc.ExitCode) { 'OK' } else { "EXIT:$($dismProc.ExitCode)" }
     } catch { $health.DISM = 'ERROR' }
 
     # SFC integrity - check by exit code
+    # Exit codes: 0=clean, 1=found-and-fixed(verifyonly=found), 2=found-cant-fix-all, 3/4=cant-run
     try {
         $sfcProc = Start-Process sfc -ArgumentList '/verifyonly' -NoNewWindow -PassThru -Wait
-        # Exit 0 = no integrity violations, non-zero = found issues
-        $health.SFC = if ($sfcProc.ExitCode -eq 0) { 'OK' } else { "EXIT:$($sfcProc.ExitCode)" }
+        $health.SFC = switch ($sfcProc.ExitCode) {
+            0 { 'OK' }
+            1 { 'FIXABLE' }      # Found issues (would be fixed by /scannow)
+            2 { 'UNFIXABLE' }    # Found issues, can't fix all
+            3 { 'ERROR:ACCESS' } # Permissions / not admin
+            4 { 'ERROR:SAFEMODE'}# Safe mode
+            default { "EXIT:$($sfcProc.ExitCode)" }
+        }
     } catch { $health.SFC = 'ERROR' }
 
     # Disk SMART via WMI

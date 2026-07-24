@@ -1,7 +1,7 @@
 ---
 name: task-implement
-description: "Autonomous task execution driven by documents under `.task/<MMDD_slug>/` (produced by /task-alignment). Reads task.md as the goal, decomposes work, delegates to subagents when appropriate, runs independent verification, and delivers results. Acts as a UserProxy Agent — the human's representative during autonomous execution. Use when a task subdirectory exists in `.task/` and the user wants to start execution, or right after completing /task-alignment. Trigger phrases include '/task-implement', '/task-implement <slug>', 'start the task', 'go ahead and implement', 'execute the plan', or when the user confirms alignment documents and says something like 'looks good, go'."
-author: Ethan L
+description: "Autonomous task execution driven by task documents from /task-alignment (living under `~/.myagents/tasks/<taskId>/`). Reads task.md as the goal, decomposes work, delegates to subagents when appropriate, runs independent verification, and delivers results. Acts as a UserProxy Agent — the human's representative during autonomous execution. Use when the user dispatches a task from the 任务 panel or explicitly wants to start execution. Trigger phrases include '/task-implement', 'start the task', 'go ahead and implement', 'execute the plan', or when the user confirms alignment documents and says something like 'looks good, go'."
+author: MyAgents
 ---
 
 # Task Implement
@@ -14,30 +14,29 @@ You are not just an executor. You are the human's representative: you make judgm
 
 ### Check prerequisites
 
-1. **Identify which task subdirectory to execute.** Tasks live under `.task/<MMDD_slug>/` — a single project can hold many. Resolve which one to run:
+1. **Locate the task documents.** The invocation looks like `/task-implement <taskId>` (a UUID). Start with a single CLI call to resolve metadata + file paths:
+   ```bash
+   myagents task get <taskId>
+   ```
+   The output includes a `Docs` section with absolute paths to `task.md`, `verify.md`, `progress.md`, and (when present) `alignment.md` — all under `~/.myagents/tasks/<taskId>/`. Read each existing file directly with the `Read` tool — no dedicated "show-doc" CLI, just plain file reads against the paths the CLI gave you. Missing docs (e.g. no `alignment.md` for direct-dispatch tasks, no `verify.md` for simple tasks) simply won't appear in the paths list — that's not an error.
 
-   - If the user passed a slug (e.g. `/task-implement 0426_task-center`) → use that directory directly.
-   - If no slug was given → list `.task/` and inspect each subdirectory's `progress.md` status:
-     - If exactly one task is in `Planned` or `In Progress` status → use it (confirm with the user before proceeding, in their language: "Going to execute `0426_task-center` — confirm and I'll start.").
-     - If multiple are unfinished → list them with their titles + statuses and ask the user which one to run.
-     - If none are unfinished and `.task/` is empty → tell the user and suggest running `/task-alignment` first. Don't proceed.
+   If no taskId was provided, the user likely invoked `/task-implement` outside the Task Center flow. Tell them tasks need to be dispatched from the 任务 panel so execution can be tracked (state machine, statusHistory audit, SSE updates), and don't proceed.
 
-   Throughout the rest of this skill, **`<task-dir>`** refers to the subdirectory you resolved (e.g. `.task/0426_task-center/`).
-
-2. **Read all four documents** in `<task-dir>` in order:
+2. **Read all four documents** in order (whichever exist):
    - `alignment.md` — absorb the context, decisions, and user emphasis
    - `task.md` — this is your north star for the entire execution
-   - `verification.md` — understand what "done" looks like before you write a single line
+   - `verify.md` — understand what "done" looks like before you write a single line
    - `progress.md` — review the execution plan
 
 3. **Validate the plan against reality.** Read relevant code, check that files mentioned in task.md actually exist, confirm dependencies are as expected. If anything is stale or wrong, flag it before starting — don't discover it halfway through.
 
 4. **Set up a branch** if the workspace is a git repo:
-   - Check current branch. If on `main`/`master`, create a new branch (e.g., `task/{slug}` — reuse the slug from the task subdirectory).
-   - If already on a feature branch, use it.
-   - If no git repo, skip this entirely.
+   - Check current branch. If on `main`/`master`, create a new branch (e.g., `task/{short-task-name}`)
+   - If already on a feature branch, use it
+   - If no git repo, skip this entirely
 
-5. **Update `<task-dir>/progress.md`** — set status to "In Progress" and log the start time.
+5. **Update progress.md** — append a "started execution" entry. Use the `Edit` tool against the progress.md path from `task get`'s Docs section. Set status to "In Progress" and log the start time. See "Progress tracking" below for the full editing convention.
+6. **State machine transition** — call `myagents task update-status <taskId> running --message "started on branch X"`. This is the one place you DO use a CLI — because `update-status` triggers program-level side effects (statusHistory audit + desktop notification + scheduler awareness) that a raw file edit can't.
 
 ## How to execute
 
@@ -100,16 +99,16 @@ When you believe the work is complete, verification MUST be performed by an inde
 
 ### How to verify
 
-1. **Read verification.md** and separate the checks into categories:
+1. **Read verify.md** and separate the checks into categories:
 
    **Automated checks** (commands to run) — run these yourself first as a quick gate. If `npm test` fails, there's no point sending to a reviewer.
 
    **Independent review** — delegate to a subagent or external tool:
-   - Spawn a subagent with a focused review prompt: "Review the changes in [files] against these criteria: [from verification.md]. Report pass/fail for each criterion with evidence."
-   - Or invoke an external reviewer via bash (e.g., a separate AI CLI like `codex` or `gemini`, or any review skill you have available)
+   - Spawn a subagent with a focused review prompt: "Review the changes in [files] against these criteria: [from verify.md]. Report pass/fail for each criterion with evidence."
+   - Or invoke an external reviewer via bash (e.g., `codex exec` for a Codex review, or any other available review skill)
    - The reviewer should NOT have access to your reasoning about why you made certain choices — it should judge the code on its own merits
 
-   **Integration verification** — end-to-end scenarios from verification.md. Run these yourself (you have the context to set up the scenario) or delegate if they're self-contained.
+   **Integration verification** — end-to-end scenarios from verify.md. Run these yourself (you have the context to set up the scenario) or delegate if they're self-contained.
 
 2. **Collect results** from all verification sources and evaluate holistically:
    - All automated checks pass AND independent review has no critical issues → **proceed to delivery**
@@ -140,7 +139,7 @@ The key: re-alignment is a conversation with the user, not a unilateral decision
 
 Update progress as you work. This is the user's window into what's happening while they're away.
 
-**progress.md is your file.** No external program writes to it — you own the whole document end-to-end. Use the standard file tools to maintain it:
+**progress.md is your file.** The program does not write to it — you own the whole document. Use the standard file tools:
 
 - **Incremental note** → `Edit` tool to append a line at the bottom of progress.md. Convention:
   ```
@@ -150,7 +149,9 @@ Update progress as you work. This is the user's window into what's happening whi
 - **Updating a checkbox or section** → `Edit` tool with a targeted find/replace.
 - **Periodic full rewrite** (restructuring the Change Log, moving completed steps to a separate section) → `Write` tool with the full new body.
 
-Direct file editing is the only mechanism — there's no external "update-progress" command. You hold the pen.
+The progress.md absolute path came back in `myagents task get <taskId>`'s `Docs` section — use that.
+
+Note: `myagents task update-progress` no longer exists (v0.1.69+). Direct file editing is the ONLY way — you own this doc end-to-end.
 
 **When to update:**
 - Starting a new step → mark it in progress
@@ -226,7 +227,7 @@ Changes are on `task/jwt-migration` — review and merge when ready.
 
 ## Boundaries and self-discipline
 
-If `task.md` specifies boundaries under `## Boundaries` (cost limit, time limit, retry limit, file scope), respect them. There's no system-level enforcement — these are soft limits set during alignment, and you apply them through self-discipline.
+If task.md specifies boundaries (cost limit, time limit, retry limit, file scope), respect them. There's no system-level enforcement in the current runtime — this is self-discipline.
 
 - **File scope**: Before editing a file, check if it's within the allowed scope in task.md. If you need to touch an out-of-scope file, log why and get user confirmation first.
 - **Time awareness**: If you've been working significantly longer than the estimated time in progress.md, pause and assess — are you going down a rabbit hole? Should you simplify the approach?
@@ -236,7 +237,7 @@ If `task.md` specifies boundaries under `## Boundaries` (cost limit, time limit,
 
 A successful task-implement execution means:
 - The goal described in task.md is achieved
-- All checks in verification.md pass (confirmed by independent verification)
+- All checks in verify.md pass (confirmed by independent verification)
 - progress.md tells the complete story of what happened
 - The user comes back to a clear delivery summary and a clean branch ready for review
 - No surprises — anything unexpected was logged and, if necessary, discussed with the user before proceeding

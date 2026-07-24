@@ -76,3 +76,87 @@
 [22:28:30] [SUCCESS] Calculated field '毛利率' (=利润/收入) added to PivotTable7278
 [22:28:42] [SUCCESS] Protected: Sheet1 (UserInterfaceOnly, sort+filter+pivot allowed)
 [22:28:45] [SUCCESS] Unprotected: Sheet1
+[22:54:16] [ERROR] Create failed: Presentation.SaveAs : PowerPoint 储存此文件时发生错误。
+[22:54:20] [ERROR] Not found: C:\Users\zheti001\.myagents\projects\mino\test\ppt-demo.pptx
+[22:54:20] [ERROR] Not found: C:\Users\zheti001\.myagents\projects\mino\test\ppt-demo.pptx
+[22:54:21] [ERROR] Not found: C:\Users\zheti001\.myagents\projects\mino\test\ppt-demo.pptx
+[22:54:22] [ERROR] Not found: C:\Users\zheti001\.myagents\projects\mino\test\ppt-demo.pptx
+[22:54:22] [ERROR] Not found: C:\Users\zheti001\.myagents\projects\mino\test\ppt-demo.pptx
+[22:54:53] [SUCCESS] Created: C:\Users\zheti001\.myagents\projects\mino\windows\test\ppt-demo.pptx (0 slides)
+[22:55:21] [SUCCESS] Slide #1 layout=title
+[22:55:36] [SUCCESS] Slide #2 layout=content
+[22:55:44] [ERROR] Chart failed: Error HRESULT E_FAIL has been returned from a call to a COM component.
+[22:56:01] [ERROR] Transition failed: SlideShowTransition.EntryEffect : Invalid enumeration value.
+[22:56:08] [ERROR] Transition failed: SlideShowTransition.EntryEffect : Invalid enumeration value.
+[22:56:15] [ERROR] Animation failed: AnimationSettings.EntryEffect : Invalid enumeration value.
+[22:56:22] [SUCCESS] Exported: C:\Users\zheti001\.myagents\projects\mino\windows\test\slide1.png
+[22:56:26] [ERROR] Save failed: Exception setting "ExportAsFixedFormat": Cannot convert the "2" value of type "int" to type "Object".
+[22:57:54] [SUCCESS] Transition slide#1 fade (auto 3s)
+[22:57:58] [SUCCESS] Transition slide#2 push (auto 2s)
+[22:58:03] [SUCCESS] Animation shape#1 flyin delay=0.5s
+[22:58:07] [ERROR] Save failed: Exception setting "ExportAsFixedFormat": Cannot convert the "2" value of type "int" to type "Object".
+[22:58:24] [SUCCESS] Slide #3 layout=blank
+[22:59:38] [SUCCESS] Created: C:\Users\zheti001\.myagents\projects\mino\windows\test\ppt-demo2.pptx (0 slides)
+[22:59:45] [SUCCESS] Slide #1 layout=title
+[22:59:50] [SUCCESS] Transition slide#1 fade (auto 3s)
+[22:59:54] [SUCCESS] Animation shape#1 flyin delay=0.5s
+[22:59:59] [SUCCESS] Exported: C:\Users\zheti001\.myagents\projects\mino\windows\test\report-slide.png
+[23:00:06] [ERROR] Chart failed: Error HRESULT E_FAIL has been returned from a call to a COM component.
+[23:00:48] [SUCCESS] Slide #2 layout=content
+[23:00:56] [ERROR] Chart failed: Error HRESULT E_FAIL has been returned from a call to a COM component.
+[23:01:43] [SUCCESS] Created: C:\Users\zheti001\.myagents\projects\mino\windows\test\ppt-final.pptx (0 slides)
+[23:01:53] [SUCCESS] Slide #1 layout=title
+[23:01:59] [SUCCESS] Transition slide#1 fade (auto 3s)
+[23:02:06] [SUCCESS] Animation shape#1 flyin delay=1s
+[23:02:12] [SUCCESS] Slide #2 layout=content
+[23:02:19] [ERROR] Chart failed: Error HRESULT E_FAIL has been returned from a call to a COM component.
+[23:02:26] [SUCCESS] Slide #3 layout=blank
+[23:02:33] [SUCCESS] Text: slide #3
+[23:02:40] [SUCCESS] Exported: C:\Users\zheti001\.myagents\projects\mino\windows\test\final-slide1.png
+[23:03:05] [SUCCESS] Created: C:\Users\zheti001\.myagents\projects\mino\windows\test\ppt-ctest.pptx (0 slides)
+[23:03:14] [ERROR] Chart failed: Slides.Item : Integer out of range. 0 is not in Index's valid range of 1 to 0.
+[23:03:57] [SUCCESS] Created: C:\Users\zheti001\.myagents\projects\mino\windows\test\final.pptx (1 slides)
+[23:04:08] [SUCCESS] Slide #2 layout=title
+[23:04:15] [SUCCESS] Transition slide#1 fade (auto 5s)
+[23:04:22] [SUCCESS] Animation shape#1 flyin delay=0.5s
+[23:04:31] [SUCCESS] Slide #3 layout=content
+[23:04:38] [ERROR] Chart failed: Error HRESULT E_FAIL has been returned from a call to a COM component.
+[23:04:44] [SUCCESS] Slide #4 layout=blank
+[23:05:06] [ERROR] Chart failed: Error HRESULT E_FAIL has been returned from a call to a COM component.
+[23:05:31] [SUCCESS] Created: C:\Users\zheti001\.myagents\projects\mino\windows\test\ctest2.pptx (1 slides)
+[23:05:41] [ERROR] Chart failed: Error HRESULT E_FAIL has been returned from a call to a COM component.
+[23:06:00] [ERROR] Chart failed: Error HRESULT E_FAIL has been returned from a call to a COM component.
+[23:08:44] [SUCCESS] Created: C:\Users\zheti001\.myagents\projects\mino\windows\test\v.pptx (1 slides)
+[23:08:54] [ERROR] Chart failed: Error HRESULT E_FAIL has been returned from a call to a COM component.
+[23:09:01] [SUCCESS] Slide #2 layout=title
+[23:09:10] [SUCCESS] Text: slide #2
+[23:09:18] [SUCCESS] Transition slide#1 fade (auto 2s)
+[23:09:22] [SUCCESS] Animation shape#1 flyin delay=1s
+[23:09:26] [SUCCESS] Exported: C:\Users\zheti001\.myagents\projects\mino\windows\test\v-slide.png
+[23:09:48] [SUCCESS] Created: C:\Users\zheti001\.myagents\projects\mino\windows\test\v2.pptx (1 slides)
+[23:09:58] [ERROR] Chart failed: Error HRESULT E_FAIL has been returned from a call to a COM component.
+[23:10:16] [SUCCESS] Created: C:\Users\zheti001\.myagents\projects\mino\windows\test\v3.pptx (1 slides)
+[23:10:23] [SUCCESS] Slide #2 layout=blank
+[23:10:28] [ERROR] Chart failed: Error HRESULT E_FAIL has been returned from a call to a COM component.
+[23:11:38] [SUCCESS] Created: C:\Users\zheti001\.myagents\projects\mino\windows\test\v4.pptx (1 slides)
+[23:11:59] [SUCCESS] Chart: column
+[23:12:00] [SUCCESS] Chart: column
+[23:12:31] [SUCCESS] Created: C:\Users\zheti001\.myagents\projects\mino\windows\test\demo.pptx (1 slides)
+[23:12:46] [SUCCESS] Slide #2 layout=title
+[23:14:06] [SUCCESS] Transition slide#1 fade (auto 3s)
+[23:14:16] [SUCCESS] Animation shape#1 flyin delay=0.5s
+[23:14:35] [SUCCESS] Slide #3 layout=content
+[23:14:45] [SUCCESS] Chart: column
+[23:14:45] [SUCCESS] Chart: column
+[23:14:59] [SUCCESS] Exported: C:\Users\zheti001\.myagents\projects\mino\windows\test\slide3.png
+[23:30:17] [SUCCESS] Created: C:\Users\zheti001\.myagents\projects\mino\windows\test\pdf-test.pptx (1 slides)
+[23:30:32] [SUCCESS] PDF: C:\Users\zheti001\.myagents\projects\mino\windows\test\pdf-test.pdf
+[23:30:54] [SUCCESS] Video encoding: C:\Users\zheti001\.myagents\projects\mino\windows\test\pdf-test.mp4 (720p)
+[23:30:54] [INFO] Waiting for completion (up to 10 min)...
+[23:30:59] [ERROR] Video failed at 5s
+[23:31:15] [SUCCESS] Slide #2 layout=content
+[23:31:22] [ERROR] Text failed: Cannot convert value "is a test slide for video export 50" to type "System.Double". Error: "Input string was not in a correct format."
+[23:31:43] [SUCCESS] Slide #3 layout=blank
+[23:31:50] [SUCCESS] Video encoding: C:\Users\zheti001\.myagents\projects\mino\windows\test\vtest.wmv (720p)
+[23:31:50] [INFO] Waiting for completion (up to 10 min)...
+[23:32:05] [ERROR] Video failed at 15s

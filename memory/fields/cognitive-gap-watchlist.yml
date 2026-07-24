@@ -47,6 +47,9 @@ pollination:
 
 health:
   d5_end_to_end_tested: true
-  detectors_connected: true
+  detectors_connected: false  # 07-23: Serper+Tavily双耗尽，cron停摆5天
   cron_registered: true
-  notes: "07-06手动全扫描完成——27信号双引擎交叉验证。百济全触发(70%),优必选全触发(40%),寒武纪核心信号触发(45%),智谱倒退(40%),DeepSeek零变化(5%)。周级cron已注册(每7天自动扫描)。信号体系从静态→动态"
+  last_scan: "2026-07-23 22:00 #41 (WebSearch手动补扫)"
+  scan_engine: "WebSearch (Tavily/Serper配额耗尽, Exa可用但未用)"
+  companies_count: 7  # Kimi K3待正式注册
+  notes: "07-23扫描#41——5天黑洞后首次全量扫描。WebSearch引擎验证可用。商汤信号5触发✅(+12pp至52%)。范式正面盈利预告🆕(+8pp至38%)。智谱收购中科加禾(+2pp至52%)。DS V4失信(-2pp至43%)。优必选产能量化(-5pp至28%)。百济84% ready_for_harvest。组合修复~45%。Kimi K3待正式注册为第8家公司(初始25%)"

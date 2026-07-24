@@ -40,5 +40,15 @@
     "word_visible_default": false,
     "outlook_available": false,
     "auto_backup": true
+  },
+  "deeptools": {
+    "tools_dir": "%USERPROFILE%\\.myagents\\projects\\mino\\windows\\tools",
+    "nircmd": "%USERPROFILE%\\.myagents\\projects\\mino\\windows\\tools\\nircmd.exe",
+    "handle": "%USERPROFILE%\\.myagents\\projects\\mino\\windows\\tools\\handle.exe",
+    "autorunsc": "%USERPROFILE%\\.myagents\\projects\\mino\\windows\\tools\\autorunsc.exe",
+    "pslist": "%USERPROFILE%\\.myagents\\projects\\mino\\windows\\tools\\pslist.exe",
+    "pskill": "%USERPROFILE%\\.myagents\\projects\\mino\\windows\\tools\\pskill.exe",
+    "streams": "%USERPROFILE%\\.myagents\\projects\\mino\\windows\\tools\\streams.exe",
+    "sigcheck": "%USERPROFILE%\\.myagents\\projects\\mino\\windows\\tools\\sigcheck.exe"
   }
 }

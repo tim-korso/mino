@@ -1,0 +1,251 @@
+﻿[00:14:50] [INFO] === Building deep-dive PPT: watchlist-week6.pptx ===
+[00:14:56] [SUCCESS] Created: C:\Users\zheti001\.myagents\projects\mino\workspace\output\watchlist-week6.pptx (1 slides)
+[00:18:11] [INFO] === Building deep-dive PPT: watchlist-week6.pptx ===
+[00:18:22] [SUCCESS] Created: C:\Users\zheti001\.myagents\projects\mino\workspace\output\watchlist-week6.pptx (1 slides)
+[00:18:27] [SUCCESS] Slide 1: Title
+[00:18:29] [SUCCESS] Transition slide#1 fade (auto 4s)
+[00:18:31] [SUCCESS] Slide #2 layout=blank
+[00:18:34] [SUCCESS] Transition slide#2 push (auto 8s)
+[00:18:35] [SUCCESS] Slide #3 layout=blank
+[00:18:49] [WARN] Chart: bar (CSV not found: C:\Users\zheti001\.myagents\projects\mino\C)
+[00:18:59] [SUCCESS] Slide 3: Chart
+[00:19:01] [SUCCESS] Transition slide#3 push (auto 10s)
+[00:19:02] [SUCCESS] Slide #4 layout=blank
+[00:19:06] [SUCCESS] Transition slide#4 wipe (auto 12s)
+[00:19:08] [SUCCESS] Slide #5 layout=blank
+[00:19:12] [SUCCESS] Transition slide#5 push (auto 12s)
+[00:19:13] [SUCCESS] Slide #6 layout=blank
+[00:19:17] [SUCCESS] Transition slide#6 push (auto 12s)
+[00:19:18] [SUCCESS] Slide #7 layout=blank
+[00:20:19] [INFO] === Building deep-dive PPT: watchlist-week6.pptx ===
+[00:20:31] [SUCCESS] Created: C:\Users\zheti001\.myagents\projects\mino\workspace\output\watchlist-week6.pptx (1 slides)
+[00:20:49] [INFO] === Building deep-dive PPT: watchlist-week6.pptx ===
+[00:20:56] [SUCCESS] Created: C:\Users\zheti001\.myagents\projects\mino\workspace\output\watchlist-week6.pptx (1 slides)
+[00:20:58] [SUCCESS] Slide 1: Title
+[00:20:59] [SUCCESS] Transition slide#1 fade (auto 4s)
+[00:21:00] [SUCCESS] Slide #2 layout=blank
+[00:21:03] [SUCCESS] Transition slide#2 push (auto 8s)
+[00:21:03] [SUCCESS] Slide #3 layout=blank
+[00:21:53] [WARN] Chart: bar (embedded Excel init timeout — chart empty)
+[00:22:00] [SUCCESS] Slide 3: Chart
+[00:22:00] [SUCCESS] Transition slide#3 push (auto 10s)
+[00:22:01] [SUCCESS] Slide #4 layout=blank
+[00:22:03] [SUCCESS] Transition slide#4 wipe (auto 12s)
+[00:22:04] [SUCCESS] Slide #5 layout=blank
+[00:22:07] [SUCCESS] Transition slide#5 push (auto 12s)
+[00:22:08] [SUCCESS] Slide #6 layout=blank
+[00:23:44] [INFO] === Building 14-slide PPT (single session) ===
+[00:23:56] [INFO] === Building 14-slide PPT (single session) ===
+[00:24:38] [INFO] === Building 14-slide PPT (single session) ===
+[00:25:00] [INFO] === Building 14-slide PPT (single session) ===
+[00:25:08] [INFO] PowerPoint connected
+[00:25:35] [INFO] === Building 14-slide PPT (single session) ===
+[00:25:42] [INFO] PowerPoint connected
+[00:25:45] [SUCCESS]   Slide 1: Title
+[00:26:33] [INFO] === Building 14-slide PPT (single session) ===
+[00:26:40] [INFO] PowerPoint connected
+[00:26:43] [SUCCESS]   Slide 1: Title
+[00:28:25] [INFO] === Building 14-slide PPT ===
+[00:28:34] [INFO] PowerPoint connected
+[00:28:35] [SUCCESS]   Slide 1: Title
+[00:28:36] [SUCCESS]   Slide 2: Summary
+[00:28:43] [SUCCESS]   Slide 3: Chart (8 rows)
+[00:29:42] [INFO] === Building 14-slide PPT ===
+[00:29:50] [INFO] PowerPoint connected
+[00:29:53] [SUCCESS]   Slide 1: Title
+[00:29:54] [SUCCESS]   Slide 2: Summary
+[00:30:02] [SUCCESS]   Slide 3: Chart (8 rows)
+[00:30:02] [SUCCESS]   Slide 4: 商汤 U1 Pro -- 信号5触发 [+12pp]
+[00:30:03] [SUCCESS]   Slide 5: DeepSeek V4 -- 首度失信 [-2pp]
+[00:30:03] [SUCCESS]   Slide 6: 智谱 -- 股价过山车+收购中科加禾 [+2pp]
+[00:30:03] [SUCCESS]   Slide 7: [NEW] Kimi K3 -- Watchlist 第8家公司 初始修复25%
+[00:30:04] [SUCCESS]   Slide 8: 范式智能 -- 正面盈利预告+扭亏为盈 [+8pp]
+[00:30:05] [SUCCESS]   Slide 9: 优必选 [-5pp]  &  寒武纪 [+2pp]
+[00:30:05] [SUCCESS]   Slide 10: 百济神州 84%  &  组合健康度
+[00:30:06] [SUCCESS]   Slide 11: 前瞻: 未来关键事件时间线
+[00:30:06] [SUCCESS]   Slide 12: 潜规则洞察
+[00:30:06] [SUCCESS]   Slide 13: 推荐行动 & 决策清单
+[00:30:06] [SUCCESS]   Slide 14: End
+[00:51:00] [INFO] === Building 14-slide PPT (Design System v3) ===
+[00:51:14] [INFO] PowerPoint connected (Design System loaded)
+[00:51:19] [SUCCESS]   Slide 1: Hero (dark bg + brand red accent)
+[00:51:23] [SUCCESS]   Slide 2: Summary
+[00:53:29] [INFO] === Building 14-slide PPT (Design System v3) ===
+[00:53:32] [INFO] PowerPoint connected (Design System loaded)
+[00:53:39] [SUCCESS]   Slide 1: Hero (dark bg + brand red accent)
+[00:53:51] [SUCCESS]   Slide 2: Summary
+[00:56:55] [INFO] === Building 14-slide PPT (Design System v3) ===
+[00:57:06] [INFO] PowerPoint connected (Design System loaded)
+[00:57:08] [SUCCESS]   Slide 1: Hero (dark bg + brand red accent)
+[00:57:09] [SUCCESS]   Slide 2: Summary
+[00:57:18] [SUCCESS]   Slide 3: Chart (8 rows, styled)
+[00:57:18] [SUCCESS]   Slide 4: 商汤 U1 Pro —— 信号5触发 [+12pp]
+[00:57:19] [SUCCESS]   Slide 5: DeepSeek V4 —— 首度失信 [-2pp]
+[00:57:19] [SUCCESS]   Slide 6: 智谱 —— 股价过山车+收购中科加禾 [+2pp]
+[00:57:19] [SUCCESS]   Slide 7: [NEW] Kimi K3 —— Watchlist 第8家公司 初始修复25%
+[00:57:20] [SUCCESS]   Slide 8: 范式智能 —— 正面盈利预告+扭亏为盈 [+8pp]
+[00:57:20] [SUCCESS]   Slide 9: 优必选 [-5pp]  &  寒武纪 [+2pp]
+[00:57:20] [SUCCESS]   Slide 10: 百济神州 84%  &  组合健康度
+[00:57:21] [SUCCESS]   Slide 11: 前瞻: 未来关键事件时间线
+[00:57:21] [SUCCESS]   Slide 12: 潜规则洞察
+[00:57:44] [SUCCESS]   Slide 13: 推荐行动 & 决策清单
+[00:57:44] [SUCCESS]   Slide 14: End
+[00:57:45] [SUCCESS] PPT v3 complete: 14 slides, 86 KB
+[00:57:45] [SUCCESS] Design System: Microsoft YaHei + 26pt title / 13pt body / BrandRed #D33941
+[00:57:45] [INFO] Output: C:\Users\zheti001\.myagents\projects\mino\workspace\output\watchlist-week6-v3.pptx
+[01:10:49] [ERROR] Theme script not found: C:\Users\zheti001\.myagents\projects\mino\windows\hub\modules\..\..\workspace	heme-inject.py
+[01:11:12] [ERROR] Theme script not found: C:\Users\zheti001\.myagents\projects\mino\windows\hub\modules\..\..\workspace	heme-inject.py
+[01:12:21] [INFO] Injecting Mino brand theme -> C:\Users\zheti001\.myagents\projects\mino\workspace\output\watchlist-week6-v3.pptx...
+[01:12:22] [SUCCESS] Theme injected: C:\Users\zheti001\.myagents\projects\mino\workspace\output\watchlist-week6-v3.pptx
+[01:12:22] [INFO]   Theme part: /ppt/theme/theme1.xml
+[01:12:22] [INFO]   Found 1 clrScheme(s)
+[01:12:22] [INFO]     Replaced 'Office' -> 'Mino Cognitive Gap Tracker'
+[01:12:22] [INFO]     Theme fonts updated: Microsoft YaHei + Arial
+[01:12:22] [INFO]   Saved: workspace/output/watchlist-week6-v3-themed-py.pptx
+[01:12:22] [INFO]   Size: 86KB -> 80KB (delta: -5886B)
+[01:14:10] [INFO] Injecting Mino brand theme -> C:\Users\zheti001\.myagents\projects\mino\workspace\output\watchlist-week6-v3.pptx...
+[01:14:12] [SUCCESS] Theme injected: C:\Users\zheti001\.myagents\projects\mino\workspace\output\watchlist-week6-v3.pptx
+[01:14:12] [INFO]   Theme part: /ppt/theme/theme1.xml
+[01:14:12] [INFO]   Found 1 clrScheme(s)
+[01:14:12] [INFO]     Replaced 'Office' -> 'Mino Cognitive Gap Tracker'
+[01:14:12] [INFO]     Theme fonts updated: Microsoft YaHei + Arial
+[01:14:12] [INFO]   Theme injected: C:\Users\zheti001\.myagents\projects\mino\workspace\output\watchlist-week6-v3.pptx
+[01:14:12] [INFO]   Size: 80KB -> 80KB (delta: +0B)
+[01:14:43] [INFO] === Building 14-slide PPT (Design System v3) ===
+[01:15:04] [INFO] PowerPoint connected (Design System loaded)
+[01:15:09] [SUCCESS]   Slide 1: Hero (dark bg + brand red accent)
+[01:15:13] [SUCCESS]   Slide 2: Summary
+[01:15:30] [ERROR] Cannot access key: HKCU\Software\Microsoft
+[01:16:18] [SUCCESS]   Slide 3: Chart (8 rows, styled)
+[01:16:19] [SUCCESS]   Slide 4: 商汤 U1 Pro —— 信号5触发 [+12pp]
+[01:16:19] [SUCCESS]   Slide 5: DeepSeek V4 —— 首度失信 [-2pp]
+[01:16:20] [SUCCESS]   Slide 6: 智谱 —— 股价过山车+收购中科加禾 [+2pp]
+[01:16:20] [SUCCESS]   Slide 7: [NEW] Kimi K3 —— Watchlist 第8家公司 初始修复25%
+[01:16:21] [SUCCESS]   Slide 8: 范式智能 —— 正面盈利预告+扭亏为盈 [+8pp]
+[01:16:22] [SUCCESS]   Slide 9: 优必选 [-5pp]  &  寒武纪 [+2pp]
+[01:16:22] [SUCCESS]   Slide 10: 百济神州 84%  &  组合健康度
+[01:16:23] [SUCCESS]   Slide 11: 前瞻: 未来关键事件时间线
+[01:16:23] [SUCCESS]   Slide 12: 潜规则洞察
+[01:16:24] [SUCCESS]   Slide 13: 推荐行动 & 决策清单
+[01:16:24] [SUCCESS]   Slide 14: End
+[01:17:00] [INFO] === Building 14-slide PPT (Design System v3) ===
+[01:17:20] [INFO] === Building 14-slide PPT (Design System v3) ===
+[01:17:34] [INFO] PowerPoint connected (Design System loaded)
+[01:17:38] [SUCCESS]   Slide 1: Hero (dark bg + brand red accent)
+[01:17:41] [SUCCESS]   Slide 2: Summary
+[01:18:07] [SUCCESS]   Slide 3: Chart (8 rows, styled)
+[01:18:13] [SUCCESS]   Slide 4: 商汤 U1 Pro —— 信号5触发 [+12pp]
+[01:18:14] [SUCCESS]   Slide 5: DeepSeek V4 —— 首度失信 [-2pp]
+[01:18:15] [SUCCESS]   Slide 6: 智谱 —— 股价过山车+收购中科加禾 [+2pp]
+[01:18:16] [SUCCESS]   Slide 7: [NEW] Kimi K3 —— Watchlist 第8家公司 初始修复25%
+[01:18:18] [SUCCESS]   Slide 8: 范式智能 —— 正面盈利预告+扭亏为盈 [+8pp]
+[01:18:19] [SUCCESS]   Slide 9: 优必选 [-5pp]  &  寒武纪 [+2pp]
+[01:18:20] [SUCCESS]   Slide 10: 百济神州 84%  &  组合健康度
+[01:18:21] [SUCCESS]   Slide 11: 前瞻: 未来关键事件时间线
+[01:18:32] [SUCCESS]   Slide 12: 潜规则洞察
+[01:18:33] [SUCCESS]   Slide 13: 推荐行动 & 决策清单
+[01:18:36] [SUCCESS]   Slide 14: End
+[01:18:38] [INFO]   Injecting brand theme via python-pptx...
+[01:18:41] [SUCCESS]   Theme injected: 12 colors + fonts
+[01:18:41] [SUCCESS] PPT v3 complete: 14 slides, 80 KB
+[01:18:41] [SUCCESS] Design System: Microsoft YaHei + 26pt title / 13pt body / BrandRed #D33941
+[01:18:41] [INFO] Output: C:\Users\zheti001\.myagents\projects\mino\workspace\output\watchlist-week6-v3.pptx
+[02:00:29] [WARN] Killed zombie: WINWORD (PID 6172)
+[02:00:29] [WARN] Killed zombie: WINWORD (PID 25180)
+[02:00:34] [ERROR] Admin privileges required. Run as administrator.
+[12:33:50] [INFO] Downloading: https://www.nirsoft.net/utils/nircmd.zip
+[12:33:57] [SUCCESS] NirCmd installed
+[12:33:57] [INFO] Downloading: https://live.sysinternals.com/handle.exe
+[12:34:00] [SUCCESS] handle installed
+[12:34:00] [INFO] Downloading: https://live.sysinternals.com/autorunsc.exe
+[12:34:02] [SUCCESS] autorunsc installed
+[12:34:02] [INFO] Downloading: https://live.sysinternals.com/pslist.exe
+[12:34:02] [SUCCESS] pslist installed
+[12:34:02] [INFO] Downloading: https://live.sysinternals.com/pskill.exe
+[12:34:03] [SUCCESS] pskill installed
+[12:34:03] [INFO] Downloading: https://live.sysinternals.com/streams.exe
+[12:34:04] [SUCCESS] streams installed
+[12:34:04] [INFO] Downloading: https://live.sysinternals.com/sigcheck.exe
+[12:34:06] [SUCCESS] sigcheck installed
+[12:34:39] [ERROR] Screenshot failed
+[12:36:14] [SUCCESS] Volume set to: 32768
+[12:36:32] [SUCCESS] Toast sent
+[13:11:54] [INFO] === Building PPT v4 (Cinematic Design System) ===
+[13:12:04] [INFO] PowerPoint connected
+[13:12:07] [SUCCESS]   S1 hero
+[13:15:18] [INFO] === Building PPT v4 (Cinematic Design System) ===
+[13:15:25] [INFO] PowerPoint connected
+[13:15:27] [SUCCESS]   S1 hero
+[13:15:28] [ERROR] add-Text FAIL: text='组合加权修复 ~45%。检测器断链造成 ' size=10.5 [Double] color=9013641 [Int32] x=40 y=462 w=880 h=34 :: Specified cast is not valid.
+[13:16:21] [INFO] === Building PPT v4 (Cinematic Design System) ===
+[13:16:29] [INFO] PowerPoint connected
+[13:16:30] [SUCCESS]   S1 hero
+[13:16:32] [SUCCESS]   S2 signal cards
+[13:16:34] [SUCCESS]   S3 chart: 8 companies, direct series write
+[13:16:34] [SUCCESS]   S3 chart
+[13:16:35] [SUCCESS]   S4 商汤 U1 Pro —— 信号5触发 [+12pp] (bottom=482)
+[13:16:35] [SUCCESS]   S5 DeepSeek V4 —— 首度失信 [-2pp] (bottom=482)
+[13:16:36] [SUCCESS]   S6 智谱 —— 股价过山车 + 收购中科加禾 [+2pp] (bottom=496)
+[13:16:37] [SUCCESS]   S7 [NEW] Kimi K3 —— Watchlist 第8家公司 (bottom=492)
+[13:16:38] [SUCCESS]   S8 范式智能 —— 正面盈利预告 + 扭亏为盈 [+8pp] (bottom=504)
+[13:16:39] [SUCCESS]   S9 two columns
+[13:16:40] [SUCCESS]   S10 two columns
+[13:16:41] [SUCCESS]   S11 timeline
+[13:16:42] [SUCCESS]   S12 insights (bottom=454)
+[13:16:43] [SUCCESS]   S13 actions
+[13:16:43] [SUCCESS]   S14 end
+[13:16:43] [INFO] Exporting QA PNGs (14 slides)...
+[13:16:48] [INFO] Injecting brand theme...
+[13:16:49] [SUCCESS] Theme injected
+[13:16:49] [SUCCESS] PPT v4 complete: 14 slides, 145 KB
+[13:16:49] [INFO] Output: C:\Users\zheti001\.myagents\projects\mino\workspace\output\watchlist-week6-v4.pptx
+[13:16:49] [INFO] QA PNGs: C:\Users\zheti001\.myagents\projects\mino\workspace\output\v4-png
+[13:32:23] [INFO] === Building PPT v4 (Cinematic Design System) ===
+[13:32:30] [INFO] PowerPoint connected
+[13:32:32] [SUCCESS]   S1 hero
+[13:32:34] [SUCCESS]   S2 signal cards
+[13:32:36] [SUCCESS]   S3 chart: 8 companies, direct series write
+[13:32:36] [SUCCESS]   S3 chart
+[13:32:37] [SUCCESS]   S4 商汤 U1 Pro —— 信号5触发 [+12pp] (bottom=482)
+[13:32:38] [SUCCESS]   S5 DeepSeek V4 —— 首度失信 [-2pp] (bottom=482)
+[13:32:39] [SUCCESS]   S6 智谱 —— 股价过山车 + 收购中科加禾 [+2pp] (bottom=496)
+[13:32:40] [SUCCESS]   S7 [NEW] Kimi K3 —— Watchlist 第8家公司 (bottom=492)
+[13:32:41] [SUCCESS]   S8 范式智能 —— 正面盈利预告 + 扭亏为盈 [+8pp] (bottom=504)
+[13:32:42] [SUCCESS]   S9 two columns
+[13:32:43] [SUCCESS]   S10 two columns
+[13:32:44] [SUCCESS]   S11 timeline
+[13:32:45] [SUCCESS]   S12 insights (bottom=459)
+[13:32:46] [SUCCESS]   S13 actions
+[13:32:47] [SUCCESS]   S14 end
+[13:32:47] [INFO] Exporting QA PNGs (14 slides)...
+[13:32:52] [INFO] Injecting brand theme...
+[13:32:52] [SUCCESS] Theme injected
+[13:32:52] [SUCCESS] PPT v4 complete: 14 slides, 145 KB
+[13:32:52] [INFO] Output: C:\Users\zheti001\.myagents\projects\mino\workspace\output\watchlist-week6-v4.pptx
+[13:32:52] [INFO] QA PNGs: C:\Users\zheti001\.myagents\projects\mino\workspace\output\v4-png
+[13:35:55] [INFO] === Building PPT v4 (Cinematic Design System) ===
+[13:36:03] [INFO] PowerPoint connected
+[13:36:05] [SUCCESS]   S1 hero
+[13:36:06] [SUCCESS]   S2 signal cards
+[13:36:08] [SUCCESS]   S3 chart: 8 companies, direct series write
+[13:36:08] [SUCCESS]   S3 chart
+[13:36:09] [SUCCESS]   S4 商汤 U1 Pro —— 信号5触发 [+12pp] (bottom=482)
+[13:36:10] [SUCCESS]   S5 DeepSeek V4 —— 首度失信 [-2pp] (bottom=482)
+[13:36:11] [SUCCESS]   S6 智谱 —— 股价过山车 + 收购中科加禾 [+2pp] (bottom=496)
+[13:36:12] [SUCCESS]   S7 [NEW] Kimi K3 —— Watchlist 第8家公司 (bottom=492)
+[13:36:13] [SUCCESS]   S8 范式智能 —— 正面盈利预告 + 扭亏为盈 [+8pp] (bottom=504)
+[13:36:14] [SUCCESS]   S9 two columns
+[13:36:15] [SUCCESS]   S10 two columns
+[13:36:16] [SUCCESS]   S11 timeline
+[13:36:17] [SUCCESS]   S12 insights (bottom=459)
+[13:36:18] [SUCCESS]   S13 actions
+[13:36:18] [SUCCESS]   S14 end
+[13:36:18] [INFO] Exporting QA PNGs (14 slides)...
+[13:36:23] [INFO] Injecting brand theme...
+[13:36:24] [SUCCESS] Theme injected
+[13:36:24] [SUCCESS] PPT v4 complete: 14 slides, 144 KB
+[13:36:24] [INFO] Output: C:\Users\zheti001\.myagents\projects\mino\workspace\output\watchlist-week6-v4.pptx
+[13:36:24] [INFO] QA PNGs: C:\Users\zheti001\.myagents\projects\mino\workspace\output\v4-png
+[19:25:01] [WARN] Killed zombie: WINWORD (PID 12000)
+[19:25:01] [WARN] Killed zombie: WINWORD (PID 13620)
+[19:25:01] [WARN] Killed zombie: WINWORD (PID 22672)

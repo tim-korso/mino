@@ -8,7 +8,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position=0, Mandatory)]
-    [ValidateSet('system','cleanup','office','workplace','help')]
+    [ValidateSet('system','cleanup','office','workplace','deeptools','help')]
     [string]$Module,
 
     [Parameter(Position=1, ValueFromRemainingArguments)]
@@ -51,6 +51,7 @@ function Show-MinoHelp {
     cleanup    Cleanup & optimization (scan/daily/deep/bleachbit/analyze/dupes/tweak/setup)
     office     Office COM deep operations (excel/word/outlook + subcommands)
     workplace  Workplace automation (brief/email/weekly/organize/push/research)
+    deeptools  Deep automation toolbox (file/event/perf/reg/svc/net/ui/proc/task/tools/setup)
 
   Options:
     --dry-run   Preview only, no changes
@@ -63,6 +64,8 @@ function Show-MinoHelp {
     mino cleanup daily --dry-run
     mino office excel read report.xlsx A1:D20
     mino workplace brief
+    mino deeptools file hash report.xlsx
+    mino deeptools net ports --json
 
 '@ -ForegroundColor Cyan
 }
@@ -82,6 +85,18 @@ if (-not (Test-Path $modFile)) {
 
 # 鍔犺浇妯″潡
 . $modFile
+
+# Extract --json/--dry-run from remaining args (they get swallowed by ValueFromRemainingArguments)
+if ($CmdArgs -contains '--json') {
+    $global:MinoJson = $true
+    $script:OutputJson = $true
+    $CmdArgs = $CmdArgs | Where-Object { $_ -ne '--json' }
+}
+if ($CmdArgs -contains '--dry-run') {
+    $global:MinoDryRun = $true
+    $script:DryRun = $true
+    $CmdArgs = $CmdArgs | Where-Object { $_ -ne '--dry-run' }
+}
 
 $subCommand = if ($CmdArgs.Count -gt 0) { $CmdArgs[0] } else { '' }
 $restArgs   = $CmdArgs[1..($CmdArgs.Count - 1)] -join ' '
@@ -103,6 +118,10 @@ switch ($Module) {
     'workplace' {
         if (-not $subCommand) { Write-Mino 'workplace requires a command (brief|email|weekly|organize|push|research)' -Level ERROR; exit 1 }
         Invoke-WorkplaceCommand -Command $subCommand -Extra $restArgs
+    }
+    'deeptools' {
+        if (-not $subCommand) { Show-DeeptoolsHelp; exit 0 }
+        Invoke-DeeptoolsCommand -Command $subCommand -Extra $restArgs
     }
 }
 

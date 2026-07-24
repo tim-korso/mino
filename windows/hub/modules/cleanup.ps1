@@ -13,16 +13,55 @@ $script:UserProfile = $env:USERPROFILE
 $script:ScanDirs  = @("$script:UserProfile\Downloads", "$script:UserProfile\Desktop", "$script:UserProfile\Documents")
 
 # BleachBit safe cleaner whitelist
-$script:BBDaily = @('system.tmp','system.cache','system.recycle_bin','system.thumbs_db','system.clipboard',
-    'firefox.cache','firefox.vacuum','chrome.cache','chrome.vacuum','edge.cache')
-$script:BBDeep  = @('system.tmp','system.cache','system.recycle_bin','system.thumbs_db','system.clipboard',
-    'firefox.cache','firefox.vacuum','chrome.cache','chrome.vacuum','edge.cache',
-    'deepscan.tmp','system.memory_dump','system.minidump','system.logs', 'internet_explorer.cache')
+# NOTE: Cleaner IDs must match what --list-cleaners returns
+$script:BBDaily = @('system.tmp','system.recycle_bin','system.clipboard','deepscan.thumbs_db',
+    'firefox.cache','firefox.vacuum','google_chrome.cache','google_chrome.vacuum','microsoft_edge.cache')
+$script:BBDeep  = @('system.tmp','system.recycle_bin','system.clipboard','deepscan.thumbs_db',
+    'firefox.cache','firefox.vacuum','google_chrome.cache','google_chrome.vacuum','microsoft_edge.cache',
+    'deepscan.tmp','system.memory_dump','system.logs','internet_explorer.cache')
+# Claude cleaner for self-maintenance
+$script:BBClaude = @('claude.cache','claude.logs','claude.tmp','claude.backup','claude.file_history','claude.session','claude.shell_snapshots')
+
+# Safe BleachBit wrapper - filters unavailable cleaners
+function Invoke-BleachBitSafe {
+    param(
+        [string[]]$Cleaners,
+        [switch]$Preview,
+        [switch]$Clean
+    )
+    if (-not (Test-Path $script:BB)) {
+        Write-Mino "BleachBit not found at $script:BB" -Level WARN
+        return
+    }
+    # Get list of actually available cleaners
+    $available = & $script:BB --list-cleaners 2>$null | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' }
+    $valid = $Cleaners | Where-Object { $_ -in $available }
+    $missing = $Cleaners | Where-Object { $_ -notin $available }
+    if ($missing) {
+        Write-Mino "BleachBit: skipping unavailable cleaners: $($missing -join ', ')" -Level DEBUG
+    }
+    if (-not $valid) {
+        Write-Mino "BleachBit: no valid cleaners to run" -Level WARN
+        return
+    }
+    $args = @()
+    if ($Preview) { $args += '--preview' }
+    if ($Clean) { $args += '--clean' }
+    try {
+        & $script:BB @args $valid 2>&1 | ForEach-Object {
+            if ($_ -match '^(error|Error|warning):') {
+                Write-Mino "BleachBit: $_" -Level DEBUG
+            }
+        }
+    } catch {
+        Write-Mino "BleachBit error: $_" -Level WARN
+    }
+}
 
 function Invoke-CleanupCommand {
     param(
         [Parameter(Mandatory)]
-        [ValidateSet('scan','daily','deep','bleachbit','analyze','dupes','tweak','setup')]
+        [ValidateSet('scan','daily','deep','bleachbit','analyze','dupes','tweak','setup','claude')]
         [string]$Command
     )
     switch ($Command) {
@@ -34,6 +73,7 @@ function Invoke-CleanupCommand {
         'dupes'     { Invoke-CleanupDupes }
         'tweak'     { Invoke-CleanupTweak }
         'setup'     { Invoke-CleanupSetup }
+        'claude'    { Invoke-CleanupClaude }
     }
 }
 
@@ -45,12 +85,9 @@ function Invoke-CleanupScan {
     if ($snap.DiskC -match '\(([\d.]+)%\)') { $diskFreeGB = [math]::Round(100 - [double]$Matches[1], 1) }
     Write-Host ('  Disk C free: {0}%' -f $diskFreeGB) -ForegroundColor Gray
 
-    # BleachBit preview
-    if (Test-Path $script:BB) {
-        Write-Host "`n  --- BleachBit Preview ---" -ForegroundColor Yellow
-        $preview = & $script:BB --preview $script:BBDaily 2>&1 | Select-Object -Last 3
-        Write-Host "  $preview" -ForegroundColor Gray
-    }
+    # BleachBit preview (using safe wrapper)
+    Write-Host "`n  --- BleachBit Preview ---" -ForegroundColor Yellow
+    Invoke-BleachBitSafe -Cleaners $script:BBDaily -Preview
 
     # Temp files estimate
     $tempSize = 0
@@ -75,9 +112,7 @@ function Invoke-CleanupDaily {
     Assert-Admin
 
     Invoke-MinoSafe 'BleachBit daily clean' {
-        if (Test-Path $script:BB) {
-            & $script:BB --clean $script:BBDaily 2>&1 | Out-Null
-        }
+        Invoke-BleachBitSafe -Cleaners $script:BBDaily -Clean
     }
 
     Invoke-MinoSafe 'User Temp cleanup' {
@@ -97,25 +132,30 @@ function Invoke-CleanupDaily {
 function Invoke-RepairSystem {
     Write-Mino 'System file repair (DISM RestoreHealth + SFC /scannow)' -Level INFO
 
+    # DISM exit codes: 0=success, 3010=success-reboot-needed (MSI standard), other=error
+    # SFC exit codes: 0=clean, 1=found+fixed(success), 2=found-cant-fix-all(error), 3/4=cant-run
+
     # 1. DISM - check if component store is repairable
     Invoke-MinoSafe 'DISM CheckHealth' {
         $r = Start-Process dism -ArgumentList '/Online','/Cleanup-Image','/CheckHealth' `
             -NoNewWindow -PassThru -Wait
-        if ($r.ExitCode -ne 0) { throw "DISM CheckHealth exit: $($r.ExitCode)" }
+        if ($r.ExitCode -notin @(0, 3010)) { throw "DISM CheckHealth exit: $($r.ExitCode)" }
     }
 
     # 2. DISM - full component store scan
     Invoke-MinoSafe 'DISM ScanHealth' {
         $r = Start-Process dism -ArgumentList '/Online','/Cleanup-Image','/ScanHealth' `
             -NoNewWindow -PassThru -Wait
-        if ($r.ExitCode -ne 0) { throw "DISM ScanHealth exit: $($r.ExitCode)" }
+        if ($r.ExitCode -notin @(0, 3010)) { throw "DISM ScanHealth exit: $($r.ExitCode)" }
     }
 
     # 3. DISM - restore health from Windows Update
     Invoke-MinoSafe 'DISM RestoreHealth' {
         $r = Start-Process dism -ArgumentList '/Online','/Cleanup-Image','/RestoreHealth' `
             -NoNewWindow -PassThru -Wait
-        if ($r.ExitCode -ne 0) {
+        if ($r.ExitCode -eq 3010) {
+            Write-Mino 'RestoreHealth successful (reboot required to complete)' -Level SUCCESS
+        } elseif ($r.ExitCode -ne 0) {
             Write-Mino 'RestoreHealth failed - may need /Source with install.wim' -Level WARN
             throw "DISM RestoreHealth exit: $($r.ExitCode)"
         }
@@ -125,8 +165,13 @@ function Invoke-RepairSystem {
     Invoke-MinoSafe 'SFC scannow' {
         $r = Start-Process sfc -ArgumentList '/scannow' `
             -NoNewWindow -PassThru -Wait
-        if ($r.ExitCode -ne 0) {
-            Write-Mino 'SFC found and repaired corrupt files' -Level WARN
+        switch ($r.ExitCode) {
+            0 { Write-Mino 'SFC: No integrity violations found' -Level SUCCESS }
+            1 { Write-Mino 'SFC: Found and repaired corrupt files (reboot may be needed)' -Level WARN }
+            2 { throw 'SFC: Found corrupt files but could not fix all. Check CBS.log' }
+            3 { throw 'SFC: Could not run (permissions / not admin?)' }
+            4 { throw 'SFC: Could not run (safe mode?)' }
+            default { throw "SFC exit: $($r.ExitCode)" }
         }
     }
 
@@ -146,9 +191,7 @@ function Invoke-CleanupDeep {
 
     # BleachBit deep clean
     Invoke-MinoSafe 'BleachBit deep clean' {
-        if (Test-Path $script:BB) {
-            & $script:BB --clean $script:BBDeep 2>&1 | Out-Null
-        }
+        Invoke-BleachBitSafe -Cleaners $script:BBDeep -Clean
     }
 
     # Sifty deep
@@ -186,7 +229,7 @@ function Invoke-CleanupBleachBit {
     }
 
     Write-Host '  Cleaners available:' -ForegroundColor Yellow
-    & $script:BB --preset-list 2>&1 | Select-Object -First 20
+    & $script:BB --list-cleaners 2>&1 | Select-Object -First 30
 
     Write-Host "`n  Daily whitelist: $($script:BBDaily -join ', ')" -ForegroundColor Gray
     Write-Host "  Deep whitelist:  $($script:BBDeep -join ', ')" -ForegroundColor Gray
@@ -311,5 +354,46 @@ function Invoke-CleanupSetup {
     Write-Host '  Current Windows Task Scheduler cleanup tasks:' -ForegroundColor Yellow
     Get-ScheduledTask | Where-Object { $_.TaskName -match 'Mino|Cleanup|Sifty|BleachBit' -and $_.State -ne 'Disabled' } |
         ForEach-Object { Write-Host "  [$($_.State)] $($_.TaskName)" -ForegroundColor Gray }
+    Write-Host ''
+}
+
+# --- claude: self-maintenance ---
+function Invoke-CleanupClaude {
+    Write-Banner 'Claude Self-Maintenance'
+
+    $claudeDirs = @(
+        "$env:USERPROFILE\.claude\cache",
+        "$env:USERPROFILE\.claude\logs",
+        "$env:LOCALAPPDATA\Claude\Cache",
+        "$env:LOCALAPPDATA\Claude\Logs",
+        "$env:TEMP\claude"
+    )
+
+    $totalCleaned = 0
+    foreach ($dir in $claudeDirs) {
+        if (-not (Test-Path $dir)) {
+            Write-Host "  $dir : not found" -ForegroundColor Gray
+            continue
+        }
+        try {
+            $size = (Get-ChildItem $dir -Recurse -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
+            $sizeMB = [math]::Round($size/1MB, 1)
+            if ($global:MinoDryRun) {
+                Write-Host "  [DRY] $dir : ${sizeMB}MB would be cleaned" -ForegroundColor Yellow
+            } else {
+                Get-ChildItem $dir -Recurse -Force -ErrorAction SilentlyContinue |
+                    Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
+                Write-Host "  $dir : ${sizeMB}MB cleaned" -ForegroundColor Green
+                $totalCleaned += $sizeMB
+            }
+        } catch {
+            Write-Host "  $dir : $($_.Exception.Message)" -ForegroundColor Yellow
+        }
+    }
+
+    # Also run BleachBit claude cleaners
+    Invoke-BleachBitSafe -Cleaners $script:BBClaude -Clean
+
+    Write-Host "`n  Total Claude cleanup: ${totalCleaned}MB" -ForegroundColor Cyan
     Write-Host ''
 }
