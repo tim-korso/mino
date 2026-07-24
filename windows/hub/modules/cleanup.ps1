@@ -109,20 +109,31 @@ function Invoke-CleanupScan {
 # --- daily: light cleanup ---
 function Invoke-CleanupDaily {
     Write-Banner 'Daily Cleanup'
-    Assert-Admin
 
-    Invoke-MinoSafe 'BleachBit daily clean' {
-        Invoke-BleachBitSafe -Cleaners $script:BBDaily -Clean
-    }
-
-    Invoke-MinoSafe 'User Temp cleanup' {
-        @("$env:TEMP\*", "$env:WINDIR\Temp\*") | ForEach-Object {
-            if (Test-Path $_) { Remove-Item $_ -Recurse -Force -ErrorAction SilentlyContinue }
+    if (Test-Admin) {
+        # Full cleanup with admin: BleachBit + WINDIR\Temp + Recycle Bin
+        Invoke-MinoSafe 'BleachBit daily clean' {
+            Invoke-BleachBitSafe -Cleaners $script:BBDaily -Clean
         }
+
+        Invoke-MinoSafe 'System Temp cleanup' {
+            if (Test-Path "$env:WINDIR\Temp\*") {
+                Remove-Item "$env:WINDIR\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
+            }
+        }
+
+        Invoke-MinoSafe 'Recycle Bin empty' {
+            Clear-RecycleBin -Force -ErrorAction SilentlyContinue
+        }
+    } else {
+        Write-Mino 'Non-admin mode: skipping system-wide BleachBit + WINDIR\Temp + Recycle Bin' -Level WARN
     }
 
-    Invoke-MinoSafe 'Recycle Bin empty' {
-        Clear-RecycleBin -Force -ErrorAction SilentlyContinue
+    # User Temp (always works without admin)
+    Invoke-MinoSafe 'User Temp cleanup' {
+        if (Test-Path "$env:TEMP\*") {
+            Remove-Item "$env:TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 
     Write-Mino 'Daily cleanup complete' -Level SUCCESS
