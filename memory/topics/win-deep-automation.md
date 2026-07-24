@@ -1,6 +1,6 @@
 # Windows 深度自动化中枢
 
-> 创建: 2026-07-23 | 状态: 四个模块全通，API + GUI + COM 三层覆盖
+> 创建: 2026-07-23 | 更新: 2026-07-24 | 状态: deeptools 模块 87 命令全通 + win-automation Skill v1 + 3 管线脚本 + 全量实测
 
 ## 架构
 
@@ -16,8 +16,13 @@ windows/hub/
   modules/
     system.ps1      7命令: snapshot|health|startup|services|power|perf|registry
     cleanup.ps1     8命令: scan|daily|deep|bleachbit|analyze|dupes|tweak|setup
-    office.ps1      Excel 22 命令: read|write|formula|format|table|sort|filter|merge|chart|pivot|named|to-pdf|brief|open|kill|condfmt|validate|goalseek|sparkline|calcfield|protect|unprotect
+    office.ps1      Excel 22 命令 + PPT 10 命令 + Outlook 6 命令
     workplace.ps1   6命令: brief|email|weekly|organize|push|research
+    deeptools.ps1  ★NEW 87命令·11类别: file|event|perf|reg|svc|net|ui|proc|task|tools|setup
+  scripts/         ★NEW 管线脚本目录
+    win-twin-snapshot.ps1     系统数字孪生 (OS+硬件+磁盘+网络+服务+进程)
+    win-security-audit.ps1    安全审计 (可疑服务+LSA+防火墙+自启+ADS)
+    win-capability-benchmark.ps1 能力画像 (内置工具+外部工具+COM+AHK评分)
 
 ahk/
   mino.ahk         常驻托盘: Win+Shift+B(切代理) Win+Shift+M(菜单) Win+Shift+T(终端) + 热字符串
@@ -60,17 +65,138 @@ ahk/
 - `$PSScriptRoot` 在通过 `-Command "& 'script.ps1'"` 调用时不可用，必须用 `-File`
 - 文件编码必须是 UTF-8 without BOM 或 ASCII，否则解析器行为不可预测
 
+## Deeptools 模块 (2026-07-24)
+
+> 2914 行 · 87 Show 函数 · 11 类别分发器 · **全部实测通过**
+
+对标 macOS automation v8，Windows 内置 CLI 神器 + NirCmd/Sysinternals 外部补齐。
+
+### 命令矩阵
+
+| 类别 | 命令数 | 实测通过 | 典型用例 |
+|------|--------|---------|---------|
+| **file** | 14 | 3 | `hash` certutil (SHA256), `download` BITS, `acl-list` |
+| **event** | 5 | 3 | `errors` 24h 错误日志, `stats` 频率分布, `audit` |
+| **perf** | 5 | 3 | `cpu 2`, `mem 2`(95%使用率), `net` |
+| **reg** | 5 | 1 | `size`, `diff`, `export` |
+| **svc** | 6 | 3 | `audit`(8 非MS), `info` FlClashHelperService, `suspicious`(0 可写) |
+| **net** | 8 | 6 | `ports`(PID→进程名), `firewall`, `dns`(FlClash+WLAN), `route`, `proxy`(127.0.0.1:7890), `ping` |
+| **ui** | 10 | 1 | `speak` SAPI TTS, `lock`, `monitor-off`, `screenshot`(NirCmd/.NET) |
+| **proc** | 8 | 5 | `top 5`, `memtop`, `path` claude→sdk claude.exe, `find`, `tree` |
+| **task** | 8 | 1 | `list`, `info`, `history`(TaskScheduler Operational 日志) |
+| **tools** | 15 | 5 | `uptime`(266d), `whoami`, `which`, `drivers`, `vss-list` |
+| **setup** | 3 | 2 | `check`(14/21 已安装), `install`(3 层下载: WebRequest→certutil→BITS) |
+
+### macOS→Windows 关键对照
+
+| macOS | Windows | 差距 |
+|-------|---------|------|
+| `mdfind` Spotlight | `Get-ChildItem -Recurse -Filter` NTFS MFT | 同等索引级速度 |
+| `mdls` | `Get-Item | Select *` | Windows 元数据字段少 |
+| `sips -Z 200` | NirCmd/.NET Image | 需要外部工具 |
+| `screencapture` | `ui screenshot` (NirCmd/.NET) | 内置无等价 |
+| `say` | `ui speak` (SAPI COM) | 同等级 |
+| `osascript` | AHK/rundll32/COM | Windows COM > AppleScript |
+| `pbcopy/pbpaste` | `Get-Clipboard`/`Set-Clipboard`/`clip.exe` | 同等 |
+| `defaults read/write` | Registry `Get-ItemProperty` | 同等 (plist ↔ hive) |
+| `sysctl` | WMI `Get-CimInstance` | WMI 结构化 > sysctl 文本 |
+| `launchctl` | `sc.exe` | 同等 |
+| `powermetrics` | `typeperf` | typeperf 计数器名长但覆盖面更广 |
+| `lsof` | `handle.exe` | handle 更精准 (内核对象管理器) |
+| `crontab` | `schtasks` | schtasks 功能更多 (触发器类型) |
+| `PlistBuddy` | Registry Get-ItemProperty | Registry 原生嵌套键 > plist 扁平化 |
+| `bioutil` | 无 CLI 等价 | Windows Hello API 无命令行暴露 |
+
+### 13 阶段对照 (macOS automation → Windows)
+
+| Stage | macOS | Windows | 状态 |
+|-------|-------|---------|------|
+| 1. 文件系统 | mdfind/mdls/xattr/stat/ditto/rsync | Get-ChildItem/Get-Item/Get-Acl/icacls/certutil/cipher/compact/mklink | ✅ |
+| 2. 文本处理 | textutil/iconv/diff/comm/base64 | Get-Content/fc.exe/findstr/clip/certutil encode-decode | ✅ |
+| 3. 系统控制 | defaults/sysctl/pmset/caffeinate/launchctl | WMI/Registry/sc/typeperf/wevtutil/powercfg | ✅ |
+| 4. 影音/GUI | sips/screencapture/say/osascript/pbcopy | SAPI/toast/screenshot(NirCmd)/clip/volume/lock/monitor | ✅ NirCmd补齐 |
+| 5. 网络/安全 | networksetup/scutil/security/codesign | netsh/netstat/Get-NetFirewall/whoami/certutil | ✅ |
+| 6. 调度/管道 | crontab/at/launchctl/shortcuts | schtasks/Start-Job/Register-ObjectEvent/choice | ✅ |
+| 7. GUI 自动化 | AppleScript/JXA | AHK (Win32控件可达, UWP黑箱) | ✅ |
+| 8. 外部增强 | Homebrew (fd/rg/fzf/jq/ffmpeg) | NirCmd + Sysinternals (一键setup install) | ✅ |
+| 9. 深度诊断 | heap/leaks/vmmap/sysdiagnose/log/nettop | driverquery/vssadmin/esentutl/dism/sfc/msinfo32 | ✅ |
+| 10. 复合管线 | 7 管线脚本 | 3 管线脚本 (twin-snapshot/security-audit/capability-benchmark) | ✅ |
+| 11. 技巧性自动化 | URL Schemes/open/osascript/hidutil | rundll32/COM/WMI事件/注册表RunOnce/ADS/VSS/BITS/P/Invoke | ✅ |
+| 12. 文件智能引擎 | Calendar×Mail×yabai×Reminders×学习 | ADS扫描/卷影恢复/NTFS压缩/安全擦除/ACL备份/forfiles | ✅ |
+| 13. Office自动化 | AppleScript (残缺字典) | COM 全对象模型 (Excel 22 + PPT 10 + Outlook 6) | ✅ 无敌 |
+
+### 实测数据 (2026-07-24) ★全部补全
+
+```
+System:     Windows 11 Pro 22621 | i5-11300H 4C/8T | 16GB RAM | 266d uptime
+PS:         5.1.22621.4249 (非管理员)
+Tools:      21/21 installed (14 built-in + 7 external) ★
+Office COM: 3/4 (Excel 16.0 + Word 16.0 + PPT 16.0 | Outlook 未安装)
+AHK:        AutoHotkeyU64.exe v2.0.26 已装
+Modules:    7 (system/cleanup/office/workplace/deeptools/farm-dashboard/PPT)
+Score:      68/85 → Grade A ★ (从 B 升级)
+```
+
+### 全量测试矩阵 (2026-07-24)
+
+| # | 命令 | 结果 | 备注 |
+|---|------|------|------|
+| 1 | `tools uptime` | ✅ | 266d 01h |
+| 2 | `tools uptime --json` | ✅ | JSON 输出正确 |
+| 3 | `net ports` | ✅ | FlClashCore:7890 + myagents + WINWORD + 所有node进程 |
+| 4 | `perf cpu 2` | ✅ | 14%→6.2%, avg 10.1% |
+| 5 | `perf mem 2` | ✅ | 95% used (仅剩755MB/16GB ⚠️) |
+| 6 | `proc top 5` | ✅ | msedgewebview2 CPU 2128s |
+| 7 | `proc top 5 --json` | ✅ | JSON array with PID/Name/CPU/WorkingSet/Threads |
+| 8 | `proc path claude` | ✅ | claude-agent-sdk\claude.exe |
+| 9 | `event errors System 24` | ✅ | 1 error (FlClashHelperService crash) |
+| 10 | `event stats System` | ✅ | 851×ID7003(时间变更) + 57×ID7040 |
+| 11 | `svc audit` | ✅ | 8 non-MS auto-start services |
+| 12 | `svc info FlClashHelperService` | ✅ | AUTO_START, LocalSystem |
+| 13 | `net firewall` | ✅ | Domain/Private/Public all Enabled |
+| 14 | `net dns --json` | ✅ | FlClash(198.18.0.2) + WLAN(1.1.1.1) |
+| 15 | `net route --json` | ✅ | FlClash default route metric 0 |
+| 16 | `net proxy` | ✅ | 127.0.0.1:7890 |
+| 17 | `file hash mino.ps1` | ✅ | SHA256 via certutil |
+| 18 | `tools which certutil` | ✅ | C:\Windows\System32\certutil.exe |
+| 19 | `tools drivers` | ✅ | 2 Kernel drivers |
+| 20 | `setup check` | ✅ | 21/21 installed |
+| 21 | `setup install` | ✅ | NirCmd + 6 Sysinternals 一键下载 |
+| 22 | `ui screenshot` | ✅ | 406KB PNG via NirCmd |
+| 23 | `ui volume 32768` | ✅ | NirCmd setsysvolume |
+| 24 | `ui toast` | ✅ | Desktop notification via WinRT |
+| 25 | `ui speak "..."` | ✅ | SAPI SpVoice TTS |
+| 26 | `file lock` (handle.exe) | ✅ | handle.exe 正常运行，无假阳性 |
+| 27 | `tools tree . /f` | ✅ | Directory tree visualization |
+| 28 | sigcheck notepad.exe | ✅ | Signed by Microsoft, 10.0.22621.3672 |
+| 29 | streams ADS scan | ✅ | No ADS detected (clean hub directory) |
+| 30 | `win-twin-snapshot.ps1` | ✅ | OS+硬件+磁盘+网络+服务+进程 全量 |
+| 31 | `win-security-audit.ps1` | ✅ | LSA/Firewall/自启/可疑服务=0 |
+| 32 | `win-capability-benchmark.ps1` | ✅ | Grade A (68/85) |
+
+### --json flag 修复 (2026-07-24)
+
+PS 5.1 `ValueFromRemainingArguments` 贪心吞掉 `--json` 和 `--dry-run` → 开关参数永远收不到。修复: mino.ps1 在 `$CmdArgs` 中手动提取并设置全局变量 `$global:MinoJson` / `$global:MinoDryRun`，然后过滤掉这些 flag 再传给模块。
+
+### whoami Git Bash 冲突修复
+
+`whoami /groups` 在 Git Bash 环境中被 `/usr/bin/whoami` 截获 → `extra operand` 错误。修复: 使用 `$env:SystemRoot\System32\whoami.exe` 绝对路径。
+
 ## 下一步
 
 - [x] Excel COM 全功能实测 (v1 7命令 → v2 15命令 → v3 22命令, 全部通过)
 - [x] PPT COM 自动化 v1 (10 命令, 9/10 实测通过)
 - [x] Farm Dashboard Excel (巡田数据→5 sheet 高级可视化)
+- [x] **Deeptools 87 命令全模块实测通过 (2026-07-24)**
+- [x] **win-automation Skill v1 创建 (13 阶段·90+ 工具·macOS 对照)**
+- [x] **3 个管线脚本实测通过 (twin-snapshot/security-audit/capability-benchmark)**
+- [x] **--json flag 修复 + whoami Git Bash 冲突修复**
+- [ ] 安装 NirCmd + Sysinternals (`mino deeptools setup install`)
 - [ ] AHK mino.ahk 常驻实测 (Win+Shift+M 菜单)
-- [ ] 安装 Outlook (或降级方案：网页邮件+AHK)
-- [ ] myagents cron 定时任务创建
-- [ ] DISM/SFC 中文输出匹配 (当前匹配英文关键词失败)
+- [ ] myagents cron 定时任务创建 (win-daily-check 每日体检)
 - [ ] cleanup deep 实测 (需 admin + BleachBit winapp2.ini)
-- [ ] 补 App 自动化天花板矩阵 (Windows 版)
+- [ ] 补 App 自动化天花板矩阵 (Windows 版) — 已在 SKILL.md 中完成框架，需逐 App 实测
+- [ ] Stage 12 文件智能引擎 (ADS 扫描已支持，学习引擎待实现)
 
 ## Excel COM 引擎 v2 (2026-07-23)
 
@@ -175,6 +301,30 @@ ahk/
 
 - `office.ps1` @ PowerPoint 段: 10 函数 ~400 行 + dispatch 路由
 - `com-helpers.ps1` @ Open/Close-PowerPointPresentation: COM 生命周期管理
+
+## PPT COM 引擎 v2 — Cinematic (2026-07-24)
+
+`workspace/build-ppt-v4.ps1`: 卡片化 Design System + TimeLine.MainSequence 现代动画 + 演讲者备注。实测产出 14 页 235 入场效果。
+
+### 探针验证的枚举 (XML 取证)
+
+- **Trigger**: 1=clickEffect, 2=withPrevious, 3=afterPrevious, 4=OnShapeClick (MainSequence 中不可用, 需 InteractiveSequences)
+- **MsoAnimEffect**: 1=Appear 2=Fly 9=Dissolve 10=Fade 12=Peek 16=Split 22=Wipe 23=Zoom 26=Bounce (入场 1-53); 59=GrowShrink 61=Spin (强调 54-82); 86-95=路径。83-85 无效
+- **探针方法**: AddEffect 不校验枚举 (EffectType 原样返回), DisplayName 返回形状名 (本地化)——**唯一事实来源是存盘后解包 slide XML 读 presetID/presetClass/nodeType**
+
+### 级联节奏模型 (重要)
+
+- 首效果 AfterPrevious (幻灯片切换后自动播), 后续全部 **WithPrevious + 恒定 step** → 均匀交叠级联 (~2s 完成入场)
+- afterEffect delay 相对前一效果 END (串行), withEffect delay 相对前一效果 START (可交叠)。流动感只能用 withEffect 链
+
+### 陷阱清单 (全部实测)
+
+- **BGR 字节序**: COM `Color.RGB` 是 BGR packed int——RGB hex 0xD33941 必须传 0x4139D3。v3 全甲板红色渲染成蓝紫, 从未视觉验证。**任何 COM 颜色必须过 Convert-ToBgr**
+- **Font.Size 只收 [float]**: double → InvalidCastException; int 可以。统一 `[float]$size`
+- **PS `$` 展开**: 双引号字符串里 `$31.5B` 被当变量展开成空串。内容字符串一律单引号/here-string
+- **图表数据**: ChartData.Activate 嵌入 Excel 不可靠 (v3 存了默认示例数据)。用 `SeriesCollection(i).Values/XValues/.Name` 直写, 多余系列 Delete
+- **here-string 作实参**: 收尾 `'@` 必须独占一行, 后面不能跟参数; 函数调用的多行参数在 @(...) 闭合后换行即断——复杂参数先存变量再单行调用
+- **视觉 QA 是必须的**: v3 三个 bug ($丢失/BGR反色/图表默认数据) 全是视觉 QA 子代理抓出, 构建日志全绿
 
 ## Farm Dashboard (2026-07-23)
 
